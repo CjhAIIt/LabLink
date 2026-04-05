@@ -5,9 +5,11 @@ import com.lab.recruitment.dto.AttendanceRecordReviewDTO;
 import com.lab.recruitment.dto.AttendanceScheduleDTO;
 import com.lab.recruitment.dto.AttendanceSignInDTO;
 import com.lab.recruitment.dto.AttendanceTaskUpsertDTO;
+import com.lab.recruitment.dto.AttendanceMakeupRequestDTO;
 import com.lab.recruitment.entity.AttendanceSchedule;
 import com.lab.recruitment.entity.User;
 import org.springframework.web.multipart.MultipartFile;
+import com.lab.recruitment.dto.AttendanceDutyUpsertDTO;
 
 import java.util.List;
 import java.util.Map;
@@ -34,9 +36,13 @@ public interface AttendanceWorkflowService {
 
     Map<String, Object> uploadCurrentSessionPhoto(MultipartFile file, String remark, User currentUser);
 
+    Map<String, Object> setSessionDuty(Long sessionId, AttendanceDutyUpsertDTO dutyDTO, User currentUser);
+
     Map<String, Object> getCurrentStudentSession(User currentUser);
 
     boolean studentSignIn(AttendanceSignInDTO signInDTO, User currentUser);
+
+    boolean studentRequestMakeup(AttendanceMakeupRequestDTO requestDTO, User currentUser);
 
     Page<Map<String, Object>> getStudentHistory(Integer pageNum, Integer pageSize, User currentUser);
 }

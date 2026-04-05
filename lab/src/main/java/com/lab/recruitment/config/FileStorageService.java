@@ -21,13 +21,20 @@ public class FileStorageService {
     private static final DateTimeFormatter DATE_PATH_FORMATTER = DateTimeFormatter.ofPattern("yyyy/MM/dd");
 
     private final Path uploadRoot;
+    private final Path protectedUploadRoot;
 
-    public FileStorageService(@Value("${file.upload-path:./uploads/}") String uploadPath) {
+    public FileStorageService(@Value("${file.upload-path:./uploads/}") String uploadPath,
+                              @Value("${file.protected-upload-path:./uploads_protected/}") String protectedUploadPath) {
         this.uploadRoot = initializeUploadRoot(uploadPath);
+        this.protectedUploadRoot = initializeUploadRoot(protectedUploadPath);
     }
 
     public Path getUploadRoot() {
         return uploadRoot;
+    }
+
+    public Path getProtectedUploadRoot() {
+        return protectedUploadRoot;
     }
 
     public Path resolveTargetDirectory(LocalDate date) {
@@ -36,8 +43,18 @@ public class FileStorageService {
         return targetDir;
     }
 
+    public Path resolveProtectedTargetDirectory(LocalDate date) {
+        Path targetDir = protectedUploadRoot.resolve(DATE_PATH_FORMATTER.format(date).replace("/", File.separator));
+        ensureDirectory(targetDir);
+        return targetDir;
+    }
+
     public String buildPublicUrl(LocalDate date, String fileName) {
         return "/uploads/" + DATE_PATH_FORMATTER.format(date) + "/" + fileName;
+    }
+
+    public String buildProtectedKey(LocalDate date, String fileName) {
+        return "protected:" + DATE_PATH_FORMATTER.format(date) + "/" + fileName;
     }
 
     public String getResourceLocation() {
@@ -74,6 +91,28 @@ public class FileStorageService {
             return resolvedPath.startsWith(uploadRoot) ? resolvedPath : null;
         } catch (InvalidPathException ex) {
             log.warn("Invalid public upload path: {}", publicPath, ex);
+            return null;
+        }
+    }
+
+    public Path resolveProtectedPath(String protectedKey) {
+        String normalizedPath = protectedKey == null ? "" : protectedKey.trim();
+        if (normalizedPath.isEmpty()) {
+            return null;
+        }
+        if (normalizedPath.startsWith("protected:")) {
+            normalizedPath = normalizedPath.substring("protected:".length());
+        } else {
+            return null;
+        }
+        if (normalizedPath.startsWith("/")) {
+            normalizedPath = normalizedPath.substring(1);
+        }
+        try {
+            Path resolvedPath = protectedUploadRoot.resolve(normalizedPath).normalize();
+            return resolvedPath.startsWith(protectedUploadRoot) ? resolvedPath : null;
+        } catch (InvalidPathException ex) {
+            log.warn("Invalid protected upload key: {}", protectedKey, ex);
             return null;
         }
     }

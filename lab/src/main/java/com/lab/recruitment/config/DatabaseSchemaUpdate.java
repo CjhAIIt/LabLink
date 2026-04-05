@@ -46,6 +46,7 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
         createOutstandingGraduateTable();
         createLabAttendanceTable();
         createLabExitApplicationTable();
+        createAuditLogTable();
         if (growthCenterEnabled) {
             createGrowthPracticeQuestionTable();
         }
@@ -341,6 +342,13 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
                 "user_id BIGINT NOT NULL COMMENT '借用人ID'," +
                 "borrow_time DATETIME COMMENT '借用时间'," +
                 "return_time DATETIME COMMENT '归还时间'," +
+                "expected_return_time DATETIME NULL COMMENT '预计归还时间'," +
+                "pickup_time DATETIME NULL COMMENT '领用确认时间'," +
+                "pickup_confirmed_by BIGINT NULL COMMENT '领用确认人ID'," +
+                "return_apply_time DATETIME NULL COMMENT '归还申请时间'," +
+                "return_confirmed_by BIGINT NULL COMMENT '归还验收人ID'," +
+                "return_confirm_time DATETIME NULL COMMENT '归还验收时间'," +
+                "acceptance_checklist TEXT NULL COMMENT '验收清单'," +
                 "reason VARCHAR(255) COMMENT '借用理由'," +
                 "status TINYINT NOT NULL DEFAULT 0 COMMENT '状态 0-申请中 1-已借出 2-已拒绝 3-已归还'," +
                 "create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
@@ -349,6 +357,21 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
                 "FOREIGN KEY (equipment_id) REFERENCES t_equipment(id)," +
                 "FOREIGN KEY (user_id) REFERENCES t_user(id)" +
                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='设备借用记录表'");
+
+        addColumnIfMissing("t_equipment_borrow", "expected_return_time",
+                "ALTER TABLE t_equipment_borrow ADD COLUMN expected_return_time DATETIME NULL COMMENT '预计归还时间' AFTER return_time");
+        addColumnIfMissing("t_equipment_borrow", "pickup_time",
+                "ALTER TABLE t_equipment_borrow ADD COLUMN pickup_time DATETIME NULL COMMENT '领用确认时间' AFTER expected_return_time");
+        addColumnIfMissing("t_equipment_borrow", "pickup_confirmed_by",
+                "ALTER TABLE t_equipment_borrow ADD COLUMN pickup_confirmed_by BIGINT NULL COMMENT '领用确认人ID' AFTER pickup_time");
+        addColumnIfMissing("t_equipment_borrow", "return_apply_time",
+                "ALTER TABLE t_equipment_borrow ADD COLUMN return_apply_time DATETIME NULL COMMENT '归还申请时间' AFTER pickup_confirmed_by");
+        addColumnIfMissing("t_equipment_borrow", "return_confirmed_by",
+                "ALTER TABLE t_equipment_borrow ADD COLUMN return_confirmed_by BIGINT NULL COMMENT '归还验收人ID' AFTER return_apply_time");
+        addColumnIfMissing("t_equipment_borrow", "return_confirm_time",
+                "ALTER TABLE t_equipment_borrow ADD COLUMN return_confirm_time DATETIME NULL COMMENT '归还验收时间' AFTER return_confirmed_by");
+        addColumnIfMissing("t_equipment_borrow", "acceptance_checklist",
+                "ALTER TABLE t_equipment_borrow ADD COLUMN acceptance_checklist TEXT NULL COMMENT '验收清单' AFTER return_confirm_time");
     }
 
     private void createOutstandingGraduateTable() {
@@ -404,6 +427,21 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
                 "FOREIGN KEY (user_id) REFERENCES t_user(id)," +
                 "FOREIGN KEY (lab_id) REFERENCES t_lab(id)" +
                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='实验室退出申请表'");
+    }
+
+    private void createAuditLogTable() {
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_audit_log (" +
+                "id BIGINT AUTO_INCREMENT PRIMARY KEY COMMENT '主键'," +
+                "actor_user_id BIGINT NULL COMMENT '操作者ID'," +
+                "action VARCHAR(64) NOT NULL COMMENT '动作'," +
+                "target_type VARCHAR(64) NULL COMMENT '对象类型'," +
+                "target_id BIGINT NULL COMMENT '对象ID'," +
+                "detail TEXT NULL COMMENT '详情'," +
+                "create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+                "deleted TINYINT NOT NULL DEFAULT 0," +
+                "INDEX idx_audit_log_action_time (action, create_time)," +
+                "INDEX idx_audit_log_target (target_type, target_id, create_time)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='审计日志表'");
     }
 
     private void createGrowthPracticeQuestionTable() {
