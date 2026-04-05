@@ -92,6 +92,8 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
                 "ALTER TABLE t_lab ADD COLUMN founding_date VARCHAR(50) COMMENT '成立时间'");
         addColumnIfMissing("t_lab", "awards",
                 "ALTER TABLE t_lab ADD COLUMN awards TEXT COMMENT '获奖信息'");
+        addColumnIfMissing("t_lab", "outstanding_seniors",
+                "ALTER TABLE t_lab ADD COLUMN outstanding_seniors TEXT COMMENT '优秀学长（JSON格式）'");
         addColumnIfMissing("t_lab", "basic_info",
                 "ALTER TABLE t_lab ADD COLUMN basic_info TEXT COMMENT '基础信息'");
         addColumnIfMissing("t_lab", "advisors",

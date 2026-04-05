@@ -19,6 +19,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Spring Security配置类
@@ -45,6 +46,9 @@ public class SecurityConfig {
      */
     @Autowired
     private JwtAuthenticationEntryPoint jwtAuthenticationEntryPoint;
+
+    @Autowired
+    private AppSecurityProperties appSecurityProperties;
 
     /**
      * 密码编码器Bean
@@ -107,13 +111,14 @@ public class SecurityConfig {
                     "/api/user/login",
                     "/api/user/register"
             ).permitAll()
-            .antMatchers("/file/upload", "/file/view").permitAll()
-            .antMatchers("/uploads/**").permitAll()
+            .antMatchers("/file/view").permitAll()
+            .antMatchers(HttpMethod.GET, "/colleges/options", "/api/colleges/options").permitAll()
             .antMatchers(HttpMethod.GET, "/labs/list", "/api/labs/list").permitAll()
+            .antMatchers(HttpMethod.GET, "/labs/stats", "/api/labs/stats").permitAll()
             .antMatchers(HttpMethod.GET, "/labs/*", "/api/labs/*").permitAll()
             .antMatchers(HttpMethod.GET, "/labs/detail/*", "/api/labs/detail/*").permitAll()
+            .antMatchers(HttpMethod.GET, "/recruit-plans/active", "/api/recruit-plans/active").permitAll()
             .antMatchers(HttpMethod.GET, "/graduate/list", "/api/graduate/list").permitAll()
-            .antMatchers("/colleges/options").permitAll()
             // 总负责人权限的端点
             .antMatchers("/user/admin/**").hasAuthority("ROLE_SUPER_ADMIN")
             .antMatchers("/user/student/list").hasAuthority("ROLE_SUPER_ADMIN")
@@ -137,10 +142,12 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        List<String> allowedOrigins = appSecurityProperties.resolveAllowedOrigins();
+        configuration.setAllowedOrigins(allowedOrigins);
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
+        configuration.setAllowedHeaders(Arrays.asList("Authorization", "Content-Type", "X-Requested-With"));
+        configuration.setExposedHeaders(Arrays.asList("Authorization", "X-RateLimit-Limit", "X-RateLimit-Remaining", "Retry-After"));
+        configuration.setAllowCredentials(appSecurityProperties.isAllowCredentials());
         
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);

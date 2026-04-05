@@ -1,6 +1,11 @@
 const { Client } = require('ssh2');
 
 const password = 'Cjh041217@';
+const args = process.argv.slice(2);
+const uploadMode = args[0] === 'upload';
+const remoteCommand = uploadMode ? '' : args.join(' ') || 'echo ok';
+const localPath = uploadMode ? args[1] : '';
+const remotePath = uploadMode ? args[2] : '';
 const conn = new Client();
 
 conn
@@ -10,7 +15,33 @@ conn
   })
   .on('ready', () => {
     console.log('SSH ready');
-    conn.exec('echo ok', (err, stream) => {
+    if (uploadMode) {
+      if (!localPath || !remotePath) {
+        console.error('Usage: node test-ssh.js upload <localPath> <remotePath>');
+        conn.end();
+        process.exitCode = 1;
+        return;
+      }
+      conn.sftp((err, sftp) => {
+        if (err) {
+          console.error(err);
+          conn.end();
+          process.exitCode = 1;
+          return;
+        }
+        sftp.fastPut(localPath, remotePath, (uploadErr) => {
+          if (uploadErr) {
+            console.error(uploadErr);
+            process.exitCode = 1;
+          } else {
+            console.log(`uploaded ${localPath} -> ${remotePath}`);
+          }
+          conn.end();
+        });
+      });
+      return;
+    }
+    conn.exec(remoteCommand, (err, stream) => {
       if (err) {
         console.error(err);
         conn.end();

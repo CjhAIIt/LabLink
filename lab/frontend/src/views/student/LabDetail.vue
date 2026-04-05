@@ -18,7 +18,7 @@
           </div>
         </div>
         <div class="hero-actions">
-          <el-button type="primary" size="large" @click="handleApply" :disabled="!!userStore.userInfo?.labId">
+          <el-button type="primary" size="large" :disabled="!!userStore.userInfo?.labId" @click="handleApply">
             {{ userStore.userInfo?.labId ? '已加入实验室' : '立即申请加入' }}
           </el-button>
           <el-button size="large" @click="$router.back()">返回列表</el-button>

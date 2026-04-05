@@ -20,7 +20,7 @@ public interface LabApplyMapper extends BaseMapper<LabApply> {
             "  a.apply_reason AS applyReason, a.research_interest AS researchInterest, a.skill_summary AS skillSummary,",
             "  a.status, a.audit_by AS auditBy, a.audit_time AS auditTime, a.audit_comment AS auditComment,",
             "  a.create_time AS createTime, l.lab_name AS labName, rp.title AS planTitle,",
-            "  u.real_name AS studentName, u.student_id AS studentId, u.major, u.grade, u.phone, u.email",
+            "  u.real_name AS studentName, u.student_id AS studentId, u.major, u.grade, u.phone, u.email, u.resume AS resume",
             "FROM t_lab_apply a",
             "LEFT JOIN t_lab l ON l.id = a.lab_id AND l.deleted = 0",
             "LEFT JOIN t_recruit_plan rp ON rp.id = a.recruit_plan_id AND rp.deleted = 0",
