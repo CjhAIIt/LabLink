@@ -33,11 +33,13 @@
 - 构建：`Maven`、`npm`
 - 部署：`Docker Compose`
 
-## 默认数据库配置
+## 必填环境变量
 
 - 数据库名：`lab_recruitment`
-- 用户名：`root`
-- 密码：`cjh041217`
+- 数据库用户：`DB_USERNAME`（默认 `root`）
+- 数据库密码：`DB_PASSWORD`
+- JWT 密钥：`JWT_SECRET`（至少 32 位）
+- Docker MySQL root 密码：`MYSQL_ROOT_PASSWORD`
 
 默认配置见 [application.yml](/C:/Users/cjh/IdeaProjects/lab/src/main/resources/application.yml)。
 
@@ -50,7 +52,7 @@ CREATE DATABASE lab_recruitment DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_un
 然后导入初始化脚本：
 
 ```bash
-mysql -uroot -p lab_recruitment < src/main/resources/init.sql
+mysql -uroot -p"${DB_PASSWORD}" lab_recruitment < src/main/resources/init.sql
 ```
 
 ## 本地启动
@@ -86,6 +88,7 @@ npm run dev
 
 ```powershell
 Copy-Item .env.cloud.example .env.cloud
+Copy-Item .env.cloud .env
 ```
 
 再执行：
@@ -139,6 +142,7 @@ docker compose --env-file .env.cloud -f docker-compose.cloud.yml up -d --build
 - 初始化学院主数据切换为安徽信息工程学院全校版语境
 - 初始化公告与实验室示例数据切换为学校版语境
 - 文档新增学校版改造说明
+- 上传文件改为受控访问，静态 `/uploads/**` 不再直接暴露
 
 ## 当前仍需继续推进的需求
 

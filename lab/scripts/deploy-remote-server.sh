@@ -12,6 +12,7 @@ DB_PASS=__DB_PASS__
 JWT_SECRET_VALUE=__JWT_SECRET__
 MAIL_USERNAME_VALUE=__MAIL_USERNAME__
 MAIL_PASSWORD_VALUE=__MAIL_PASSWORD__
+SKIP_DB="${SKIP_DB:-0}"
 
 echo '[1/8] prepare directories'
 mkdir -p "$APP_ROOT" "$WEB_ROOT" "$DATA_ROOT/uploads" "$DATA_ROOT/judge-work" "$DATA_ROOT/logs"
@@ -59,8 +60,11 @@ services:
 COMPOSEEOF
 chmod 600 "$APP_ROOT/docker-compose.yml"
 
-echo '[4/8] prepare mysql database and user'
-mysql --defaults-file=/etc/mysql/debian.cnf <<SQLEOF
+if [[ "$SKIP_DB" == "1" ]]; then
+  echo '[4/8] SKIP_DB=1, skip mysql operations'
+else
+  echo '[4/8] prepare mysql database and user'
+  mysql --defaults-file=/etc/mysql/debian.cnf <<SQLEOF
 CREATE DATABASE IF NOT EXISTS \`$DB_NAME\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 CREATE USER IF NOT EXISTS '$DB_USER'@'127.0.0.1' IDENTIFIED BY '$DB_PASS';
 CREATE USER IF NOT EXISTS '$DB_USER'@'localhost' IDENTIFIED BY '$DB_PASS';
@@ -71,12 +75,13 @@ GRANT ALL PRIVILEGES ON \`$DB_NAME\`.* TO '$DB_USER'@'localhost';
 FLUSH PRIVILEGES;
 SQLEOF
 
-USER_TABLE_COUNT=$(mysql --defaults-file=/etc/mysql/debian.cnf -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='t_user';")
-if [ "$USER_TABLE_COUNT" = "0" ]; then
-  echo '[4/8] import init.sql into empty database'
-  mysql --defaults-file=/etc/mysql/debian.cnf "$DB_NAME" < "$APP_DIR/src/main/resources/init.sql"
-else
-  echo '[4/8] database already initialized, skip init.sql'
+  USER_TABLE_COUNT=$(mysql --defaults-file=/etc/mysql/debian.cnf -Nse "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name='t_user';")
+  if [ "$USER_TABLE_COUNT" = "0" ]; then
+    echo '[4/8] import init.sql into empty database'
+    mysql --defaults-file=/etc/mysql/debian.cnf "$DB_NAME" < "$APP_DIR/src/main/resources/init.sql"
+  else
+    echo '[4/8] database already initialized, skip init.sql'
+  fi
 fi
 
 echo '[5/8] build and start backend container'

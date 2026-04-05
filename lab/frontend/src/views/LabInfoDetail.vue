@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
 import { Back, InfoFilled, Trophy, DataBoard, Document } from '@element-plus/icons-vue'
 import { getLabById } from '@/api/lab'
@@ -111,7 +111,14 @@ const route = useRoute()
 const lab = ref(null)
 const graduates = ref([])
 
-onMounted(async () => {
+const revealItems = () => {
+  setTimeout(() => {
+    const items = document.querySelectorAll('.reveal-item')
+    items.forEach((el) => el.classList.add('visible'))
+  }, 100)
+}
+
+const loadLabDetail = async () => {
   const labId = route.params.id
   if (labId) {
     const [labRes, graduateRes] = await Promise.all([
@@ -124,11 +131,29 @@ onMounted(async () => {
     if (graduateRes.code === 200) {
       graduates.value = graduateRes.data.records || []
     }
-    setTimeout(() => {
-      const items = document.querySelectorAll('.reveal-item')
-      items.forEach((el) => el.classList.add('visible'))
-    }, 100)
+    revealItems()
   }
+}
+
+const handleWindowFocus = () => {
+  loadLabDetail()
+}
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    loadLabDetail()
+  }
+}
+
+onMounted(async () => {
+  await loadLabDetail()
+  window.addEventListener('focus', handleWindowFocus)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', handleWindowFocus)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

@@ -44,9 +44,13 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
             return;
         }
 
-        String clientKey = buildClientKey(request, rule.getPath());
+        AppSecurityProperties.RateLimitProperties rateLimitProperties = securityProperties.getRateLimit();
+        long nowEpochSecond = Instant.now().getEpochSecond();
+        cleanupBuckets(nowEpochSecond, rateLimitProperties.getBucketIdleSeconds());
+
+        String clientKey = buildClientKey(request, rule.getPath(), rateLimitProperties.getMaxTrackedClients());
         RateLimitBucket bucket = buckets.computeIfAbsent(clientKey, key -> new RateLimitBucket());
-        RateLimitDecision decision = bucket.consume(rule.getMaxRequests(), rule.getWindowSeconds());
+        RateLimitDecision decision = bucket.consume(rule.getMaxRequests(), rule.getWindowSeconds(), nowEpochSecond);
 
         response.setHeader("X-RateLimit-Limit", String.valueOf(rule.getMaxRequests()));
         response.setHeader("X-RateLimit-Remaining", String.valueOf(Math.max(decision.getRemaining(), 0)));
@@ -92,16 +96,28 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
         return null;
     }
 
-    private String buildClientKey(HttpServletRequest request, String path) {
-        String forwardedFor = request.getHeader("X-Forwarded-For");
-        String clientIp = forwardedFor;
-        if (clientIp != null && clientIp.contains(",")) {
-            clientIp = clientIp.split(",")[0].trim();
+    private String buildClientKey(HttpServletRequest request, String path, int maxTrackedClients) {
+        String clientIp = request.getRemoteAddr();
+        if (securityProperties.isTrustForwardHeaders()) {
+            String forwardedFor = request.getHeader("X-Forwarded-For");
+            if (forwardedFor != null && !forwardedFor.isBlank()) {
+                clientIp = forwardedFor.contains(",") ? forwardedFor.split(",")[0].trim() : forwardedFor.trim();
+            }
         }
         if (clientIp == null || clientIp.isBlank()) {
-            clientIp = request.getRemoteAddr();
+            clientIp = "unknown";
+        }
+        if (buckets.size() >= maxTrackedClients && !buckets.containsKey(path + "|" + clientIp)) {
+            return path + "|overflow";
         }
         return path + "|" + clientIp;
+    }
+
+    private void cleanupBuckets(long nowEpochSecond, long bucketIdleSeconds) {
+        if (buckets.isEmpty()) {
+            return;
+        }
+        buckets.entrySet().removeIf(entry -> entry.getValue().isExpired(nowEpochSecond, bucketIdleSeconds));
     }
 
     private String normalizePath(String requestUri) {
@@ -114,9 +130,10 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
     private static class RateLimitBucket {
         private final AtomicInteger counter = new AtomicInteger(0);
         private volatile long windowStartEpochSecond = 0L;
+        private volatile long lastSeenEpochSecond = 0L;
 
-        private synchronized RateLimitDecision consume(int limit, long windowSeconds) {
-            long now = Instant.now().getEpochSecond();
+        private synchronized RateLimitDecision consume(int limit, long windowSeconds, long now) {
+            lastSeenEpochSecond = now;
             if (windowStartEpochSecond == 0L || now - windowStartEpochSecond >= windowSeconds) {
                 windowStartEpochSecond = now;
                 counter.set(0);
@@ -127,6 +144,10 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
             long retryAfter = allowed ? 0L : Math.max(windowSeconds - (now - windowStartEpochSecond), 1L);
             int remaining = allowed ? limit - used : 0;
             return new RateLimitDecision(allowed, remaining, retryAfter);
+        }
+
+        private boolean isExpired(long nowEpochSecond, long bucketIdleSeconds) {
+            return lastSeenEpochSecond > 0L && nowEpochSecond - lastSeenEpochSecond >= bucketIdleSeconds;
         }
     }
 

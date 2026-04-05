@@ -2,12 +2,16 @@ package com.lab.recruitment.controller;
 
 import com.lab.recruitment.config.FileStorageService;
 import com.lab.recruitment.utils.Result;
+import com.lab.recruitment.utils.JwtUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -41,6 +45,9 @@ public class FileUploadController {
     @Autowired
     private FileStorageService fileStorageService;
 
+    @Autowired
+    private JwtUtils jwtUtils;
+
     @PostMapping("/upload")
     public Result<Map<String, Object>> uploadFile(@RequestParam("file") MultipartFile file,
                                                   @RequestParam(value = "scene", required = false) String scene) {
@@ -61,28 +68,33 @@ public class FileUploadController {
             }
 
             LocalDate today = LocalDate.now();
-            Path targetDir = fileStorageService.resolveTargetDirectory(today);
+            Path targetDir = fileStorageService.resolveProtectedTargetDirectory(today);
             String newFilename = UUID.randomUUID() + extension;
             Path targetFile = targetDir.resolve(newFilename);
             file.transferTo(targetFile.toFile());
 
-            String publicUrl = fileStorageService.buildPublicUrl(today, newFilename);
+            String protectedKey = fileStorageService.buildProtectedKey(today, newFilename);
             Map<String, Object> result = new HashMap<>();
             result.put("fileName", originalFilename);
-            result.put("url", publicUrl);
-            result.put("path", publicUrl);
+            result.put("url", protectedKey);
+            result.put("path", protectedKey);
             result.put("fileSize", file.getSize());
 
             return Result.success(result);
         } catch (IOException e) {
-            return Result.error("上传失败：" + e.getMessage());
+            return Result.error("上传失败，请稍后重试");
         }
     }
 
     @GetMapping("/view")
-    public ResponseEntity<Resource> viewFile(@RequestParam("path") String publicPath) {
+    public ResponseEntity<Resource> viewFile(@RequestParam("path") String path,
+                                             @RequestParam(value = "token", required = false) String token) {
         try {
-            Path resolvedPath = fileStorageService.resolvePublicPath(publicPath);
+            if (!hasFileAccess(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
+            Path resolvedPath = resolveStoragePath(path);
             if (resolvedPath == null || !Files.exists(resolvedPath) || Files.isDirectory(resolvedPath)) {
                 return ResponseEntity.notFound().build();
             }
@@ -101,6 +113,35 @@ public class FileUploadController {
                     .body(resource);
         } catch (IOException ex) {
             return ResponseEntity.internalServerError().build();
+        }
+    }
+
+    private Path resolveStoragePath(String rawPath) {
+        Path protectedPath = fileStorageService.resolveProtectedPath(rawPath);
+        if (protectedPath != null) {
+            return protectedPath;
+        }
+        return fileStorageService.resolvePublicPath(rawPath);
+    }
+
+    private boolean hasFileAccess(String token) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication != null
+                && authentication.isAuthenticated()
+                && StringUtils.hasText(authentication.getName())
+                && !"anonymousUser".equalsIgnoreCase(authentication.getName())) {
+            return true;
+        }
+
+        if (!StringUtils.hasText(token)) {
+            return false;
+        }
+
+        try {
+            jwtUtils.parseToken(token);
+            return true;
+        } catch (RuntimeException ex) {
+            return false;
         }
     }
 

@@ -35,7 +35,17 @@ chown -R www-data:www-data "$WEBROOT"
 
 systemctl restart "$SERVICE_NAME"
 systemctl is-active --quiet "$SERVICE_NAME"
-curl -fsS "http://127.0.0.1:8081/api/labs/list?pageNum=1&pageSize=1" > /dev/null
+BACKEND_OK=0
+for i in {1..60}; do
+  if curl -fsS "http://127.0.0.1:8081/labs/list?pageNum=1&pageSize=1" > /dev/null; then
+    BACKEND_OK=1
+    break
+  fi
+  sleep 2
+done
+if [ "$BACKEND_OK" != "1" ]; then
+  exit 1
+fi
 curl -fsS "http://127.0.0.1/" > /dev/null
 
 find "$RELEASE_ROOT" -mindepth 1 -maxdepth 1 -type d ! -name "$TIMESTAMP" -exec rm -rf {} +

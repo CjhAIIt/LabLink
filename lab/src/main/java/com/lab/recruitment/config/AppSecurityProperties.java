@@ -21,6 +21,10 @@ public class AppSecurityProperties {
             "http://127.0.0.1:5173"
     ));
 
+    private boolean allowCredentials = false;
+
+    private boolean trustForwardHeaders = false;
+
     private RateLimitProperties rateLimit = new RateLimitProperties();
 
     public List<String> getAllowedOrigins() {
@@ -48,6 +52,22 @@ public class AppSecurityProperties {
         return allowedOrigins;
     }
 
+    public boolean isAllowCredentials() {
+        return allowCredentials;
+    }
+
+    public void setAllowCredentials(boolean allowCredentials) {
+        this.allowCredentials = allowCredentials;
+    }
+
+    public boolean isTrustForwardHeaders() {
+        return trustForwardHeaders;
+    }
+
+    public void setTrustForwardHeaders(boolean trustForwardHeaders) {
+        this.trustForwardHeaders = trustForwardHeaders;
+    }
+
     public RateLimitProperties getRateLimit() {
         return rateLimit;
     }
@@ -62,6 +82,8 @@ public class AppSecurityProperties {
         private LimitRule emailCode = new LimitRule(3, 300);
         private LimitRule passwordReset = new LimitRule(5, 300);
         private LimitRule upload = new LimitRule(20, 300);
+        private int maxTrackedClients = 4096;
+        private long bucketIdleSeconds = 1800;
 
         public LimitRule getLogin() {
             return login;
@@ -101,6 +123,22 @@ public class AppSecurityProperties {
 
         public void setUpload(LimitRule upload) {
             this.upload = upload;
+        }
+
+        public int getMaxTrackedClients() {
+            return maxTrackedClients;
+        }
+
+        public void setMaxTrackedClients(int maxTrackedClients) {
+            this.maxTrackedClients = maxTrackedClients;
+        }
+
+        public long getBucketIdleSeconds() {
+            return bucketIdleSeconds;
+        }
+
+        public void setBucketIdleSeconds(long bucketIdleSeconds) {
+            this.bucketIdleSeconds = bucketIdleSeconds;
         }
     }
 

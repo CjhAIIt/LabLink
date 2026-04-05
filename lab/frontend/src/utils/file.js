@@ -1,3 +1,5 @@
+import { getToken } from '@/utils/auth'
+
 const ABSOLUTE_URL_PATTERN = /^https?:\/\//i
 const PRIVATE_HOST_PATTERN = /^(localhost|127(?:\.\d{1,3}){3}|0(?:\.0){3})$/i
 
@@ -20,11 +22,24 @@ export function resolveFileUrl(rawUrl) {
     return rawUrl
   }
 
+  if (rawUrl.startsWith('protected:')) {
+    return buildSecuredFileViewUrl(rawUrl)
+  }
+
   const normalizedPath = rawUrl.startsWith('/') ? rawUrl : `/${rawUrl}`
   if (normalizedPath.startsWith('/uploads/')) {
-    return `${getBackendOrigin()}/api/file/view?path=${encodeURIComponent(normalizedPath)}`
+    return buildSecuredFileViewUrl(normalizedPath)
   }
   return `${getBackendOrigin()}${normalizedPath}`
+}
+
+function buildSecuredFileViewUrl(path) {
+  const params = new URLSearchParams({ path })
+  const token = getToken()
+  if (token) {
+    params.set('token', token)
+  }
+  return `${getBackendOrigin()}/api/file/view?${params.toString()}`
 }
 
 export function getFileNameFromUrl(rawUrl, fallback = 'attachment') {
@@ -78,6 +93,9 @@ export function buildOfficePreviewUrl(rawUrl) {
 
   try {
     const url = new URL(absoluteUrl)
+    if (url.searchParams.has('token')) {
+      return ''
+    }
     if (PRIVATE_HOST_PATTERN.test(url.hostname)) {
       return ''
     }

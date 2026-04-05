@@ -43,22 +43,46 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { onBeforeUnmount, onMounted, ref } from 'vue'
 import { ArrowRight, Back, OfficeBuilding } from '@element-plus/icons-vue'
 import { getAllLabs } from '@/api/lab'
 
 const labs = ref([])
 
-onMounted(async () => {
+const revealItems = () => {
+  setTimeout(() => {
+    const items = document.querySelectorAll('.reveal-item')
+    items.forEach((el) => el.classList.add('visible'))
+  }, 100)
+}
+
+const loadLabs = async () => {
   const res = await getAllLabs()
   if (res.code === 200) {
-    labs.value = res.data.records
-    // Trigger animations after data load
-    setTimeout(() => {
-      const items = document.querySelectorAll('.reveal-item');
-      items.forEach(el => el.classList.add('visible'));
-    }, 100);
+    labs.value = res.data.records || []
+    revealItems()
   }
+}
+
+const handleWindowFocus = () => {
+  loadLabs()
+}
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    loadLabs()
+  }
+}
+
+onMounted(async () => {
+  await loadLabs()
+  window.addEventListener('focus', handleWindowFocus)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', handleWindowFocus)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

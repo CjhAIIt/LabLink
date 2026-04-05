@@ -120,7 +120,7 @@
 
 <script setup>
 import BrandLogo from '@/components/BrandLogo.vue'
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCollegeOptions } from '@/api/colleges'
 import { getLabPage, getLabStats } from '@/api/lab'
@@ -152,11 +152,6 @@ const selectedCollegeName = computed(() => {
   const match = colleges.value.find((item) => item.id === filters.collegeId)
   return match ? match.collegeName : '学院'
 })
-
-const resolveCollegeName = (collegeId) => {
-  const match = colleges.value.find((item) => item.id === collegeId)
-  return match ? match.collegeName : '-'
-}
 
 const loadColleges = async () => {
   const response = await getCollegeOptions()
@@ -200,6 +195,14 @@ const loadCollegeStats = async () => {
   })
 }
 
+const refreshIntroData = async ({ includeColleges = false } = {}) => {
+  if (includeColleges || !colleges.value.length) {
+    await loadColleges()
+  }
+  await loadCollegeStats()
+  await loadLabs()
+}
+
 const selectCollege = (collegeId) => {
   filters.collegeId = collegeId
   pagination.pageNum = 1
@@ -218,10 +221,25 @@ const openLabDetail = (lab) => {
   router.push(`/lab-info/${lab.id}`)
 }
 
+const handleWindowFocus = () => {
+  refreshIntroData()
+}
+
+const handleVisibilityChange = () => {
+  if (document.visibilityState === 'visible') {
+    refreshIntroData()
+  }
+}
+
 onMounted(async () => {
-  await loadColleges()
-  await loadCollegeStats()
-  await loadLabs()
+  await refreshIntroData({ includeColleges: true })
+  window.addEventListener('focus', handleWindowFocus)
+  document.addEventListener('visibilitychange', handleVisibilityChange)
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('focus', handleWindowFocus)
+  document.removeEventListener('visibilitychange', handleVisibilityChange)
 })
 </script>
 

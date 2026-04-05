@@ -8,7 +8,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: ${DB_URL:jdbc:mysql://localhost:3306/lab_recruitment?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true}
     username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:cjh041217}
+    password: ${DB_PASSWORD}
   mail:
     host: ${MAIL_HOST:smtp.qq.com}
     port: ${MAIL_PORT:465}
@@ -33,7 +33,6 @@ spring:
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true
-    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
   global-config:
     db-config:
       logic-delete-field: deleted
@@ -42,11 +41,12 @@ mybatis-plus:
   mapper-locations: classpath:mapper/*.xml
 
 jwt:
-  secret: ${JWT_SECRET:labRecruitmentSecretKey2023ForJWTTokenGenerationAndValidationThisIsASecureKey}
+  secret: ${JWT_SECRET}
   expiration: 86400000
 
 file:
   upload-path: ${FILE_UPLOAD_PATH:./uploads/}
+  protected-upload-path: ${FILE_PROTECTED_UPLOAD_PATH:./uploads_protected/}
 
 judge:
   python-command: ${JUDGE_PYTHON_COMMAND:python}
@@ -71,6 +71,19 @@ logging:
     file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
 
 app:
+  security:
+    allow-credentials: false
+    trust-forward-headers: ${TRUST_FORWARD_HEADERS:false}
+    allowed-origins:
+      - http://localhost:3000
+      - http://127.0.0.1:3000
+      - http://localhost:4173
+      - http://127.0.0.1:4173
+      - http://localhost:5173
+      - http://127.0.0.1:5173
+    rate-limit:
+      max-tracked-clients: ${APP_SECURITY_RATE_LIMIT_MAX_TRACKED_CLIENTS:4096}
+      bucket-idle-seconds: ${APP_SECURITY_RATE_LIMIT_BUCKET_IDLE_SECONDS:1800}
   email-auth:
     from-name: 安徽信息工程学院实验室管理平台
     code-expire-minutes: 10

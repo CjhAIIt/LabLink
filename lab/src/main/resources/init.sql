@@ -29,6 +29,7 @@ CREATE TABLE IF NOT EXISTS t_lab (
     status TINYINT NOT NULL DEFAULT 1,
     founding_date VARCHAR(50) NULL,
     awards TEXT NULL,
+    outstanding_seniors TEXT NULL,
     basic_info TEXT NULL,
     advisors VARCHAR(255) NULL,
     current_admins VARCHAR(255) NULL,
@@ -302,10 +303,10 @@ INSERT INTO t_college (id, college_code, college_name, admin_user_id, status, re
     (6, 'ART', '艺术设计学院', NULL, 1, '安徽信息工程学院学院主数据', 0),
     (7, 'FLA', '通识教育与外国语学院', NULL, 1, '安徽信息工程学院学院主数据', 0);
 
-INSERT INTO t_lab (id, lab_name, lab_code, college_id, lab_desc, teacher_name, location, contact_email, require_skill, recruit_num, current_num, status, founding_date, awards, basic_info, advisors, current_admins, deleted) VALUES
-    (1, '智能软件与应用创新实验室', 'LAB-CS-001', 1, '面向 Web 系统、软件工程实践、校园数字化应用与创新创业项目。', '待维护', '科创楼 A-301', 'software_lab@aiit.edu.cn', 'Java、Spring Boot、Vue、数据库基础', 20, 2, 1, '2021-09', '承担多项校级创新创业与竞赛项目', '服务软件工程与计算机方向学生的项目化培养。', '待维护', 'cs_admin', 0),
-    (2, '数据智能决策实验室', 'LAB-AI-002', 2, '聚焦数据治理、机器学习、可视化分析和人工智能应用。', '待维护', '科创楼 B-402', 'ai_lab@aiit.edu.cn', 'Python、机器学习、数据分析基础', 18, 1, 1, '2022-03', '支持学院数据智能方向科研与实践训练', '服务大数据与人工智能学院的实验与竞赛协同。', '待维护', 'ai_admin', 0),
-    (3, '工业智能与嵌入式系统实验室', 'LAB-EEE-003', 3, '聚焦嵌入式系统、物联网应用、电子信息与工程实践。', '待维护', '工程楼 C-214', 'embedded_lab@aiit.edu.cn', 'C 语言、单片机、嵌入式基础', 16, 1, 1, '2020-06', '面向电子信息和嵌入式方向提供实践平台', '服务电气与电子工程学院的实验教学与竞赛训练。', '待维护', 'ee_admin', 0);
+INSERT INTO t_lab (id, lab_name, lab_code, college_id, lab_desc, teacher_name, location, contact_email, require_skill, recruit_num, current_num, status, founding_date, awards, outstanding_seniors, basic_info, advisors, current_admins, deleted) VALUES
+    (1, '智能软件与应用创新实验室', 'LAB-CS-001', 1, '面向 Web 系统、软件工程实践、校园数字化应用与创新创业项目。', '待维护', '科创楼 A-301', 'software_lab@aiit.edu.cn', 'Java、Spring Boot、Vue、数据库基础', 20, 2, 1, '2021-09', '承担多项校级创新创业与竞赛项目', NULL, '服务软件工程与计算机方向学生的项目化培养。', '待维护', 'cs_admin', 0),
+    (2, '数据智能决策实验室', 'LAB-AI-002', 2, '聚焦数据治理、机器学习、可视化分析和人工智能应用。', '待维护', '科创楼 B-402', 'ai_lab@aiit.edu.cn', 'Python、机器学习、数据分析基础', 18, 1, 1, '2022-03', '支持学院数据智能方向科研与实践训练', NULL, '服务大数据与人工智能学院的实验与竞赛协同。', '待维护', 'ai_admin', 0),
+    (3, '工业智能与嵌入式系统实验室', 'LAB-EEE-003', 3, '聚焦嵌入式系统、物联网应用、电子信息与工程实践。', '待维护', '工程楼 C-214', 'embedded_lab@aiit.edu.cn', 'C 语言、单片机、嵌入式基础', 16, 1, 1, '2020-06', '面向电子信息和嵌入式方向提供实践平台', NULL, '服务电气与电子工程学院的实验教学与竞赛训练。', '待维护', 'ee_admin', 0);
 
 INSERT INTO t_user (id, username, password, real_name, role, student_id, college, major, grade, phone, email, lab_id, can_edit, status, deleted) VALUES
     (1, 'superadmin', '$2a$10$TkpWpInMFmWbL4HWZXC7yuMC3szk.vR/ghGvrCEClWQxWBWgFQ6LK', '学校管理员', 'super_admin', NULL, NULL, NULL, NULL, '13800000001', 'superadmin@aiit.edu.cn', NULL, 0, 1, 0),

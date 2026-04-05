@@ -118,7 +118,7 @@ public class LabController {
      * @param id 实验室ID
      * @return 实验室详情信息
      */
-    @GetMapping("/{id}")
+    @GetMapping("/{id:\\d+}")
     public Result<Lab> getLabById(@PathVariable Long id) {
         try {
             Lab lab = labService.getLabById(id);
@@ -131,7 +131,7 @@ public class LabController {
         }
     }
 
-    @GetMapping("/detail/{id}")
+    @GetMapping("/detail/{id:\\d+}")
     public Result<Lab> getLabDetailById(@PathVariable Long id) {
         return getLabById(id);
     }

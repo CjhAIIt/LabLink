@@ -25,8 +25,8 @@ public class FileStorageService {
 
     public FileStorageService(@Value("${file.upload-path:./uploads/}") String uploadPath,
                               @Value("${file.protected-upload-path:./uploads_protected/}") String protectedUploadPath) {
-        this.uploadRoot = initializeUploadRoot(uploadPath);
-        this.protectedUploadRoot = initializeUploadRoot(protectedUploadPath);
+        this.uploadRoot = initializeUploadRoot(uploadPath, "uploads");
+        this.protectedUploadRoot = initializeUploadRoot(protectedUploadPath, "uploads_protected");
     }
 
     public Path getUploadRoot() {
@@ -117,22 +117,22 @@ public class FileStorageService {
         }
     }
 
-    private Path initializeUploadRoot(String uploadPath) {
-        Path configuredPath = resolveConfiguredPath(uploadPath);
+    private Path initializeUploadRoot(String uploadPath, String fallbackDirectoryName) {
+        Path configuredPath = resolveConfiguredPath(uploadPath, fallbackDirectoryName);
         if (ensureDirectory(configuredPath)) {
             return configuredPath;
         }
 
-        Path fallbackPath = Paths.get(System.getProperty("user.dir"), "uploads").toAbsolutePath().normalize();
+        Path fallbackPath = Paths.get(System.getProperty("user.dir"), fallbackDirectoryName).toAbsolutePath().normalize();
         ensureDirectory(fallbackPath);
         log.warn("Upload directory fallback in use: {}", fallbackPath);
         return fallbackPath;
     }
 
-    private Path resolveConfiguredPath(String uploadPath) {
+    private Path resolveConfiguredPath(String uploadPath, String fallbackDirectoryName) {
         String rawPath = uploadPath == null ? "" : uploadPath.trim();
         if (rawPath.isEmpty()) {
-            rawPath = "./uploads/";
+            rawPath = "./" + fallbackDirectoryName + "/";
         }
         if (rawPath.startsWith("file:")) {
             rawPath = rawPath.substring(5);
@@ -151,7 +151,7 @@ public class FileStorageService {
             return candidatePath.toAbsolutePath().normalize();
         } catch (InvalidPathException ex) {
             log.warn("Invalid upload path '{}', falling back to project uploads directory", uploadPath, ex);
-            return Paths.get(System.getProperty("user.dir"), "uploads").toAbsolutePath().normalize();
+            return Paths.get(System.getProperty("user.dir"), fallbackDirectoryName).toAbsolutePath().normalize();
         }
     }
 
