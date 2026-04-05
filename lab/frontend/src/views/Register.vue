@@ -413,7 +413,7 @@ onBeforeUnmount(() => {
 .auth-page {
   min-height: 100vh;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 32px 16px;
   background: radial-gradient(circle at top right, #e8f0ff 0%, #f6f7fb 45%, #f2f8ff 100%);
@@ -424,11 +424,12 @@ onBeforeUnmount(() => {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
   gap: 28px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .auth-hero {
-  position: relative;
+  position: sticky;
+  top: 32px;
   padding: 32px;
   border-radius: 24px;
   color: #0f1b36;
@@ -504,7 +505,7 @@ onBeforeUnmount(() => {
 
 .auth-panel {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
 }
 
 .auth-card {

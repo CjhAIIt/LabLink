@@ -9,7 +9,7 @@ import java.util.List;
 
 public interface LabService extends IService<Lab> {
     
-    Page<Lab> getLabPage(Integer pageNum, Integer pageSize, String labName, Integer status);
+    Page<Lab> getLabPage(Integer pageNum, Integer pageSize, Long collegeId, String labName, Integer status);
     
     Lab getLabById(Long id);
     

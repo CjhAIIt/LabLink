@@ -85,6 +85,9 @@ public class CurrentUserAccessor {
 
     public Long resolveLabScope(User user, Long requestedLabId) {
         if (isSuperAdmin(user)) {
+            if (requestedLabId == null) {
+                throw new RuntimeException("请先选择实验室");
+            }
             return requestedLabId;
         }
 

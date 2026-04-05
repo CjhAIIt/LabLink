@@ -5,7 +5,9 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lab.recruitment.config.FileStorageService;
 import com.lab.recruitment.entity.LabSpaceFile;
 import com.lab.recruitment.entity.LabSpaceFolder;
+import com.lab.recruitment.entity.Lab;
 import com.lab.recruitment.entity.User;
+import com.lab.recruitment.mapper.LabMapper;
 import com.lab.recruitment.mapper.LabSpaceFileMapper;
 import com.lab.recruitment.mapper.LabSpaceFolderMapper;
 import com.lab.recruitment.service.LabSpaceService;
@@ -38,6 +40,9 @@ public class LabSpaceServiceImpl implements LabSpaceService {
     private LabSpaceFileMapper labSpaceFileMapper;
 
     @Autowired
+    private LabMapper labMapper;
+
+    @Autowired
     private CurrentUserAccessor currentUserAccessor;
 
     @Autowired
@@ -46,6 +51,7 @@ public class LabSpaceServiceImpl implements LabSpaceService {
     @Override
     public List<Map<String, Object>> getFolderTree(Long requestedLabId, User currentUser) {
         Long labId = resolveLabScope(currentUser, requestedLabId);
+        initializeDefaultFolders(labId, null);
         List<Map<String, Object>> folders = labSpaceFolderMapper.selectFolderList(labId);
         Map<Long, Map<String, Object>> nodeMap = new LinkedHashMap<>();
         List<Map<String, Object>> roots = new ArrayList<>();
@@ -100,6 +106,7 @@ public class LabSpaceServiceImpl implements LabSpaceService {
             folder.setArchived(folder.getArchived() == null ? 0 : folder.getArchived());
             folder.setCreatedBy(currentUser.getId());
             labSpaceFolderMapper.insert(folder);
+            syncFolderToAllLabs(folder, currentUser);
             return folder;
         }
 
@@ -219,12 +226,6 @@ public class LabSpaceServiceImpl implements LabSpaceService {
         if (labId == null) {
             return;
         }
-        QueryWrapper<LabSpaceFolder> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("lab_id", labId).eq("deleted", 0);
-        Long count = labSpaceFolderMapper.selectCount(queryWrapper);
-        if (count != null && count > 0) {
-            return;
-        }
 
         List<String[]> defaults = List.of(
                 new String[]{"基础档案", "profile"},
@@ -237,8 +238,21 @@ public class LabSpaceServiceImpl implements LabSpaceService {
                 new String[]{"模板与规范", "template"}
         );
 
+        QueryWrapper<LabSpaceFolder> existingWrapper = new QueryWrapper<>();
+        existingWrapper.eq("lab_id", labId)
+                .eq("deleted", 0)
+                .eq("parent_id", 0);
+        List<LabSpaceFolder> existing = labSpaceFolderMapper.selectList(existingWrapper);
+
         int sortOrder = DEFAULT_FOLDER_SORT_STEP;
         for (String[] item : defaults) {
+            boolean present = existing.stream().anyMatch(folder ->
+                    item[0].equals(folder.getFolderName())
+                            && ((folder.getCategory() == null && item[1] == null) || (folder.getCategory() != null && folder.getCategory().equals(item[1]))));
+            if (present) {
+                sortOrder += DEFAULT_FOLDER_SORT_STEP;
+                continue;
+            }
             LabSpaceFolder folder = new LabSpaceFolder();
             folder.setLabId(labId);
             folder.setParentId(0L);
@@ -270,10 +284,64 @@ public class LabSpaceServiceImpl implements LabSpaceService {
     }
 
     private void assertManagePermission(User currentUser, Long labId) {
+        if (currentUserAccessor.isSuperAdmin(currentUser) || currentUserAccessor.isCollegeManager(currentUser)) {
+            currentUserAccessor.assertLabScope(currentUser, labId);
+            return;
+        }
         if (!currentUserAccessor.isLabManager(currentUser)) {
             throw new RuntimeException("Only lab managers can modify lab space");
         }
         currentUserAccessor.assertLabScope(currentUser, labId);
+    }
+
+    private void syncFolderToAllLabs(LabSpaceFolder source, User currentUser) {
+        if (source == null || source.getLabId() == null || source.getId() == null) {
+            return;
+        }
+        Long parentId = source.getParentId();
+        if (parentId != null && parentId > 0) {
+            return;
+        }
+        QueryWrapper<Lab> labQuery = new QueryWrapper<>();
+        labQuery.select("id").eq("deleted", 0);
+        List<Lab> labs = labMapper.selectList(labQuery);
+        if (labs == null || labs.isEmpty()) {
+            return;
+        }
+        for (Lab lab : labs) {
+            if (lab == null || lab.getId() == null) {
+                continue;
+            }
+            Long targetLabId = lab.getId();
+            if (targetLabId.equals(source.getLabId())) {
+                continue;
+            }
+            initializeDefaultFolders(targetLabId, null);
+            QueryWrapper<LabSpaceFolder> existsWrapper = new QueryWrapper<>();
+            existsWrapper.eq("lab_id", targetLabId)
+                    .eq("deleted", 0)
+                    .eq("parent_id", 0)
+                    .eq("folder_name", source.getFolderName());
+            if (StringUtils.hasText(source.getCategory())) {
+                existsWrapper.eq("category", source.getCategory());
+            } else {
+                existsWrapper.isNull("category");
+            }
+            LabSpaceFolder exists = labSpaceFolderMapper.selectOne(existsWrapper);
+            if (exists != null) {
+                continue;
+            }
+            LabSpaceFolder cloned = new LabSpaceFolder();
+            cloned.setLabId(targetLabId);
+            cloned.setParentId(0L);
+            cloned.setFolderName(source.getFolderName());
+            cloned.setCategory(source.getCategory());
+            cloned.setSortOrder(source.getSortOrder() == null ? nextSortOrder(targetLabId, 0L) : source.getSortOrder());
+            cloned.setAccessScope(normalizeAccessScope(source.getAccessScope()));
+            cloned.setArchived(source.getArchived() == null ? 0 : source.getArchived());
+            cloned.setCreatedBy(currentUser == null ? null : currentUser.getId());
+            labSpaceFolderMapper.insert(cloned);
+        }
     }
 
     private void assertFolderScope(Long labId, Long folderId) {

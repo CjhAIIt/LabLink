@@ -54,6 +54,9 @@ public class Lab {
     @TableField("awards")
     private String awards;
     
+    @TableField("outstanding_seniors")
+    private String outstandingSeniors;
+    
     @TableField("basic_info")
     private String basicInfo;
     

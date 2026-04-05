@@ -6,11 +6,22 @@
           <BrandLogo title="安徽信息工程学院" subtitle="实验室管理平台" tone="dark" size="sm" />
         </div>
 
-        <el-menu :default-active="$route.path" router class="sidebar-menu" :collapse="false">
-          <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
-            <el-icon><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </el-menu-item>
+        <el-menu :default-active="$route.fullPath" router class="sidebar-menu" :collapse="false">
+          <template v-for="item in menuItems" :key="item.path">
+            <el-sub-menu v-if="item.children" :index="item.path">
+              <template #title>
+                <el-icon><component :is="item.icon" /></el-icon>
+                <span>{{ item.label }}</span>
+              </template>
+              <el-menu-item v-for="child in item.children" :key="child.path" :index="child.path">
+                <span>{{ child.label }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+            <el-menu-item v-else :index="item.path">
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </el-menu-item>
+          </template>
         </el-menu>
       </div>
     </aside>
@@ -118,7 +129,18 @@ const menuItems = computed(() =>
     isLabManager.value ? { path: '/admin/applications', label: '成员申请审核', icon: UserFilled } : null,
     isLabManager.value ? { path: '/admin/members', label: '成员管理', icon: User } : null,
     isLabManager.value ? { path: '/admin/notices', label: '公告管理', icon: Bell } : null,
-    isSchoolDirector.value || isLabManager.value ? { path: '/admin/statistics', label: '统计分析', icon: TrendCharts } : null,
+    isSchoolDirector.value || isLabManager.value
+      ? {
+          path: '/admin/statistics',
+          label: '统计分析',
+          icon: TrendCharts,
+          children: [
+            { path: '/admin/statistics?tab=overview', label: '运营概览' },
+            { path: '/admin/statistics?tab=trends', label: '趋势分析' },
+            { path: '/admin/statistics?tab=activity', label: '实时动态' }
+          ]
+        }
+      : null,
     { path: '/admin/profile', label: '个人信息', icon: UserFilled }
   ].filter(Boolean)
 )

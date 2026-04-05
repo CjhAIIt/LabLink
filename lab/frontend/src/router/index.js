@@ -10,6 +10,7 @@ import Intro from '@/views/Intro.vue'
 import Login from '@/views/Login.vue'
 import Register from '@/views/Register.vue'
 import TeacherRegister from '@/views/TeacherRegister.vue'
+import LabInfoDetail from '@/views/LabInfoDetail.vue'
 import AdminApplications from '@/views/admin/Applications.vue'
 import AdminAttendanceTasks from '@/views/admin/AttendanceTasks.vue'
 import AdminColleges from '@/views/admin/Colleges.vue'
@@ -27,6 +28,7 @@ import StudentApplications from '@/views/student/Applications.vue'
 import StudentAttendance from '@/views/student/Attendance.vue'
 import StudentDashboard from '@/views/student/Dashboard.vue'
 import StudentLabs from '@/views/student/Labs.vue'
+import StudentLabDetail from '@/views/student/LabDetail.vue'
 import StudentMyLab from '@/views/student/MyLab.vue'
 import StudentNotices from '@/views/student/Notices.vue'
 import StudentSpace from '@/views/student/Space.vue'
@@ -39,13 +41,19 @@ const PLATFORM_TITLE = '安徽信息工程学院实验室管理平台'
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/intro'
   },
   {
     path: '/intro',
     name: 'Intro',
     component: Intro,
     meta: { title: '平台介绍', requiresAuth: false }
+  },
+  {
+    path: '/lab-info/:id',
+    name: 'LabInfoDetail',
+    component: LabInfoDetail,
+    meta: { title: '实验室详情', requiresAuth: false }
   },
   {
     path: '/login',
@@ -95,6 +103,7 @@ const routes = [
       { path: '', redirect: '/student/dashboard' },
       { path: 'dashboard', component: StudentDashboard, meta: { title: '学生工作台' } },
       { path: 'labs', component: StudentLabs, meta: { title: '实验室总览' } },
+      { path: 'labs/:id', component: StudentLabDetail, meta: { title: '实验室详情' } },
       { path: 'applications', component: StudentApplications, meta: { title: '我的申请' } },
       { path: 'my-lab', component: StudentMyLab, meta: { title: '我的实验室' } },
       { path: 'attendance', component: StudentAttendance, meta: { title: '考勤记录' } },

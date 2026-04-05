@@ -1,332 +1,608 @@
 <template>
-  <div class="intro-page">
-    <section class="hero">
-      <div class="hero-copy">
-        <BrandLogo
-          size="lg"
-          title="安徽信息工程学院"
-          subtitle="实验室管理平台 · 全校版"
-        />
-        <h1>统一服务学校、学院、实验室、老师与学生的协同平台</h1>
-        <p>
-          平台按“学校 - 学院 - 实验室 - 成员”组织业务，面向全校实验室治理场景，
-          支持学院主数据、实验室创建、成员申请、公告发布与统计分析。
-        </p>
+  <div class="portal-page">
+    <div class="bg-grid"></div>
+    <div class="ambient-glow"></div>
+
+    <header class="hero">
+      <div class="hero-content">
+        <BrandLogo size="lg" title="安徽信息工程学院" subtitle="实验室综合管理平台" />
+        <h1>实验室发现与学院治理</h1>
+        <p>从学院主数据到实验室档案，一站式浏览实验室与学院信息。登录后进入考勤、设备、成员、公告等管理与协同。</p>
         <div class="hero-actions">
-          <router-link class="primary-link" to="/login">进入平台</router-link>
-          <router-link class="ghost-link" to="/register">学生注册</router-link>
+          <router-link class="primary-btn" to="/login">登录进入平台</router-link>
+          <router-link class="ghost-btn" to="/register">学生注册</router-link>
+          <router-link class="ghost-btn" to="/teacher-register">教师注册</router-link>
         </div>
       </div>
+    </header>
 
-      <div class="hero-card">
-        <h2>平台定位</h2>
-        <ul>
-          <li>学校管理员统一维护学院主数据与关键审批</li>
-          <li>学院管理员负责本学院实验室与申请事项协同</li>
-          <li>学生可浏览实验室、提交入组申请、查看公告与记录</li>
-        </ul>
-      </div>
-    </section>
+    <main class="main-content">
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <div class="panel-eyebrow">学院与实验室</div>
+            <div class="panel-title">按学院筛选实验室</div>
+          </div>
+          <div class="panel-stats">
+            <div class="stat">
+              <div class="stat-label">学院数</div>
+              <div class="stat-value">{{ colleges.length }}</div>
+            </div>
+            <div class="stat">
+              <div class="stat-label">实验室数</div>
+              <div class="stat-value">{{ labCountMap.all ?? 0 }}</div>
+            </div>
+          </div>
+        </div>
 
-    <section class="section">
-      <div class="section-header">
-        <p class="eyebrow">学院范围</p>
-        <h2>默认学院主数据按安徽信息工程学院全校版初始化</h2>
-      </div>
-      <div class="college-grid">
-        <article v-for="college in colleges" :key="college.code" class="college-card">
-          <span class="code">{{ college.code }}</span>
-          <h3>{{ college.name }}</h3>
-          <p>{{ college.description }}</p>
-        </article>
-      </div>
-    </section>
+        <div class="filters">
+          <el-select v-model="filters.collegeId" clearable placeholder="全部学院" class="filter-item">
+            <el-option v-for="item in colleges" :key="item.id" :label="item.collegeName" :value="item.id" />
+          </el-select>
+          <el-input v-model="filters.keyword" clearable placeholder="搜索实验室名称" class="filter-item" @keyup.enter="loadLabs" />
+          <el-button type="primary" :loading="loading" @click="loadLabs">查询</el-button>
+        </div>
 
-    <section class="section">
-      <div class="section-header">
-        <p class="eyebrow">角色体系</p>
-        <h2>按照需求文档收敛为校院两级治理 + 实验室业务协同</h2>
-      </div>
-      <div class="role-grid">
-        <article v-for="role in roles" :key="role.title" class="role-card">
-          <h3>{{ role.title }}</h3>
-          <p class="scope">{{ role.scope }}</p>
-          <p>{{ role.description }}</p>
-        </article>
-      </div>
-    </section>
+        <div class="college-strip">
+          <button
+            class="college-pill"
+            :class="{ active: !filters.collegeId }"
+            type="button"
+            @click="selectCollege(null)"
+          >
+            全部
+            <span class="pill-meta">{{ labCountMap.all ?? '-' }}</span>
+          </button>
+          <button
+            v-for="college in colleges"
+            :key="college.id"
+            class="college-pill"
+            :class="{ active: filters.collegeId === college.id }"
+            type="button"
+            @click="selectCollege(college.id)"
+          >
+            {{ college.collegeName }}
+            <span class="pill-meta">{{ labCountMap[college.id] ?? '-' }}</span>
+          </button>
+        </div>
+      </section>
 
-    <section class="section flow-section">
-      <div class="section-header">
-        <p class="eyebrow">业务流程</p>
-        <h2>当前版本已接入的主流程与后续迭代方向</h2>
-      </div>
-      <div class="flow-grid">
-        <article class="flow-card">
-          <h3>已具备基础能力</h3>
-          <ul>
-            <li>学院主数据管理</li>
-            <li>实验室创建申请的学院 / 学校双层审核字段</li>
-            <li>实验室、成员、公告、统计分析等基础模块</li>
-          </ul>
-        </article>
-        <article class="flow-card">
-          <h3>按需求文档继续扩展</h3>
-          <ul>
-            <li>老师注册审批链</li>
-            <li>指导老师申请与变更流程</li>
-            <li>审批日志、状态机和历史追踪表</li>
-          </ul>
-        </article>
-      </div>
-    </section>
+      <section class="labs-section">
+        <div class="section-title-row">
+          <div class="section-title">
+            <span class="section-tag">实验室列表</span>
+            <span class="section-hint">{{ selectedCollegeName }}</span>
+          </div>
+          <router-link class="ghost-link" to="/login">登录后管理考勤与设备</router-link>
+        </div>
+
+        <div v-loading="loading" class="labs-grid">
+          <button
+            v-for="(lab, index) in labs"
+            :key="lab.id"
+            class="lab-card"
+            type="button"
+            :style="{ transitionDelay: `${index * 0.06}s` }"
+            @click="openLabDetail(lab)"
+          >
+            <div class="lab-header">
+              <div class="lab-name">{{ lab.labName }}</div>
+              <div class="lab-meta">{{ lab.labCode || `LAB-${lab.id}` }}</div>
+            </div>
+            <div class="lab-desc">{{ lab.labDesc || '暂无简介' }}</div>
+            <div class="lab-badges">
+              <span v-if="lab.location" class="badge">{{ lab.location }}</span>
+              <span v-if="lab.teacherName" class="badge">导师：{{ lab.teacherName }}</span>
+              <span v-if="lab.requireSkill" class="badge">要求：{{ lab.requireSkill }}</span>
+            </div>
+            <div class="lab-footer">
+              <span>成员 {{ lab.currentNum ?? 0 }} / {{ lab.recruitNum ?? '-' }}</span>
+              <span class="lab-action">查看详情</span>
+            </div>
+          </button>
+        </div>
+
+        <div class="pagination-row">
+          <el-pagination
+            background
+            layout="prev, pager, next, total"
+            :current-page="pagination.pageNum"
+            :page-size="pagination.pageSize"
+            :total="pagination.total"
+            @current-change="handlePageChange"
+          />
+        </div>
+      </section>
+    </main>
+
   </div>
 </template>
 
 <script setup>
 import BrandLogo from '@/components/BrandLogo.vue'
+import { computed, onMounted, reactive, ref } from 'vue'
+import { useRouter } from 'vue-router'
+import { getCollegeOptions } from '@/api/colleges'
+import { getLabPage, getLabStats } from '@/api/lab'
 
-const colleges = [
-  {
-    code: 'CS',
-    name: '计算机与软件工程学院',
-    description: '面向软件工程、计算机科学与技术、网络工程等专业方向。'
-  },
-  {
-    code: 'AI',
-    name: '大数据与人工智能学院',
-    description: '面向人工智能、数据科学与大数据技术等方向的实验室建设。'
-  },
-  {
-    code: 'EEE',
-    name: '电气与电子工程学院',
-    description: '覆盖电子信息工程、通信工程、电气工程及其自动化等领域。'
-  },
-  {
-    code: 'ME',
-    name: '机械工程学院',
-    description: '支持智能制造、机械设计制造及其自动化等实验室场景。'
-  },
-  {
-    code: 'MGT',
-    name: '管理工程学院',
-    description: '面向市场营销、财务管理、供应链管理等应用方向。'
-  },
-  {
-    code: 'ART',
-    name: '艺术设计学院',
-    description: '支持视觉传达、环境设计、产品设计等实验室与工作室。'
-  }
-]
+const router = useRouter()
+const colleges = ref([])
+const labs = ref([])
+const loading = ref(false)
 
-const roles = [
-  {
-    title: '学校管理员',
-    scope: '全校范围',
-    description: '负责学院主数据、关键审批、跨学院统筹和平台级配置。'
-  },
-  {
-    title: '学院管理员',
-    scope: '单个学院',
-    description: '负责本学院实验室创建审批、成员事项协同和日常管理。'
-  },
-  {
-    title: '实验室负责人',
-    scope: '单个实验室',
-    description: '负责实验室成员管理、空间资料维护、公告发布和招新协同。'
-  },
-  {
-    title: '学生',
-    scope: '所属学院 / 实验室',
-    description: '浏览实验室信息、提交入组申请、查看公告和个人记录。'
+const pagination = reactive({
+  pageNum: 1,
+  pageSize: 12,
+  total: 0
+})
+
+const filters = reactive({
+  collegeId: null,
+  keyword: ''
+})
+
+const labCountMap = reactive({
+  all: null
+})
+
+const selectedCollegeName = computed(() => {
+  if (!filters.collegeId) {
+    return '全部学院'
   }
-]
+  const match = colleges.value.find((item) => item.id === filters.collegeId)
+  return match ? match.collegeName : '学院'
+})
+
+const resolveCollegeName = (collegeId) => {
+  const match = colleges.value.find((item) => item.id === collegeId)
+  return match ? match.collegeName : '-'
+}
+
+const loadColleges = async () => {
+  const response = await getCollegeOptions()
+  colleges.value = response.data || []
+}
+
+const loadLabs = async () => {
+  loading.value = true
+  try {
+    const response = await getLabPage({
+      pageNum: pagination.pageNum,
+      pageSize: pagination.pageSize,
+      collegeId: filters.collegeId || undefined,
+      labName: filters.keyword || undefined
+    })
+    labs.value = response.data.records || []
+    pagination.total = response.data.total || 0
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadCollegeStats = async () => {
+  const res = await getLabStats()
+  const total = res.data?.total
+  labCountMap.all = typeof total === 'number' ? total : 0
+  ;(res.data?.byCollege || []).forEach((row) => {
+    const collegeId = row.collegeId
+    if (collegeId == null) {
+      return
+    }
+    labCountMap[collegeId] = Number(row.labCount) || 0
+  })
+  colleges.value.forEach((college) => {
+    if (college?.id == null) {
+      return
+    }
+    if (labCountMap[college.id] == null) {
+      labCountMap[college.id] = 0
+    }
+  })
+}
+
+const selectCollege = (collegeId) => {
+  filters.collegeId = collegeId
+  pagination.pageNum = 1
+  loadLabs()
+}
+
+const handlePageChange = (page) => {
+  pagination.pageNum = page
+  loadLabs()
+}
+
+const openLabDetail = (lab) => {
+  if (!lab?.id) {
+    return
+  }
+  router.push(`/lab-info/${lab.id}`)
+}
+
+onMounted(async () => {
+  await loadColleges()
+  await loadCollegeStats()
+  await loadLabs()
+})
 </script>
 
 <style scoped>
-.intro-page {
+.portal-page {
+  --bg: #f8fafc;
+  --panel: #ffffff;
+  --line: #e2e8f0;
+  --text: #0f172a;
+  --muted: #64748b;
+  --brand: #0ea5e9;
+  --brand-2: #2563eb;
+  --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
+  --radius: 20px;
   min-height: 100vh;
-  padding: 40px 20px 60px;
-  background:
-    radial-gradient(circle at top left, rgba(56, 189, 248, 0.12), transparent 32%),
-    radial-gradient(circle at bottom right, rgba(14, 165, 233, 0.12), transparent 28%),
-    linear-gradient(180deg, #f8fbff 0%, #ffffff 100%);
+  background-color: var(--bg);
+  color: var(--text);
+  position: relative;
+  overflow-x: hidden;
+  padding-bottom: 80px;
 }
 
-.hero,
-.section {
-  width: min(1180px, 100%);
-  margin: 0 auto;
+.bg-grid {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: 0;
+  background-image:
+    linear-gradient(#e2e8f0 1px, transparent 1px),
+    linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+  background-size: 40px 40px;
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+}
+
+.ambient-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 80% 60%, rgba(37, 99, 235, 0.12) 0%, transparent 45%);
 }
 
 .hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(280px, 0.9fr);
-  gap: 24px;
-  align-items: stretch;
-  margin-bottom: 36px;
+  padding: 72px 24px 40px;
+  text-align: center;
+  position: relative;
+  z-index: 1;
 }
 
-.hero-copy,
-.hero-card,
-.college-card,
-.role-card,
-.flow-card {
-  border-radius: 24px;
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  box-shadow: 0 18px 40px rgba(15, 23, 42, 0.06);
+.hero-content {
+  max-width: 900px;
+  margin: 0 auto;
 }
 
-.hero-copy {
-  padding: 32px;
+.hero h1 {
+  margin: 22px 0 12px;
+  font-size: clamp(34px, 4vw, 54px);
+  line-height: 1.05;
+  letter-spacing: -1px;
 }
 
-.hero-copy h1 {
-  margin: 24px 0 14px;
-  font-size: clamp(30px, 4vw, 48px);
-  line-height: 1.08;
-  color: #0f172a;
-}
-
-.hero-copy p {
+.hero p {
+  margin: 0 auto;
   max-width: 720px;
-  color: #475569;
+  color: var(--muted);
   line-height: 1.7;
   font-size: 16px;
 }
 
 .hero-actions {
   display: flex;
+  justify-content: center;
   gap: 14px;
-  margin-top: 26px;
   flex-wrap: wrap;
+  margin-top: 26px;
 }
 
-.primary-link,
+.primary-btn,
+.ghost-btn,
 .ghost-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 132px;
   height: 44px;
   padding: 0 18px;
   border-radius: 999px;
   text-decoration: none;
   font-weight: 700;
+  transition: transform 0.2s ease, border-color 0.2s ease;
 }
 
-.primary-link {
-  background: linear-gradient(135deg, #1d4ed8, #0ea5e9);
+.primary-btn {
   color: #fff;
+  background: linear-gradient(135deg, var(--brand-2), var(--brand));
 }
 
+.ghost-btn,
 .ghost-link {
-  border: 1px solid #cbd5e1;
-  color: #0f172a;
+  border: 1px solid var(--line);
+  color: var(--text);
   background: #fff;
 }
 
-.hero-card {
-  padding: 28px;
+.primary-btn:hover,
+.ghost-btn:hover,
+.ghost-link:hover {
+  transform: translateY(-2px);
+  border-color: rgba(14, 165, 233, 0.5);
 }
 
-.hero-card h2,
-.section-header h2 {
-  margin: 0;
-  color: #0f172a;
+.main-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+  position: relative;
+  z-index: 1;
 }
 
-.hero-card ul,
-.flow-card ul {
-  margin: 16px 0 0;
-  padding-left: 18px;
-  color: #475569;
-  line-height: 1.8;
+.panel {
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
 }
 
-.section {
-  margin-bottom: 28px;
-}
-
-.section-header {
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 16px;
+  flex-wrap: wrap;
   margin-bottom: 18px;
 }
 
-.eyebrow {
-  margin: 0 0 6px;
-  color: #0f766e;
+.panel-eyebrow {
   font-size: 12px;
   font-weight: 800;
   letter-spacing: 0.16em;
   text-transform: uppercase;
+  color: #0f766e;
+  margin-bottom: 6px;
 }
 
-.college-grid,
-.role-grid,
-.flow-grid {
-  display: grid;
-  gap: 18px;
+.panel-title {
+  font-size: 18px;
+  font-weight: 800;
 }
 
-.college-grid {
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+.panel-stats {
+  display: flex;
+  gap: 14px;
 }
 
-.role-grid {
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+.stat {
+  background: #fff;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 10px 14px;
+  min-width: 110px;
 }
 
-.flow-grid {
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+.stat-label {
+  font-size: 12px;
+  color: var(--muted);
 }
 
-.college-card,
-.role-card,
-.flow-card {
-  padding: 22px;
+.stat-value {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
 }
 
-.college-card .code {
-  display: inline-flex;
-  padding: 4px 10px;
+.filters {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.filter-item {
+  min-width: 220px;
+  flex: 1;
+}
+
+.college-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.college-pill {
+  border: 1px solid var(--line);
+  background: #fff;
+  color: var(--text);
+  padding: 8px 12px;
   border-radius: 999px;
-  background: #e0f2fe;
+  font-weight: 700;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+}
+
+.college-pill.active {
+  border-color: rgba(14, 165, 233, 0.55);
+  background: rgba(14, 165, 233, 0.08);
+  color: #075985;
+}
+
+.pill-meta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  min-width: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(2, 132, 199, 0.12);
   color: #075985;
   font-size: 12px;
   font-weight: 800;
 }
 
-.college-card h3,
-.role-card h3,
-.flow-card h3 {
-  margin: 14px 0 10px;
-  color: #0f172a;
+.labs-section {
+  margin-top: 24px;
 }
 
-.college-card p,
-.role-card p,
-.flow-card p {
-  margin: 0;
-  color: #475569;
-  line-height: 1.7;
+.section-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  margin: 8px 0 16px;
 }
 
-.scope {
-  margin-bottom: 8px !important;
-  color: #0f766e !important;
-  font-size: 13px;
+.section-title {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.section-tag {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: rgba(14, 165, 233, 0.1);
+  color: #075985;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.section-hint {
+  color: var(--muted);
   font-weight: 700;
 }
 
-@media (max-width: 900px) {
-  .hero {
-    grid-template-columns: 1fr;
+.labs-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 18px;
+}
+
+.lab-card {
+  text-align: left;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: var(--shadow);
+  padding: 18px 18px 16px;
+  cursor: pointer;
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.lab-card:hover {
+  transform: translateY(-6px);
+  border-color: rgba(14, 165, 233, 0.55);
+  box-shadow: 0 20px 40px -10px rgba(14, 165, 233, 0.16);
+}
+
+.lab-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.lab-name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--text);
+}
+
+.lab-meta {
+  font-size: 12px;
+  font-weight: 800;
+  color: #0f766e;
+}
+
+.lab-desc {
+  color: var(--muted);
+  line-height: 1.65;
+  font-size: 14px;
+  min-height: 46px;
+}
+
+.lab-badges {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.badge {
+  display: inline-flex;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #f1f5f9;
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.lab-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 14px;
+  color: var(--muted);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.lab-action {
+  color: #0284c7;
+  font-weight: 800;
+}
+
+.pagination-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.lab-detail {
+  display: grid;
+  gap: 12px;
+}
+
+.detail-row {
+  display: grid;
+  grid-template-columns: 120px 1fr;
+  gap: 12px;
+  align-items: baseline;
+}
+
+.detail-label {
+  color: var(--muted);
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.detail-value {
+  color: var(--text);
+  line-height: 1.7;
+}
+
+@media (max-width: 680px) {
+  .filter-item {
+    min-width: 100%;
   }
 
-  .hero-copy,
-  .hero-card {
-    padding: 24px;
+  .detail-row {
+    grid-template-columns: 1fr;
   }
 }
 </style>
