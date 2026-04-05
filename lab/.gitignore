@@ -1,0 +1,35 @@
+# Build output
+/target/
+/frontend/dist/
+
+# Private environment files
+/.env.cloud
+
+# Runtime artifacts
+/logs/
+/uploads/
+/temp-upload-test.pdf
+/*.zip
+/*.tar
+/*.tar.gz
+/*.tgz
+/changed-files.txt
+/latest-workspace.patch
+/frontend-dist.tar
+/base-release.tar
+/base-release.tar.gz
+/base-release.tgz
+/Cjh041217@
+/Cjh041217@.pub
+/hostkey*.tmp
+/plink-debug.log
+/plink.exe
+/pscp.exe
+/deploy-tools/node_modules/
+/frontend/node_modules/
+/frontend/.vite/
+
+# IDE files
+/.idea/
+/.vscode/
+/.vercel/
