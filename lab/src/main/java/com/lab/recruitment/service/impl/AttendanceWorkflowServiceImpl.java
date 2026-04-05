@@ -3,6 +3,8 @@ package com.lab.recruitment.service.impl;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lab.recruitment.config.FileStorageService;
+import com.lab.recruitment.dto.AttendanceMakeupRequestDTO;
+import com.lab.recruitment.dto.AttendanceDutyUpsertDTO;
 import com.lab.recruitment.dto.AttendanceRecordReviewDTO;
 import com.lab.recruitment.dto.AttendanceScheduleDTO;
 import com.lab.recruitment.dto.AttendanceSignInDTO;
@@ -23,9 +25,11 @@ import com.lab.recruitment.mapper.AttendanceTaskMapper;
 import com.lab.recruitment.mapper.LabMapper;
 import com.lab.recruitment.mapper.LabMemberMapper;
 import com.lab.recruitment.mapper.UserMapper;
+import com.lab.recruitment.service.AuditLogService;
 import com.lab.recruitment.service.AttendanceWorkflowService;
 import com.lab.recruitment.service.UserAccessService;
 import com.lab.recruitment.support.CurrentUserAccessor;
+import com.lab.recruitment.support.UserAccessProfile;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
@@ -59,8 +63,9 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
     private static final String RECORD_STATUS_LATE = "late";
     private static final String RECORD_STATUS_LEAVE = "leave";
     private static final String RECORD_STATUS_ABSENT = "absent";
-    private static final String RECORD_STATUS_MAKEUP = "makeup";
-    private static final String RECORD_STATUS_ANOMALY = "anomaly";
+    private static final String RECORD_STATUS_MAKEUP_PENDING = "makeup_pending";
+    private static final String RECORD_STATUS_MAKEUP_APPROVED = "makeup_approved";
+    private static final String RECORD_STATUS_MAKEUP_REJECTED = "makeup_rejected";
     private static final String SOURCE_STUDENT = "student";
     private static final String SOURCE_ADMIN = "admin";
     private static final String SOURCE_SYSTEM = "system";
@@ -101,6 +106,9 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
 
     @Autowired
     private FileStorageService fileStorageService;
+
+    @Autowired
+    private AuditLogService auditLogService;
 
     @Override
     public Page<Map<String, Object>> getTaskPage(Integer pageNum, Integer pageSize, Long collegeId, String keyword, User currentUser) {
@@ -398,13 +406,21 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
         record.setSource(SOURCE_ADMIN);
         record.setReviewedBy(currentUser == null ? null : currentUser.getId());
         record.setReviewTime(LocalDateTime.now());
-        if (!RECORD_STATUS_ABSENT.equals(signStatus) && record.getSignTime() == null) {
+        if (shouldWriteSignTime(signStatus) && record.getSignTime() == null) {
             record.setSignTime(LocalDateTime.now());
         }
 
-        return record.getId() == null
+        boolean success = record.getId() == null
                 ? attendanceRecordMapper.insert(record) > 0
                 : attendanceRecordMapper.updateById(record) > 0;
+        if (success) {
+            auditLogService.record(currentUser == null ? null : currentUser.getId(),
+                    "attendance_record_review",
+                    "attendance_record",
+                    record.getId(),
+                    "sessionId=" + session.getId() + ",userId=" + reviewDTO.getUserId() + ",signStatus=" + record.getSignStatus());
+        }
+        return success;
     }
 
     @Override
@@ -420,7 +436,7 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
 
         AttendanceSession session = ensureSessionForToday(labId, currentUser, true);
         LocalDate sessionDate = session.getSessionDate() == null ? LocalDate.now() : session.getSessionDate();
-        Path targetDir = fileStorageService.resolveTargetDirectory(sessionDate);
+        Path targetDir = fileStorageService.resolveProtectedTargetDirectory(sessionDate);
         String fileName = buildAttendancePhotoFileName(file.getOriginalFilename());
         Path targetPath = targetDir.resolve(fileName);
         try {
@@ -429,7 +445,7 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
             throw new RuntimeException("Failed to save attendance photo", ex);
         }
 
-        String photoUrl = fileStorageService.buildPublicUrl(sessionDate, fileName);
+        String photoUrl = fileStorageService.buildProtectedKey(sessionDate, fileName);
         AttendancePhoto photo = new AttendancePhoto();
         photo.setSessionId(session.getId());
         photo.setLabId(session.getLabId());
@@ -437,14 +453,110 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
         photo.setPhotoUrl(photoUrl);
         photo.setRemark(trimToNull(remark));
         attendancePhotoMapper.insert(photo);
+        auditLogService.record(currentUser == null ? null : currentUser.getId(),
+                "attendance_photo_upload",
+                "attendance_photo",
+                photo.getId(),
+                "sessionId=" + session.getId() + ",labId=" + session.getLabId());
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("id", photo.getId());
         result.put("sessionId", photo.getSessionId());
         result.put("labId", photo.getLabId());
         result.put("photoUrl", photo.getPhotoUrl());
+        result.put("viewUrl", "/attendance-workflow/photos/" + photo.getId() + "/view");
         result.put("remark", photo.getRemark());
         result.put("createTime", photo.getCreateTime());
+        return result;
+    }
+
+    @Override
+    @Transactional
+    public Map<String, Object> setSessionDuty(Long sessionId, AttendanceDutyUpsertDTO dutyDTO, User currentUser) {
+        if (sessionId == null || dutyDTO == null || dutyDTO.getDutyAdminUserId() == null) {
+            throw new RuntimeException("Duty assignment data is required");
+        }
+        AttendanceSession session = attendanceSessionMapper.selectById(sessionId);
+        if (session == null || !Objects.equals(session.getDeleted(), 0)) {
+            throw new RuntimeException("Attendance session does not exist");
+        }
+        AttendanceTask task = attendanceTaskMapper.selectById(session.getTaskId());
+        if (task == null || !Objects.equals(task.getDeleted(), 0)) {
+            throw new RuntimeException("Attendance task does not exist");
+        }
+
+        if (!currentUserAccessor.isSuperAdmin(currentUser)) {
+            if (currentUserAccessor.isCollegeManager(currentUser)) {
+                Long managedCollegeId = currentUserAccessor.resolveManagedCollegeId(currentUser);
+                if (managedCollegeId == null || !managedCollegeId.equals(task.getCollegeId())) {
+                    throw new RuntimeException("You do not have access to this attendance task");
+                }
+            } else {
+                throw new RuntimeException("Only school directors or college managers can assign duty admins");
+            }
+        }
+
+        User dutyAdmin = userMapper.selectById(dutyDTO.getDutyAdminUserId());
+        if (dutyAdmin == null || !Objects.equals(dutyAdmin.getDeleted(), 0) || !Objects.equals(dutyAdmin.getStatus(), 1)) {
+            throw new RuntimeException("Duty admin user does not exist");
+        }
+        UserAccessProfile dutyAdminProfile = userAccessService.buildProfile(dutyAdmin);
+        if (!dutyAdminProfile.isSchoolDirector()
+                && !(dutyAdminProfile.isCollegeManager() && Objects.equals(dutyAdminProfile.getManagedCollegeId(), task.getCollegeId()))) {
+            throw new RuntimeException("Duty admin user must be a school director or the college manager of this task");
+        }
+        if (dutyDTO.getBackupAdminUserId() != null) {
+            User backupAdmin = userMapper.selectById(dutyDTO.getBackupAdminUserId());
+            if (backupAdmin == null || !Objects.equals(backupAdmin.getDeleted(), 0) || !Objects.equals(backupAdmin.getStatus(), 1)) {
+                throw new RuntimeException("Backup admin user does not exist");
+            }
+            UserAccessProfile backupAdminProfile = userAccessService.buildProfile(backupAdmin);
+            if (!backupAdminProfile.isSchoolDirector()
+                    && !(backupAdminProfile.isCollegeManager() && Objects.equals(backupAdminProfile.getManagedCollegeId(), task.getCollegeId()))) {
+                throw new RuntimeException("Backup admin user must be a school director or the college manager of this task");
+            }
+        }
+
+        Integer existingCount = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM t_attendance_duty WHERE deleted = 0 AND session_id = ?",
+                Integer.class,
+                sessionId
+        );
+        if (existingCount != null && existingCount > 0) {
+            jdbcTemplate.update(
+                    "UPDATE t_attendance_duty SET duty_admin_user_id = ?, backup_admin_user_id = ?, remark = ?, update_time = NOW() " +
+                            "WHERE deleted = 0 AND session_id = ?",
+                    dutyDTO.getDutyAdminUserId(),
+                    dutyDTO.getBackupAdminUserId(),
+                    trimToNull(dutyDTO.getRemark()),
+                    sessionId
+            );
+        } else {
+            jdbcTemplate.update(
+                    "INSERT INTO t_attendance_duty (task_id, session_id, college_id, duty_admin_user_id, backup_admin_user_id, status, remark, create_time, update_time, deleted) " +
+                            "VALUES (?, ?, ?, ?, ?, 'active', ?, NOW(), NOW(), 0)",
+                    task.getId(),
+                    sessionId,
+                    task.getCollegeId(),
+                    dutyDTO.getDutyAdminUserId(),
+                    dutyDTO.getBackupAdminUserId(),
+                    trimToNull(dutyDTO.getRemark())
+            );
+        }
+
+        auditLogService.record(currentUser == null ? null : currentUser.getId(),
+                "attendance_duty_set",
+                "attendance_session",
+                sessionId,
+                "dutyAdminUserId=" + dutyDTO.getDutyAdminUserId());
+
+        Map<String, Object> result = new LinkedHashMap<>();
+        result.put("sessionId", sessionId);
+        result.put("taskId", task.getId());
+        result.put("collegeId", task.getCollegeId());
+        result.put("dutyAdminUserId", dutyDTO.getDutyAdminUserId());
+        result.put("backupAdminUserId", dutyDTO.getBackupAdminUserId());
+        result.put("remark", trimToNull(dutyDTO.getRemark()));
         return result;
     }
 
@@ -527,6 +639,64 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
         return record.getId() == null
                 ? attendanceRecordMapper.insert(record) > 0
                 : attendanceRecordMapper.updateById(record) > 0;
+    }
+
+    @Override
+    @Transactional
+    public boolean studentRequestMakeup(AttendanceMakeupRequestDTO requestDTO, User currentUser) {
+        if (currentUser == null || currentUser.getId() == null || currentUser.getLabId() == null) {
+            throw new RuntimeException("Current account is not bound to a lab");
+        }
+        AttendanceSession session = ensureSessionForToday(currentUser.getLabId(), currentUser, false);
+        if (session == null) {
+            throw new RuntimeException("No attendance session is available today");
+        }
+        refreshSessionStatus(session);
+        if (!SESSION_STATUS_CLOSED.equals(session.getStatus())) {
+            throw new RuntimeException("Makeup requests are only allowed after the session is closed");
+        }
+
+        AttendanceRecord record = findAttendanceRecord(session.getId(), currentUser.getId());
+        if (record != null && record.getSignTime() != null && !RECORD_STATUS_ABSENT.equals(record.getSignStatus())) {
+            throw new RuntimeException("You have already signed in for this session");
+        }
+        if (record == null) {
+            record = new AttendanceRecord();
+            record.setSessionId(session.getId());
+            record.setTaskId(session.getTaskId());
+            record.setLabId(session.getLabId());
+            record.setUserId(currentUser.getId());
+        }
+
+        String currentStatus = trimToNull(record.getSignStatus());
+        if (currentStatus != null) {
+            currentStatus = normalizeSignStatus(currentStatus);
+        }
+        if (RECORD_STATUS_MAKEUP_PENDING.equals(currentStatus)
+                || RECORD_STATUS_MAKEUP_APPROVED.equals(currentStatus)
+                || RECORD_STATUS_MAKEUP_REJECTED.equals(currentStatus)) {
+            throw new RuntimeException("Makeup request already exists for this session");
+        }
+
+        record.setSignStatus(RECORD_STATUS_MAKEUP_PENDING);
+        record.setRemark(requestDTO == null ? null : trimToNull(requestDTO.getRemark()));
+        record.setSource(SOURCE_STUDENT);
+        record.setReviewedBy(null);
+        record.setReviewTime(null);
+        record.setSignCode(null);
+        record.setSignTime(null);
+
+        boolean success = record.getId() == null
+                ? attendanceRecordMapper.insert(record) > 0
+                : attendanceRecordMapper.updateById(record) > 0;
+        if (success) {
+            auditLogService.record(currentUser.getId(),
+                    "attendance_makeup_request",
+                    "attendance_record",
+                    record.getId(),
+                    "sessionId=" + session.getId());
+        }
+        return success;
     }
 
     @Override
@@ -660,20 +830,34 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
         long lateCount = counter.getOrDefault(RECORD_STATUS_LATE, 0L);
         long leaveCount = counter.getOrDefault(RECORD_STATUS_LEAVE, 0L);
         long absentCount = counter.getOrDefault(RECORD_STATUS_ABSENT, 0L);
-        long makeupCount = counter.getOrDefault(RECORD_STATUS_MAKEUP, 0L);
-        long anomalyCount = counter.getOrDefault(RECORD_STATUS_ANOMALY, 0L);
-        long totalCount = presentCount + lateCount + leaveCount + absentCount + makeupCount + anomalyCount;
-        long denominator = presentCount + lateCount + absentCount + makeupCount + anomalyCount;
+        long makeupPendingCount = counter.getOrDefault(RECORD_STATUS_MAKEUP_PENDING, 0L);
+        long makeupApprovedCount = counter.getOrDefault(RECORD_STATUS_MAKEUP_APPROVED, 0L);
+        long makeupRejectedCount = counter.getOrDefault(RECORD_STATUS_MAKEUP_REJECTED, 0L);
+
+        long legacyMakeupCount = counter.getOrDefault("makeup", 0L);
+        long legacyAnomalyCount = counter.getOrDefault("anomaly", 0L);
+
+        long totalCount = presentCount + lateCount + leaveCount + absentCount
+                + makeupPendingCount + makeupApprovedCount + makeupRejectedCount
+                + legacyMakeupCount + legacyAnomalyCount;
+        long denominator = presentCount + lateCount + absentCount
+                + makeupPendingCount + makeupApprovedCount + makeupRejectedCount
+                + legacyMakeupCount + legacyAnomalyCount;
 
         summary.put("presentCount", presentCount);
         summary.put("normalCount", presentCount);
         summary.put("lateCount", lateCount);
         summary.put("leaveCount", leaveCount);
         summary.put("absentCount", absentCount);
-        summary.put("makeupCount", makeupCount);
-        summary.put("anomalyCount", anomalyCount);
+        summary.put("makeupPendingCount", makeupPendingCount);
+        summary.put("makeupApprovedCount", makeupApprovedCount);
+        summary.put("makeupRejectedCount", makeupRejectedCount);
+        summary.put("makeupCount", makeupPendingCount + makeupApprovedCount + legacyMakeupCount);
+        summary.put("anomalyCount", legacyAnomalyCount);
         summary.put("totalCount", totalCount);
-        summary.put("attendanceRate", denominator <= 0 ? 100D : round((presentCount + lateCount + makeupCount) * 100.0D / denominator));
+        summary.put("attendanceRate", denominator <= 0
+                ? 100D
+                : round((presentCount + lateCount + makeupApprovedCount + legacyMakeupCount) * 100.0D / denominator));
     }
 
     private long count(String sql, Object... args) {
@@ -810,6 +994,17 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
         result.put("codeExpireTime", session.getCodeExpireTime());
         result.put("publishTime", session.getPublishTime());
         result.put("photoCount", count("SELECT COUNT(*) FROM t_attendance_photo WHERE deleted = 0 AND session_id = ?", session.getId()));
+        List<Map<String, Object>> dutyRows = jdbcTemplate.queryForList(
+                "SELECT duty_admin_user_id AS dutyAdminUserId, backup_admin_user_id AS backupAdminUserId, remark " +
+                        "FROM t_attendance_duty WHERE deleted = 0 AND session_id = ? ORDER BY id DESC LIMIT 1",
+                session.getId()
+        );
+        if (!dutyRows.isEmpty()) {
+            Map<String, Object> dutyRow = dutyRows.get(0);
+            result.put("dutyAdminUserId", dutyRow.get("dutyAdminUserId"));
+            result.put("backupAdminUserId", dutyRow.get("backupAdminUserId"));
+            result.put("dutyRemark", dutyRow.get("remark"));
+        }
         fillSummary(result,
                 "SELECT sign_status, COUNT(*) AS value FROM t_attendance_record WHERE deleted = 0 AND session_id = ? GROUP BY sign_status",
                 session.getId());
@@ -914,15 +1109,31 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
             throw new RuntimeException("Sign status is required");
         }
         normalized = normalized.toLowerCase(Locale.ROOT);
+        if ("makeup".equals(normalized)) {
+            return RECORD_STATUS_MAKEUP_PENDING;
+        }
+        if ("anomaly".equals(normalized)) {
+            return RECORD_STATUS_ABSENT;
+        }
         if (!RECORD_STATUS_NORMAL.equals(normalized)
                 && !RECORD_STATUS_LATE.equals(normalized)
                 && !RECORD_STATUS_LEAVE.equals(normalized)
                 && !RECORD_STATUS_ABSENT.equals(normalized)
-                && !RECORD_STATUS_MAKEUP.equals(normalized)
-                && !RECORD_STATUS_ANOMALY.equals(normalized)) {
+                && !RECORD_STATUS_MAKEUP_PENDING.equals(normalized)
+                && !RECORD_STATUS_MAKEUP_APPROVED.equals(normalized)
+                && !RECORD_STATUS_MAKEUP_REJECTED.equals(normalized)) {
             throw new RuntimeException("Sign status is invalid");
         }
         return normalized;
+    }
+
+    private boolean shouldWriteSignTime(String signStatus) {
+        if (signStatus == null) {
+            return false;
+        }
+        return RECORD_STATUS_NORMAL.equals(signStatus)
+                || RECORD_STATUS_LATE.equals(signStatus)
+                || RECORD_STATUS_MAKEUP_APPROVED.equals(signStatus);
     }
 
     private String buildAttendancePhotoFileName(String originalFileName) {

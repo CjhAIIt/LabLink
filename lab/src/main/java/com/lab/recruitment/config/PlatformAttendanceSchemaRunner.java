@@ -242,6 +242,26 @@ public class PlatformAttendanceSchemaRunner implements CommandLineRunner {
                 "CONSTRAINT fk_attendance_photo_lab FOREIGN KEY (lab_id) REFERENCES t_lab(id)," +
                 "CONSTRAINT fk_attendance_photo_uploader FOREIGN KEY (uploader_id) REFERENCES t_user(id)" +
                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_attendance_duty (" +
+                "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                "task_id BIGINT NOT NULL," +
+                "session_id BIGINT NOT NULL," +
+                "college_id BIGINT NOT NULL," +
+                "duty_admin_user_id BIGINT NOT NULL," +
+                "backup_admin_user_id BIGINT NULL," +
+                "status VARCHAR(32) NOT NULL DEFAULT 'active'," +
+                "remark VARCHAR(255) NULL," +
+                "create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
+                "update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+                "deleted TINYINT NOT NULL DEFAULT 0," +
+                "UNIQUE KEY uk_attendance_duty_session (session_id, deleted)," +
+                "KEY idx_attendance_duty_task (task_id, college_id, deleted)," +
+                "CONSTRAINT fk_attendance_duty_task FOREIGN KEY (task_id) REFERENCES t_attendance_task(id)," +
+                "CONSTRAINT fk_attendance_duty_session FOREIGN KEY (session_id) REFERENCES t_attendance_session(id)," +
+                "CONSTRAINT fk_attendance_duty_college FOREIGN KEY (college_id) REFERENCES t_college(id)," +
+                "CONSTRAINT fk_attendance_duty_admin FOREIGN KEY (duty_admin_user_id) REFERENCES t_user(id)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     }
 
     private void migrateLegacyAccessModel() {

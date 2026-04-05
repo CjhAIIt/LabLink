@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lab.recruitment.entity.Equipment;
 import com.lab.recruitment.entity.EquipmentBorrow;
+import com.lab.recruitment.service.AuditLogService;
 import com.lab.recruitment.service.EquipmentBorrowService;
 import com.lab.recruitment.service.EquipmentService;
 import com.lab.recruitment.utils.Result;
@@ -24,6 +25,9 @@ public class EquipmentController {
 
     @Autowired
     private EquipmentBorrowService borrowService;
+
+    @Autowired
+    private AuditLogService auditLogService;
 
     // --- 设备管理 ---
 
@@ -97,7 +101,7 @@ public class EquipmentController {
             return Result.error("您尚未加入任何实验室，无法借用设备");
         }
         
-        return Result.success(borrowService.apply(borrow.getEquipmentId(), borrow.getReason(), username));
+        return Result.success(borrowService.apply(borrow.getEquipmentId(), borrow.getReason(), borrow.getExpectedReturnTime(), username));
     }
 
     @GetMapping("/borrow/list")
@@ -158,7 +162,15 @@ public class EquipmentController {
         Equipment equipment = equipmentService.getById(exist.getEquipmentId());
         if (!equipment.getLabId().equals(user.getLabId())) return Result.error("无权操作其他实验室记录");
         
-        return Result.success(borrowService.audit(borrow.getId(), borrow.getStatus()));
+        boolean success = borrowService.audit(borrow.getId(), borrow.getStatus());
+        if (success) {
+            auditLogService.record(user == null ? null : user.getId(),
+                    "equipment_borrow_audit",
+                    "equipment_borrow",
+                    borrow.getId(),
+                    "status=" + borrow.getStatus());
+        }
+        return Result.success(success);
     }
 
     @PostMapping("/borrow/return")
@@ -173,6 +185,14 @@ public class EquipmentController {
         Equipment equipment = equipmentService.getById(exist.getEquipmentId());
         if (!equipment.getLabId().equals(user.getLabId())) return Result.error("无权操作其他实验室记录");
 
-        return Result.success(borrowService.returnEquipment(borrow.getId()));
+        boolean success = borrowService.returnEquipment(borrow.getId());
+        if (success) {
+            auditLogService.record(user == null ? null : user.getId(),
+                    "equipment_borrow_return",
+                    "equipment_borrow",
+                    borrow.getId(),
+                    null);
+        }
+        return Result.success(success);
     }
 }

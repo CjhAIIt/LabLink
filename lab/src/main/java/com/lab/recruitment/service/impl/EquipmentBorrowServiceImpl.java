@@ -26,7 +26,7 @@ public class EquipmentBorrowServiceImpl extends ServiceImpl<EquipmentBorrowMappe
 
     @Override
     @Transactional
-    public boolean apply(Long equipmentId, String reason, String username) {
+    public boolean apply(Long equipmentId, String reason, LocalDateTime expectedReturnTime, String username) {
         QueryWrapper<User> userQuery = new QueryWrapper<>();
         userQuery.eq("username", username);
         User user = userService.getOne(userQuery);
@@ -50,6 +50,7 @@ public class EquipmentBorrowServiceImpl extends ServiceImpl<EquipmentBorrowMappe
         borrow.setUserId(user.getId());
         borrow.setReason(reason);
         borrow.setStatus(0);
+        borrow.setExpectedReturnTime(expectedReturnTime);
         return this.save(borrow);
     }
 
@@ -91,12 +92,13 @@ public class EquipmentBorrowServiceImpl extends ServiceImpl<EquipmentBorrowMappe
         if (borrow == null) {
             throw new RuntimeException("Borrow record not found");
         }
-        if (borrow.getStatus() != 1) {
+        if (borrow.getStatus() == null || (borrow.getStatus() != 1 && borrow.getStatus() != 4 && borrow.getStatus() != 5)) {
             throw new RuntimeException("The borrow status is invalid");
         }
 
         borrow.setStatus(3);
         borrow.setReturnTime(LocalDateTime.now());
+        borrow.setReturnConfirmTime(LocalDateTime.now());
         this.updateById(borrow);
 
         Equipment equipment = equipmentService.getById(borrow.getEquipmentId());

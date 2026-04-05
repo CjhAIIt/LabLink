@@ -1,6 +1,8 @@
 package com.lab.recruitment.controller;
 
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.lab.recruitment.dto.AttendanceMakeupRequestDTO;
+import com.lab.recruitment.dto.AttendanceDutyUpsertDTO;
 import com.lab.recruitment.dto.AttendanceRecordReviewDTO;
 import com.lab.recruitment.dto.AttendanceScheduleDTO;
 import com.lab.recruitment.dto.AttendanceSignInDTO;
@@ -151,6 +153,18 @@ public class AttendanceWorkflowController {
         }
     }
 
+    @PostMapping("/duty/sessions/{sessionId}")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    public Result<Map<String, Object>> setSessionDuty(@PathVariable Long sessionId,
+                                                      @Validated @RequestBody AttendanceDutyUpsertDTO dutyDTO) {
+        try {
+            User currentUser = currentUserAccessor.getCurrentUser();
+            return Result.success(attendanceWorkflowService.setSessionDuty(sessionId, dutyDTO, currentUser));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
     @GetMapping("/student/session/current")
     @PreAuthorize("hasRole('STUDENT')")
     public Result<Map<String, Object>> getCurrentStudentSession() {
@@ -168,6 +182,17 @@ public class AttendanceWorkflowController {
         try {
             User currentUser = currentUserAccessor.getCurrentUser();
             return Result.success(attendanceWorkflowService.studentSignIn(signInDTO, currentUser));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/student/session/makeup")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Boolean> studentRequestMakeup(@Validated @RequestBody AttendanceMakeupRequestDTO requestDTO) {
+        try {
+            User currentUser = currentUserAccessor.getCurrentUser();
+            return Result.success(attendanceWorkflowService.studentRequestMakeup(requestDTO, currentUser));
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
