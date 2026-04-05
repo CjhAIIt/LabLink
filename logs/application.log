@@ -1,0 +1,20 @@
+2026-04-05 14:38:31 [main] INFO  c.l.r.LabRecruitmentApplication - Starting LabRecruitmentApplication using Java 17.0.12 on DESKTOP-BA8OBJV with PID 43292 (C:\Users\cjh\IdeaProjects\labLink\lab\target\classes started by cjh in C:\Users\cjh\IdeaProjects\labLink)
+2026-04-05 14:38:31 [main] INFO  c.l.r.LabRecruitmentApplication - No active profile set, falling back to 1 default profile: "default"
+2026-04-05 14:38:32 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat initialized with port(s): 8081 (http)
+2026-04-05 14:38:32 [main] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-04-05 14:38:32 [main] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/9.0.78]
+2026-04-05 14:38:32 [main] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring embedded WebApplicationContext
+2026-04-05 14:38:32 [main] INFO  o.s.b.w.s.c.ServletWebServerApplicationContext - Root WebApplicationContext: initialization completed in 1081 ms
+2026-04-05 14:38:34 [main] INFO  o.s.s.web.DefaultSecurityFilterChain - Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@3a209918, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@2cae5fa7, org.springframework.security.web.context.SecurityContextPersistenceFilter@6b25ef1c, org.springframework.security.web.header.HeaderWriterFilter@6d6039df, org.springframework.web.filter.CorsFilter@34aa8b61, org.springframework.security.web.authentication.logout.LogoutFilter@60807fd9, com.lab.recruitment.config.JwtAuthenticationFilter@543d5863, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@68c34db2, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@7b95bdb0, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@6d7b001b, org.springframework.security.web.session.SessionManagementFilter@6c9a3661, org.springframework.security.web.access.ExceptionTranslationFilter@eaf8427, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@3855d9b2]
+2026-04-05 14:38:34 [main] INFO  c.b.m.e.s.MybatisPlusApplicationContextAware - Register ApplicationContext instances org.springframework.boot.web.servlet.context.AnnotationConfigServletWebServerApplicationContext@5cbe877d
+2026-04-05 14:38:34 [main] INFO  o.s.b.w.e.tomcat.TomcatWebServer - Tomcat started on port(s): 8081 (http) with context path ''
+2026-04-05 14:38:34 [main] INFO  c.l.r.LabRecruitmentApplication - Started LabRecruitmentApplication in 3.098 seconds (JVM running for 3.569)
+2026-04-05 14:38:34 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-04-05 14:38:34 [main] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-04-05 14:39:02 [http-nio-8081-exec-2] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-04-05 14:39:02 [http-nio-8081-exec-2] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-04-05 14:39:02 [http-nio-8081-exec-2] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-04-05 14:39:02 [http-nio-8081-exec-2] WARN  c.l.r.config.JwtAuthenticationFilter - Unable to get JWT Token
+2026-04-05 14:39:02 [http-nio-8081-exec-1] WARN  c.l.r.config.JwtAuthenticationFilter - Unable to get JWT Token
+2026-04-05 14:43:47 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-04-05 14:43:47 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.

@@ -1,0 +1,36 @@
+FROM maven:3.9.11-eclipse-temurin-11 AS build
+
+WORKDIR /workspace
+
+COPY pom.xml ./
+RUN mvn -q -DskipTests dependency:go-offline
+
+COPY src ./src
+RUN mvn -q -DskipTests package
+
+FROM eclipse-temurin:11-jdk-jammy
+
+ENV TZ=Asia/Shanghai \
+    LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
+    FILE_UPLOAD_PATH=/app/uploads/ \
+    JUDGE_PYTHON_COMMAND=python3 \
+    JUDGE_C_COMPILER_COMMAND=gcc \
+    JUDGE_CPP_COMPILER_COMMAND=g++ \
+    JUDGE_JAVA_COMPILER_COMMAND=javac \
+    JUDGE_JAVA_COMMAND=java \
+    JUDGE_WORK_DIR=/app/judge-work
+
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends python3 gcc g++ curl ca-certificates tzdata \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+COPY --from=build /workspace/target/lab-recruitment-1.0.0.jar ./app.jar
+
+RUN mkdir -p /app/uploads /app/judge-work /app/logs
+
+EXPOSE 8081
+
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]

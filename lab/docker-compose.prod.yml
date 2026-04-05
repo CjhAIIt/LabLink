@@ -1,0 +1,10 @@
+services:
+  mysql:
+    ports: []
+
+  backend:
+    ports: []
+
+  frontend:
+    ports:
+      - "80:80"
