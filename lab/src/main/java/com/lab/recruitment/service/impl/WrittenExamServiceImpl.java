@@ -265,7 +265,7 @@ public class WrittenExamServiceImpl implements WrittenExamService {
 
     @Override
     public Page<Map<String, Object>> getStudentLabPage(User user, Integer pageNum, Integer pageSize, String labName, Integer status) {
-        Page<Lab> labPage = labService.getLabPage(pageNum, pageSize, labName, status);
+        Page<Lab> labPage = labService.getLabPage(pageNum, pageSize, null, labName, status);
         List<Lab> labs = labPage.getRecords();
         if (labs == null || labs.isEmpty()) {
             Page<Map<String, Object>> emptyPage = new Page<>(pageNum, pageSize);

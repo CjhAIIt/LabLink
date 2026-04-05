@@ -5,12 +5,16 @@ SET FOREIGN_KEY_CHECKS = 0;
 INSERT INTO t_college (id, college_code, college_name, admin_user_id, status, remark) VALUES
 (1, 'CS', '计算机学院', NULL, 1, '负责软件与系统方向实验室建设'),
 (2, 'AI', '人工智能学院', NULL, 1, '负责数据智能与大模型方向建设'),
-(3, 'EE', '电子信息学院', NULL, 1, '负责嵌入式与硬件创新方向建设');
+(3, 'EE', '电子信息学院', NULL, 1, '负责嵌入式与硬件创新方向建设'),
+(4, 'SD', '软件学院', NULL, 1, '负责软件工程与敏捷开发方向建设'),
+(5, 'MA', '数学学院', NULL, 1, '负责数学建模与算法研究方向建设');
 
-INSERT INTO t_lab (id, lab_name, lab_code, college_id, lab_desc, teacher_name, location, contact_email, require_skill, recruit_num, current_num, status, founding_date, awards, basic_info, advisors, current_admins, interview_open) VALUES
-(1, '智能应用创新实验室', 'LAB-CS-001', 1, '聚焦 Web 平台、数据应用与工程实践，承担校内创新项目与竞赛训练。', '张建国', '信息楼A301', 'iai_lab@school.edu.cn', 'Java、Spring Boot、Vue、MySQL', 12, 2, 1, '2022-09', '省级软件设计大赛二等奖、互联网+校赛金奖', '面向校级数字化项目、竞赛与工程训练的综合实验室。', '张建国、刘志强', '张教授', 1),
-(2, '数据智能与决策实验室', 'LAB-AI-001', 2, '聚焦数据分析、机器学习、决策支持与大模型应用，服务科研与项目孵化。', '李明', '科研楼B204', 'data_lab@school.edu.cn', 'Python、机器学习、数据分析、深度学习', 15, 1, 1, '2023-03', '数学建模省赛一等奖、智能决策挑战赛二等奖', '建设数据分析、AIGC 与科研训练的联合实践平台。', '李明、周岚', '李教授', 1),
-(3, '嵌入式与物联网实验室', 'LAB-EE-001', 3, '聚焦嵌入式系统、智能硬件、传感网络与控制系统开发。', '王海涛', '实训楼C108', 'iot_lab@school.edu.cn', 'C/C++、单片机、嵌入式 Linux、硬件调试', 10, 1, 1, '2021-11', '电子设计竞赛省赛一等奖、物联网应用创新赛三等奖', '承担嵌入式项目实训、硬件竞赛与成果转化。', '王海涛、陈峰', '王教授', 1);
+INSERT INTO t_lab (id, lab_name, lab_code, college_id, lab_desc, teacher_name, location, contact_email, require_skill, recruit_num, current_num, status, founding_date, awards, outstanding_seniors, basic_info, advisors, current_admins, interview_open) VALUES
+(1, '智能应用创新实验室', 'LAB-CS-001', 1, '聚焦 Web 平台、数据应用与工程实践，承担校内创新项目与竞赛训练。', '张建国', '信息楼A301', 'iai_lab@school.edu.cn', 'Java、Spring Boot、Vue、MySQL', 12, 2, 1, '2022-09', '省级软件设计大赛二等奖、互联网+校赛金奖', '[{"name":"张晓明","major":"软件工程","achievement":"入职阿里巴巴"},{"name":"李华","major":"计科","achievement":"保研清华大学"}]', '面向校级数字化项目、竞赛与工程训练的综合实验室。', '张建国、刘志强', '张教授', 1),
+(2, '数据智能与决策实验室', 'LAB-AI-001', 2, '聚焦数据分析、机器学习、决策支持与大模型应用，服务科研与项目孵化。', '李明', '科研楼B204', 'data_lab@school.edu.cn', 'Python、机器学习、数据分析、深度学习', 15, 1, 1, '2023-03', '数学建模省赛一等奖、智能决策挑战赛二等奖', '[{"name":"王五","major":"人工智能","achievement":"入职百度"},{"name":"赵六","major":"大数据","achievement":"保研北京大学"}]', '建设数据分析、AIGC 与科研训练的联合实践平台。', '李明、周岚', '李教授', 1),
+(3, '嵌入式与物联网实验室', 'LAB-EE-001', 3, '聚焦嵌入式系统、智能硬件、传感网络与控制系统开发。', '王海涛', '实训楼C108', 'iot_lab@school.edu.cn', 'C/C++、单片机、嵌入式 Linux、硬件调试', 10, 1, 1, '2021-11', '电子设计竞赛省赛一等奖、物联网应用创新赛三等奖', '[{"name":"孙琦","major":"电子信息","achievement":"入职华为"},{"name":"周吴","major":"物联网","achievement":"保研复旦大学"}]', '承担嵌入式项目实训、硬件竞赛与成果转化。', '王海涛、陈峰', '王教授', 1),
+(4, '软件工程实验室', 'LAB-SD-001', 4, '专注于软件工程方法论与高质量软件开发。', '赵敏', '信息楼A401', 'sd_lab@school.edu.cn', 'Java、Go、Docker、Kubernetes', 10, 0, 1, '2023-05', '软件工程大赛全国一等奖', '[{"name":"陈龙","major":"软件工程","achievement":"入职腾讯"}]', '软件工程研究与实践基地。', '赵敏、李华', '赵教授', 1),
+(5, '算法竞赛实验室', 'LAB-MA-001', 5, '专注于 ACM/ICPC、蓝桥杯等算法竞赛。', '钱峰', '理学院B301', 'algo_lab@school.edu.cn', 'C++、算法、数据结构', 20, 0, 1, '2020-09', 'ACM 区域赛金奖', '[{"name":"郑毅","major":"数学","achievement":"入职字节跳动"}]', '算法与数学竞赛训练中心。', '钱峰、孙博', '钱教授', 1);
 
 INSERT INTO t_user (id, username, password, real_name, role, student_id, college, major, grade, phone, email, avatar, resume, lab_id, can_edit, status, deleted) VALUES
 (1, 'super_admin', '$2a$10$hDR6MPU7eW3XYq/DiRwqCuZHJ6B1kCO.vWmsuo2Tal79eDKfFl8r2', '系统总负责人', 'super_admin', NULL, NULL, NULL, NULL, '13800000001', 'superadmin@school.edu.cn', NULL, NULL, NULL, 1, 1, 0),

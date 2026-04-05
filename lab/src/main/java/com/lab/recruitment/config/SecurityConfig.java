@@ -3,6 +3,7 @@ package com.lab.recruitment.config;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
@@ -108,8 +109,10 @@ public class SecurityConfig {
             ).permitAll()
             .antMatchers("/file/upload", "/file/view").permitAll()
             .antMatchers("/uploads/**").permitAll()
-            .antMatchers("/labs/list").permitAll()
-            .antMatchers("/labs/{id}").permitAll()
+            .antMatchers(HttpMethod.GET, "/labs/list", "/api/labs/list").permitAll()
+            .antMatchers(HttpMethod.GET, "/labs/*", "/api/labs/*").permitAll()
+            .antMatchers(HttpMethod.GET, "/labs/detail/*", "/api/labs/detail/*").permitAll()
+            .antMatchers(HttpMethod.GET, "/graduate/list", "/api/graduate/list").permitAll()
             .antMatchers("/colleges/options").permitAll()
             // 总负责人权限的端点
             .antMatchers("/user/admin/**").hasAuthority("ROLE_SUPER_ADMIN")

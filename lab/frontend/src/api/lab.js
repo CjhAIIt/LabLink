@@ -8,6 +8,13 @@ export function getLabPage(params) {
   })
 }
 
+export function getLabStats() {
+  return request({
+    url: '/api/labs/stats',
+    method: 'get'
+  })
+}
+
 export function getLabById(id) {
   return request({
     url: `/api/labs/${id}`,

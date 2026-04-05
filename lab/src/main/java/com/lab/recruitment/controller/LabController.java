@@ -7,10 +7,13 @@ import com.lab.recruitment.service.AdminManagementService;
 import com.lab.recruitment.service.LabService;
 import com.lab.recruitment.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 实验室管理控制器
@@ -29,6 +32,9 @@ public class LabController {
     
     @Autowired
     private AdminManagementService adminManagementService;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     // ... (existing code) ...
 
@@ -74,13 +80,35 @@ public class LabController {
     public Result<Page<Lab>> getLabList(
             @RequestParam(defaultValue = "1") Integer pageNum,
             @RequestParam(defaultValue = "10") Integer pageSize,
+            @RequestParam(required = false) Long collegeId,
             @RequestParam(required = false) String labName,
             @RequestParam(required = false) Integer status) {
         try {
-            Page<Lab> labPage = labService.getLabPage(pageNum, pageSize, labName, status);
+            Page<Lab> labPage = labService.getLabPage(pageNum, pageSize, collegeId, labName, status);
             return Result.success(labPage);
         } catch (Exception e) {
             e.printStackTrace();
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @GetMapping("/stats")
+    public Result<Map<String, Object>> getLabStats() {
+        try {
+            Map<String, Object> result = new HashMap<>();
+            Long total = jdbcTemplate.queryForObject("SELECT COUNT(*) FROM t_lab WHERE deleted = 0", Long.class);
+            result.put("total", total == null ? 0L : total);
+            List<Map<String, Object>> byCollege = jdbcTemplate.queryForList(
+                    "SELECT l.college_id AS collegeId, c.college_name AS collegeName, COUNT(*) AS labCount " +
+                            "FROM t_lab l " +
+                            "LEFT JOIN t_college c ON c.id = l.college_id AND c.deleted = 0 " +
+                            "WHERE l.deleted = 0 " +
+                            "GROUP BY l.college_id, c.college_name " +
+                            "ORDER BY labCount DESC"
+            );
+            result.put("byCollege", byCollege);
+            return Result.success(result);
+        } catch (Exception e) {
             return Result.error(e.getMessage());
         }
     }
@@ -101,6 +129,11 @@ public class LabController {
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }
+    }
+
+    @GetMapping("/detail/{id}")
+    public Result<Lab> getLabDetailById(@PathVariable Long id) {
+        return getLabById(id);
     }
 
     /**

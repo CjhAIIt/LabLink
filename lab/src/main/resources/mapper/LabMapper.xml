@@ -6,6 +6,9 @@
         SELECT * FROM t_lab
         <where>
             deleted = 0
+            <if test="collegeId != null">
+                AND college_id = #{collegeId}
+            </if>
             <if test="labName != null and labName != ''">
                 AND lab_name LIKE CONCAT('%', #{labName}, '%')
             </if>

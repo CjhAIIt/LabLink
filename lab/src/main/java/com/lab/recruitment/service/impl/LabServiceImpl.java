@@ -31,9 +31,9 @@ public class LabServiceImpl extends ServiceImpl<LabMapper, Lab> implements LabSe
     private LabSpaceService labSpaceService;
 
     @Override
-    public Page<Lab> getLabPage(Integer pageNum, Integer pageSize, String labName, Integer status) {
+    public Page<Lab> getLabPage(Integer pageNum, Integer pageSize, Long collegeId, String labName, Integer status) {
         Page<Lab> page = new Page<>(pageNum, pageSize);
-        Page<Lab> result = baseMapper.selectLabPage(page, labName, status);
+        Page<Lab> result = baseMapper.selectLabPage(page, collegeId, labName, status);
         populateCurrentMemberCounts(result.getRecords());
         return result;
     }

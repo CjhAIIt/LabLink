@@ -9,7 +9,7 @@
           <span class="hero-tag anim-title">实验室详情</span>
           <h1 class="anim-middle">{{ lab.labName }}</h1>
           <div class="hero-actions anim-bottom">
-            <router-link class="ghost-btn" to="/lab-info">
+            <router-link class="ghost-btn" to="/intro">
               <el-icon><Back /></el-icon> 返回列表
             </router-link>
           </div>
@@ -67,6 +67,34 @@
             <div class="text-content">{{ lab.labDesc || '暂无' }}</div>
           </div>
         </div>
+
+        <el-card shadow="never" class="panel-card reveal-item" style="transition-delay: 0.05s">
+          <template #header>
+            <div class="panel-header">
+              <span>优秀学长</span>
+              <el-tag type="warning" effect="plain">{{ graduates.length }} 位</el-tag>
+            </div>
+          </template>
+          <div v-if="graduates.length" class="graduate-grid">
+            <div v-for="item in graduates" :key="item.id" class="graduate-card">
+              <div class="graduate-head">
+                <el-avatar :size="46" :src="item.avatarUrl">{{ (item.name || 'A').charAt(0) }}</el-avatar>
+                <div>
+                  <div class="graduate-name">{{ item.name }}</div>
+                  <div class="graduate-meta">
+                    <span>{{ item.major || '-' }}</span>
+                    <span v-if="item.graduationYear">· {{ item.graduationYear }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="graduate-body">
+                <div class="graduate-line"><span class="label">去向</span><span>{{ item.company || '-' }} {{ item.position || '' }}</span></div>
+                <div class="graduate-desc">{{ item.description || '暂无介绍' }}</div>
+              </div>
+            </div>
+          </div>
+          <el-empty v-else description="暂无优秀毕业生数据" />
+        </el-card>
       </main>
     </div>
   </div>
@@ -77,21 +105,29 @@ import { ref, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { Back, InfoFilled, Trophy, DataBoard, Document } from '@element-plus/icons-vue'
 import { getLabById } from '@/api/lab'
+import { getGraduateList } from '@/api/graduate'
 
 const route = useRoute()
 const lab = ref(null)
+const graduates = ref([])
 
 onMounted(async () => {
   const labId = route.params.id
   if (labId) {
-    const res = await getLabById(labId)
-    if (res.code === 200) {
-      lab.value = res.data
-      setTimeout(() => {
-        const items = document.querySelectorAll('.reveal-item');
-        items.forEach(el => el.classList.add('visible'));
-      }, 100);
+    const [labRes, graduateRes] = await Promise.all([
+      getLabById(labId),
+      getGraduateList({ pageNum: 1, pageSize: 12, labId })
+    ])
+    if (labRes.code === 200) {
+      lab.value = labRes.data
     }
+    if (graduateRes.code === 200) {
+      graduates.value = graduateRes.data.records || []
+    }
+    setTimeout(() => {
+      const items = document.querySelectorAll('.reveal-item')
+      items.forEach((el) => el.classList.add('visible'))
+    }, 100)
   }
 })
 </script>
@@ -184,6 +220,78 @@ onMounted(async () => {
   margin: 0 auto;
   position: relative;
   z-index: 1;
+}
+
+.panel-card {
+  margin-bottom: 32px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  box-shadow: var(--shadow);
+}
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.graduate-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+}
+
+.graduate-card {
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  padding: 18px;
+  display: grid;
+  gap: 12px;
+}
+
+.graduate-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.graduate-name {
+  font-weight: 800;
+  color: var(--text);
+}
+
+.graduate-meta {
+  margin-top: 4px;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.graduate-body {
+  display: grid;
+  gap: 10px;
+  color: #334155;
+}
+
+.graduate-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 13px;
+}
+
+.graduate-line .label {
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.graduate-desc {
+  color: #334155;
+  line-height: 1.7;
+  font-size: 13px;
+  white-space: pre-wrap;
 }
 
 .info-grid {

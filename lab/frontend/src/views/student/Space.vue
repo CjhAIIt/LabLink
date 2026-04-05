@@ -44,7 +44,7 @@
               <div class="toolbar-actions compact">
                 <el-input v-model="fileFilters.keyword" clearable placeholder="搜索文件名" style="width: 220px" />
                 <el-select v-model="fileFilters.archiveFlag" clearable placeholder="归档状态" style="width: 140px">
-                  <el-option label="全部" :value="undefined" />
+                  <el-option label="全部" :value="null" />
                   <el-option label="未归档" :value="0" />
                   <el-option label="已归档" :value="1" />
                 </el-select>
@@ -115,7 +115,7 @@ const pagination = reactive({
 })
 const fileFilters = reactive({
   keyword: '',
-  archiveFlag: undefined
+  archiveFlag: null
 })
 
 const folderCount = computed(() => {
@@ -145,7 +145,7 @@ const loadFiles = async () => {
       pageNum: pagination.pageNum,
       pageSize: pagination.pageSize,
       folderId: selectedFolderId.value || undefined,
-      archiveFlag: fileFilters.archiveFlag,
+      archiveFlag: fileFilters.archiveFlag === null ? undefined : fileFilters.archiveFlag,
       keyword: fileFilters.keyword || undefined
     })
     files.value = res.data.records || []

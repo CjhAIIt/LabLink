@@ -163,7 +163,7 @@
                   <div class="toolbar-actions compact">
                     <el-input v-model="fileFilters.keyword" clearable placeholder="搜索文件名 / 上传人" style="width: 220px" />
                     <el-select v-model="fileFilters.archiveFlag" clearable placeholder="归档状态" style="width: 140px">
-                      <el-option label="全部" :value="undefined" />
+                      <el-option label="全部" :value="null" />
                       <el-option label="未归档" :value="0" />
                       <el-option label="已归档" :value="1" />
                     </el-select>
@@ -349,7 +349,7 @@ const files = ref([])
 const fileLoading = ref(false)
 const fileFilters = reactive({
   keyword: '',
-  archiveFlag: undefined
+  archiveFlag: null
 })
 const filePagination = reactive({
   pageNum: 1,
@@ -381,7 +381,7 @@ const isTeacherPortal = computed(() => route.path.startsWith('/teacher'))
 const isSchoolDirector = computed(() => Boolean(userStore.userInfo?.schoolDirector))
 const isCollegeManager = computed(() => Boolean(userStore.userInfo?.collegeManager))
 const isLabManager = computed(() => Boolean(userStore.userInfo?.labManager) && !isTeacherPortal.value)
-const workspaceEditable = computed(() => isLabManager.value)
+const workspaceEditable = computed(() => isLabManager.value || isSchoolDirector.value)
 const canSelectCollege = computed(() => isSchoolDirector.value)
 const canSelectLab = computed(() => isSchoolDirector.value || isCollegeManager.value)
 
@@ -564,7 +564,7 @@ const loadFiles = async () => {
       pageSize: filePagination.pageSize,
       labId: selectedLabId.value,
       folderId: selectedFolderId.value || undefined,
-      archiveFlag: fileFilters.archiveFlag,
+      archiveFlag: fileFilters.archiveFlag === null ? undefined : fileFilters.archiveFlag,
       keyword: fileFilters.keyword || undefined
     })
     files.value = res.data.records || []
@@ -583,7 +583,7 @@ const exportFiles = async () => {
     pageSize: 1000,
     labId: selectedLabId.value,
     folderId: selectedFolderId.value || undefined,
-    archiveFlag: fileFilters.archiveFlag,
+    archiveFlag: fileFilters.archiveFlag === null ? undefined : fileFilters.archiveFlag,
     keyword: fileFilters.keyword || undefined
   })
   downloadCsv(
@@ -682,6 +682,7 @@ const fetchExitApplications = async () => {
   const res = await getLabExitApplications({
     pageNum: exitPagination.current,
     pageSize: exitPagination.size,
+    labId: selectedLabId.value,
     realName: exitSearch.realName || undefined,
     status: exitSearch.status
   })

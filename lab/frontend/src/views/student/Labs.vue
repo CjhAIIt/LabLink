@@ -49,6 +49,7 @@
         </div>
 
         <div class="lab-card-actions">
+          <el-button @click="$router.push(`/lab-info/${lab.id}`)">查看详情</el-button>
           <el-button
             type="primary"
             :disabled="!canApply(lab)"

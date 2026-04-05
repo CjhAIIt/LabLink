@@ -9,5 +9,8 @@ import org.apache.ibatis.annotations.Param;
 @Mapper
 public interface LabMapper extends BaseMapper<Lab> {
     
-    Page<Lab> selectLabPage(Page<Lab> page, @Param("labName") String labName, @Param("status") Integer status);
+    Page<Lab> selectLabPage(Page<Lab> page,
+                            @Param("collegeId") Long collegeId,
+                            @Param("labName") String labName,
+                            @Param("status") Integer status);
 }

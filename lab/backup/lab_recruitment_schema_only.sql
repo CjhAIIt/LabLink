@@ -1,5 +1,4 @@
-﻿
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
+﻿/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
 /*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
 /*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
 /*!50503 SET NAMES utf8mb4 */;
@@ -361,6 +360,7 @@ CREATE TABLE `t_lab` (
   `deleted` tinyint NOT NULL DEFAULT '0' COMMENT '逻辑删除（0-未删除，1-已删除）',
   `founding_date` varchar(50) DEFAULT NULL COMMENT '成立时间',
   `awards` text COMMENT '获得奖项',
+  `outstanding_seniors` text COMMENT '优秀学长（JSON格式：[{"name":"张三","major":"软件工程","achievement":"入职腾讯"}]）',
   `basic_info` text COMMENT '基础信息',
   `advisors` varchar(255) DEFAULT NULL COMMENT '指导老师',
   `current_admins` varchar(255) DEFAULT NULL COMMENT '现任管理员',

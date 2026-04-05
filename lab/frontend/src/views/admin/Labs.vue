@@ -43,6 +43,7 @@
         </el-table-column>
         <el-table-column label="操作" fixed="right" min-width="220">
           <template #default="{ row }">
+            <el-button link type="primary" @click="$router.push(`/lab-info/${row.id}`)">查看</el-button>
             <el-button link type="primary" @click="openDialog(row)">编辑</el-button>
             <el-button v-if="isSuperAdmin" link type="danger" @click="handleDelete(row)">删除</el-button>
           </template>

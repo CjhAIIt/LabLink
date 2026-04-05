@@ -117,8 +117,9 @@ public class LabSpaceController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public Result<Boolean> confirmAttendance(@RequestBody Map<String, Object> request) {
         try {
-            User currentAdmin = getCurrentLabManager();
-            Long scopedLabId = currentUserAccessor.resolveLabScope(currentAdmin, getLongValue(request.get("labId")));
+            Long requestedLabId = getLongValue(request.get("labId"));
+            User currentAdmin = getCurrentLabOperator(requestedLabId);
+            Long scopedLabId = currentUserAccessor.resolveLabScope(currentAdmin, requestedLabId);
             Long userId = getLongValue(request.get("userId"));
             Integer status = getIntegerValue(request.get("status"));
             String attendanceDate = request.get("attendanceDate") == null
@@ -308,17 +309,18 @@ public class LabSpaceController {
     }
 
     @GetMapping("/exit-application/list")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public Result<Page<LabExitApplication>> getLabExitApplications(@RequestParam(defaultValue = "1") Integer pageNum,
                                                                    @RequestParam(defaultValue = "10") Integer pageSize,
+                                                                   @RequestParam(required = false) Long labId,
                                                                    @RequestParam(required = false) Integer status,
                                                                    @RequestParam(required = false) String realName) {
         try {
-            User currentAdmin = getCurrentLabManager();
+            User currentAdmin = getCurrentLabOperator(labId);
             return Result.success(labExitApplicationService.getLabApplicationPage(
                     pageNum,
                     pageSize,
-                    currentAdmin.getLabId(),
+                    currentUserAccessor.resolveLabScope(currentAdmin, labId),
                     status,
                     realName
             ));
@@ -331,8 +333,8 @@ public class LabSpaceController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public Result<Boolean> auditExitApplication(@RequestBody Map<String, Object> request) {
         try {
-            User currentAdmin = getCurrentLabManager();
             Long id = getLongValue(request.get("id"));
+            User currentAdmin = resolveExitAuditOperator(id);
             Integer status = getIntegerValue(request.get("status"));
             String auditRemark = request.get("auditRemark") == null ? null : String.valueOf(request.get("auditRemark"));
             return Result.success(labExitApplicationService.audit(id, status, auditRemark, currentAdmin));
@@ -341,13 +343,40 @@ public class LabSpaceController {
         }
     }
 
-    private User getCurrentLabManager() {
+    private User getCurrentLabOperator(Long labId) {
         User currentUser = getCurrentUser();
+        if (currentUserAccessor.isSuperAdmin(currentUser)) {
+            if (labId == null) {
+                throw new RuntimeException("Lab id is required");
+            }
+            currentUser.setLabId(currentUserAccessor.resolveLabScope(currentUser, labId));
+            return currentUser;
+        }
         if (!currentUserAccessor.isLabManager(currentUser)) {
             throw new RuntimeException("Only lab managers can access this function");
         }
         currentUser.setLabId(currentUserAccessor.resolveLabScope(currentUser, null));
         return currentUser;
+    }
+
+    private User resolveExitAuditOperator(Long exitApplicationId) {
+        if (exitApplicationId == null) {
+            throw new RuntimeException("Exit application id is required");
+        }
+        User currentUser = getCurrentUser();
+        if (currentUserAccessor.isLabManager(currentUser)) {
+            currentUser.setLabId(currentUserAccessor.resolveLabScope(currentUser, null));
+            return currentUser;
+        }
+        if (currentUserAccessor.isSuperAdmin(currentUser)) {
+            LabExitApplication application = labExitApplicationService.getById(exitApplicationId);
+            if (application == null) {
+                throw new RuntimeException("Exit application not found");
+            }
+            currentUser.setLabId(currentUserAccessor.resolveLabScope(currentUser, application.getLabId()));
+            return currentUser;
+        }
+        throw new RuntimeException("Only lab managers can access this function");
     }
 
     private User getCurrentUser() {
