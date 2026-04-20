@@ -1,0 +1,97 @@
+server:
+  port: ${SERVER_PORT:8081}
+
+spring:
+  application:
+    name: aiit-lab-management-platform
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: ${DB_URL:jdbc:mysql://localhost:3306/lab_recruitment?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true}
+    username: ${DB_USERNAME:root}
+    password: ${DB_PASSWORD:123456}
+  mail:
+    host: ${MAIL_HOST:smtp.qq.com}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    protocol: smtp
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          ssl:
+            enable: true
+          connectiontimeout: 5000
+          timeout: 5000
+          writetimeout: 5000
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+  global-config:
+    db-config:
+      logic-delete-field: deleted
+      logic-delete-value: 1
+      logic-not-delete-value: 0
+  mapper-locations: classpath:mapper/*.xml
+
+jwt:
+  secret: ${JWT_SECRET:local-dev-secret-key-change-in-production}
+  expiration: 86400000
+
+file:
+  upload-path: ${FILE_UPLOAD_PATH:./uploads/}
+  protected-upload-path: ${FILE_PROTECTED_UPLOAD_PATH:./uploads_protected/}
+
+judge:
+  python-command: ${JUDGE_PYTHON_COMMAND:python}
+  c-compiler-command: ${JUDGE_C_COMPILER_COMMAND:gcc}
+  cpp-compiler-command: ${JUDGE_CPP_COMPILER_COMMAND:g++}
+  java-compiler-command: ${JUDGE_JAVA_COMPILER_COMMAND:javac}
+  java-command: ${JUDGE_JAVA_COMMAND:java}
+  work-dir: ${JUDGE_WORK_DIR:./.judge-work}
+
+gradpath:
+  base-url: ${GRADPATH_BASE_URL:http://localhost:8080}
+  ws-url: ${GRADPATH_WS_URL:ws://localhost:8080/ws/interview}
+
+logging:
+  level:
+    org.springframework.security: INFO
+    com.lab.recruitment: INFO
+    org.springframework.web: INFO
+  file:
+    name: logs/application.log
+  pattern:
+    file: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+app:
+  security:
+    allow-credentials: false
+    trust-forward-headers: ${TRUST_FORWARD_HEADERS:false}
+    allowed-origins:
+      - http://localhost:3000
+      - http://127.0.0.1:3000
+      - http://localhost:4173
+      - http://127.0.0.1:4173
+      - http://localhost:5173
+      - http://127.0.0.1:5173
+      - http://localhost
+      - https://localhost
+      - capacitor://localhost
+      - http://101.35.79.76
+      - https://101.35.79.76
+    rate-limit:
+      max-tracked-clients: ${APP_SECURITY_RATE_LIMIT_MAX_TRACKED_CLIENTS:4096}
+      bucket-idle-seconds: ${APP_SECURITY_RATE_LIMIT_BUCKET_IDLE_SECONDS:1800}
+  email-auth:
+    from-name: 安徽信息工程学院实验室管理平台
+    code-expire-minutes: 10
+    resend-interval-seconds: 60
+  seed:
+    normalize-demo-data: true

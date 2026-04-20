@@ -1,0 +1,258 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.recruitment.mapper.UserMapper">
+
+    <select id="selectUsersByRole" resultType="com.lab.recruitment.entity.User">
+        SELECT id, username, password, real_name, role, student_id, college, major, grade,
+               phone, email, avatar, resume, lab_id, can_edit, create_time, update_time, status, deleted
+        FROM t_user
+        WHERE role = #{role} AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="selectAllAdmins" resultType="com.lab.recruitment.entity.User">
+        SELECT id, username, password, real_name, role, student_id, college, major, grade,
+               phone, email, avatar, resume, lab_id, can_edit, create_time, update_time, status, deleted
+        FROM t_user
+        WHERE role = 'admin' AND deleted = 0
+        ORDER BY create_time DESC
+    </select>
+
+    <select id="countByUsernameIncludeDeleted" resultType="int">
+        SELECT COUNT(1)
+        FROM t_user
+        WHERE username = #{username} AND deleted = #{deleted}
+    </select>
+
+    <select id="countByStudentIdIncludeDeleted" resultType="int">
+        SELECT COUNT(1)
+        FROM t_user
+        WHERE student_id = #{studentId} AND deleted = #{deleted}
+    </select>
+
+    <select id="countByEmailIncludeDeleted" resultType="int">
+        SELECT COUNT(1)
+        FROM t_user
+        WHERE email = #{email} AND deleted = #{deleted}
+    </select>
+
+    <select id="countByPhoneIncludeDeleted" resultType="int">
+        SELECT COUNT(1)
+        FROM t_user
+        WHERE phone = #{phone} AND deleted = #{deleted}
+    </select>
+
+    <select id="selectStudentPageForAdmin" resultType="com.lab.recruitment.entity.User">
+        SELECT
+            u.id,
+            u.username,
+            u.password,
+            u.real_name,
+            u.role,
+            u.student_id,
+            u.college,
+            u.major,
+            u.grade,
+            u.phone,
+            u.email,
+            u.avatar,
+            u.resume,
+            u.lab_id,
+            u.can_edit,
+            u.create_time,
+            u.update_time,
+            u.status,
+            u.deleted,
+            COALESCE(SUM(CASE WHEN d.audit_status = 0 THEN 1 ELSE 0 END), 0) AS pending_count,
+            COALESCE(SUM(CASE WHEN d.audit_status = 1 THEN 1 ELSE 0 END), 0) AS approved_count,
+            COALESCE(SUM(CASE WHEN d.audit_status = 2 THEN 1 ELSE 0 END), 0) AS rejected_count
+        FROM t_user u
+        LEFT JOIN t_delivery d
+            ON d.user_id = u.id
+            AND d.deleted = 0
+            <if test="labId != null">
+                AND d.lab_id = #{labId}
+            </if>
+            <if test="labId == null and collegeId != null">
+                AND EXISTS (
+                    SELECT 1
+                    FROM t_lab dl
+                    WHERE dl.id = d.lab_id
+                      AND dl.deleted = 0
+                      AND dl.college_id = #{collegeId}
+                )
+            </if>
+        WHERE u.role = 'student'
+          AND u.deleted = 0
+          <if test="keyword != null and keyword != ''">
+              AND (
+                  u.real_name LIKE CONCAT('%', #{keyword}, '%')
+                  OR u.student_id LIKE CONCAT('%', #{keyword}, '%')
+              )
+          </if>
+          <if test="realName != null and realName != ''">
+              AND u.real_name LIKE CONCAT('%', #{realName}, '%')
+          </if>
+          <if test="studentId != null and studentId != ''">
+              AND u.student_id LIKE CONCAT('%', #{studentId}, '%')
+          </if>
+          <if test="major != null and major != ''">
+              AND u.major LIKE CONCAT('%', #{major}, '%')
+          </if>
+          <if test="labId != null">
+              AND (
+                  EXISTS (
+                      SELECT 1
+                      FROM t_delivery dx
+                      WHERE dx.user_id = u.id
+                        AND dx.lab_id = #{labId}
+                        AND dx.deleted = 0
+                  )
+                  OR EXISTS (
+                      SELECT 1
+                      FROM t_lab_member lm
+                      WHERE lm.user_id = u.id
+                        AND lm.lab_id = #{labId}
+                        AND lm.deleted = 0
+                  )
+              )
+          </if>
+          <if test="labId == null and collegeId != null">
+              AND (
+                  EXISTS (
+                      SELECT 1
+                      FROM t_delivery dx
+                      LEFT JOIN t_lab dl ON dl.id = dx.lab_id AND dl.deleted = 0
+                      WHERE dx.user_id = u.id
+                        AND dx.deleted = 0
+                        AND dl.college_id = #{collegeId}
+                  )
+                  OR EXISTS (
+                      SELECT 1
+                      FROM t_lab_member lm
+                      LEFT JOIN t_lab ll ON ll.id = lm.lab_id AND ll.deleted = 0
+                      WHERE lm.user_id = u.id
+                        AND lm.deleted = 0
+                        AND ll.college_id = #{collegeId}
+                  )
+              )
+          </if>
+        GROUP BY
+            u.id,
+            u.username,
+            u.password,
+            u.real_name,
+            u.role,
+            u.student_id,
+            u.college,
+            u.major,
+            u.grade,
+            u.phone,
+            u.email,
+            u.avatar,
+            u.resume,
+            u.lab_id,
+            u.can_edit,
+            u.create_time,
+            u.update_time,
+            u.status,
+            u.deleted
+        ORDER BY
+            <choose>
+                <when test="labId != null">
+                    MAX(d.delivery_time) DESC,
+                </when>
+                <otherwise>
+                    u.create_time DESC,
+                </otherwise>
+            </choose>
+            u.id DESC
+        LIMIT #{offset}, #{pageSize}
+    </select>
+
+    <select id="countStudentPageForAdmin" resultType="long">
+        SELECT COUNT(1)
+        FROM t_user u
+        WHERE u.role = 'student'
+          AND u.deleted = 0
+          <if test="keyword != null and keyword != ''">
+              AND (
+                  u.real_name LIKE CONCAT('%', #{keyword}, '%')
+                  OR u.student_id LIKE CONCAT('%', #{keyword}, '%')
+              )
+          </if>
+          <if test="realName != null and realName != ''">
+              AND u.real_name LIKE CONCAT('%', #{realName}, '%')
+          </if>
+          <if test="studentId != null and studentId != ''">
+              AND u.student_id LIKE CONCAT('%', #{studentId}, '%')
+          </if>
+          <if test="major != null and major != ''">
+              AND u.major LIKE CONCAT('%', #{major}, '%')
+          </if>
+          <if test="labId != null">
+              AND (
+                  EXISTS (
+                      SELECT 1
+                      FROM t_delivery dx
+                      WHERE dx.user_id = u.id
+                        AND dx.lab_id = #{labId}
+                        AND dx.deleted = 0
+                  )
+                  OR EXISTS (
+                      SELECT 1
+                      FROM t_lab_member lm
+                      WHERE lm.user_id = u.id
+                        AND lm.lab_id = #{labId}
+                        AND lm.deleted = 0
+                  )
+              )
+          </if>
+          <if test="labId == null and collegeId != null">
+              AND (
+                  EXISTS (
+                      SELECT 1
+                      FROM t_delivery dx
+                      LEFT JOIN t_lab dl ON dl.id = dx.lab_id AND dl.deleted = 0
+                      WHERE dx.user_id = u.id
+                        AND dx.deleted = 0
+                        AND dl.college_id = #{collegeId}
+                  )
+                  OR EXISTS (
+                      SELECT 1
+                      FROM t_lab_member lm
+                      LEFT JOIN t_lab ll ON ll.id = lm.lab_id AND ll.deleted = 0
+                      WHERE lm.user_id = u.id
+                        AND lm.deleted = 0
+                        AND ll.college_id = #{collegeId}
+                  )
+              )
+          </if>
+    </select>
+
+    <select id="findByUsernameAndDeleted" resultType="com.lab.recruitment.entity.User">
+        SELECT id, username, password, real_name, role, student_id, college, major, grade,
+               phone, email, avatar, resume, lab_id, can_edit, create_time, update_time, status, deleted
+        FROM t_user
+        WHERE username = #{username} AND deleted = #{deleted}
+    </select>
+
+    <update id="restoreDeletedUser">
+        UPDATE t_user
+        SET username = #{username},
+            password = #{password},
+            real_name = #{realName},
+            role = #{role},
+            student_id = #{studentId},
+            college = #{college},
+            major = #{major},
+            grade = #{grade},
+            phone = #{phone},
+            email = #{email},
+            status = #{status},
+            deleted = 0,
+            update_time = NOW()
+        WHERE id = #{id} AND deleted = 1
+    </update>
+
+</mapper>

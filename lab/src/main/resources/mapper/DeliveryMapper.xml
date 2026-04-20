@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.lab.recruitment.mapper.DeliveryMapper">
+
+    <select id="selectDeliveryPage" resultType="java.util.HashMap">
+        SELECT
+            d.id,
+            d.user_id AS userId,
+            d.lab_id AS labId,
+            d.skill_tags AS skillTags,
+            d.study_progress AS reason,
+            d.attachment_url AS attachmentUrl,
+            d.delivery_attempt_count AS deliveryAttemptCount,
+            d.withdraw_count AS withdrawCount,
+            d.delivery_time AS createTime,
+            d.audit_status AS status,
+            d.audit_remark AS comment,
+            d.update_time AS updateTime,
+            d.is_admitted AS isAdmitted,
+            d.admit_time AS admitTime,
+            u.real_name AS studentName,
+            u.student_id AS studentId,
+            u.college,
+            u.major,
+            u.phone,
+            u.email,
+            u.resume AS resumeUrl,
+            l.lab_name AS labName
+        FROM t_delivery d
+        LEFT JOIN t_user u ON d.user_id = u.id
+        LEFT JOIN t_lab l ON d.lab_id = l.id
+        <where>
+            d.deleted = 0
+            <if test="labId != null">
+                AND d.lab_id = #{labId}
+            </if>
+            <if test="realName != null and realName != ''">
+                AND u.real_name LIKE CONCAT('%', #{realName}, '%')
+            </if>
+            <if test="studentId != null and studentId != ''">
+                AND u.student_id LIKE CONCAT('%', #{studentId}, '%')
+            </if>
+            <if test="auditStatus != null">
+                AND d.audit_status = #{auditStatus}
+            </if>
+        </where>
+        ORDER BY d.delivery_time DESC
+    </select>
+
+    <select id="selectMyDeliveryPage" resultType="java.util.HashMap">
+        SELECT
+            d.id,
+            d.user_id AS userId,
+            d.lab_id AS labId,
+            d.skill_tags AS skillTags,
+            d.study_progress AS reason,
+            d.attachment_url AS attachmentUrl,
+            d.delivery_attempt_count AS deliveryAttemptCount,
+            d.withdraw_count AS withdrawCount,
+            d.delivery_time AS createTime,
+            d.audit_status AS status,
+            d.audit_remark AS comment,
+            d.update_time AS updateTime,
+            d.is_admitted AS isAdmitted,
+            d.admit_time AS admitTime,
+            u.real_name AS studentName,
+            u.student_id AS studentId,
+            u.college,
+            u.major,
+            u.phone,
+            u.email,
+            u.resume AS resumeUrl,
+            l.lab_name AS labName
+        FROM t_delivery d
+        LEFT JOIN t_user u ON d.user_id = u.id
+        LEFT JOIN t_lab l ON d.lab_id = l.id
+        <where>
+            d.deleted = 0
+            AND u.username = #{username}
+            <if test="labName != null and labName != ''">
+                AND l.lab_name LIKE CONCAT('%', #{labName}, '%')
+            </if>
+            <if test="auditStatus != null">
+                AND d.audit_status = #{auditStatus}
+            </if>
+        </where>
+        ORDER BY d.delivery_time DESC
+    </select>
+
+    <select id="selectPendingOfferList" resultType="java.util.HashMap">
+        SELECT
+            d.id,
+            d.user_id AS userId,
+            d.lab_id AS labId,
+            d.skill_tags AS skillTags,
+            d.study_progress AS reason,
+            d.attachment_url AS attachmentUrl,
+            d.delivery_attempt_count AS deliveryAttemptCount,
+            d.withdraw_count AS withdrawCount,
+            d.delivery_time AS createTime,
+            d.audit_status AS status,
+            d.audit_remark AS comment,
+            d.update_time AS updateTime,
+            d.is_admitted AS isAdmitted,
+            d.admit_time AS admitTime,
+            u.real_name AS studentName,
+            u.student_id AS studentId,
+            u.resume AS resumeUrl,
+            l.lab_name AS labName
+        FROM t_delivery d
+        LEFT JOIN t_user u ON d.user_id = u.id
+        LEFT JOIN t_lab l ON d.lab_id = l.id
+        <where>
+            d.deleted = 0
+            AND u.username = #{username}
+            AND d.is_admitted = 2
+        </where>
+        ORDER BY d.admit_time DESC, d.audit_time DESC
+        LIMIT 5
+    </select>
+
+    <select id="countByLabIdAndAuditStatus" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM t_delivery
+        WHERE lab_id = #{labId}
+          AND audit_status = #{auditStatus}
+          AND deleted = 0
+    </select>
+
+    <select id="countAdmittedByLabId" resultType="java.lang.Integer">
+        SELECT COUNT(*)
+        FROM t_delivery
+        WHERE lab_id = #{labId}
+          AND is_admitted = 1
+          AND deleted = 0
+    </select>
+
+</mapper>
