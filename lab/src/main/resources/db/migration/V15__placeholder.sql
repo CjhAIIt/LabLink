@@ -1,0 +1,1 @@
+-- V15 migration removed; placeholder to satisfy Flyway validation

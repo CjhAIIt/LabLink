@@ -1,0 +1,21 @@
+CREATE TABLE IF NOT EXISTS t_lab_info_change_review (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    lab_id BIGINT NOT NULL,
+    version_no INT NOT NULL,
+    applicant_user_id BIGINT NOT NULL,
+    reviewer_id BIGINT NULL,
+    review_status VARCHAR(32) NOT NULL,
+    review_comment VARCHAR(500) NULL,
+    review_snapshot LONGTEXT NOT NULL,
+    review_time DATETIME NULL,
+    created_by BIGINT NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by BIGINT NULL,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT NOT NULL DEFAULT 0,
+    version INT NOT NULL DEFAULT 0,
+    UNIQUE KEY uk_lab_info_change_review_version (lab_id, version_no),
+    KEY idx_lab_info_change_review_status (review_status, create_time),
+    KEY idx_lab_info_change_review_lab (lab_id, create_time),
+    KEY idx_lab_info_change_review_applicant (applicant_user_id, create_time)
+);

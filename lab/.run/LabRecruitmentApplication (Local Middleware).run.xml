@@ -1,0 +1,25 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="LabRecruitmentApplication (Local Middleware)" type="SpringBootApplicationConfigurationType" factoryName="Spring Boot">
+    <envs>
+      <env name="DB_PASSWORD" value="LabLinkLocalRoot!2026" />
+      <env name="DB_URL" value="jdbc:mysql://localhost:3307/lab_recruitment?useUnicode=true&amp;characterEncoding=utf-8&amp;useSSL=false&amp;serverTimezone=GMT%2B8&amp;allowPublicKeyRetrieval=true" />
+      <env name="DB_USERNAME" value="root" />
+      <env name="JWT_SECRET" value="LabLinkLocalJwtSecretForPhase2Wave1!2026" />
+      <env name="LABLINK_CACHE_REDIS_ENABLED" value="true" />
+      <env name="LABLINK_MQ_RABBIT_ENABLED" value="true" />
+      <env name="RABBITMQ_HOST" value="localhost" />
+      <env name="RABBITMQ_PASSWORD" value="guest" />
+      <env name="RABBITMQ_PORT" value="5672" />
+      <env name="RABBITMQ_USERNAME" value="guest" />
+      <env name="RABBITMQ_VHOST" value="/" />
+      <env name="REDIS_HOST" value="localhost" />
+      <env name="REDIS_PORT" value="6379" />
+      <env name="SERVER_PORT" value="8080" />
+    </envs>
+    <module name="lab-recruitment" />
+    <option name="SPRING_BOOT_MAIN_CLASS" value="com.lab.recruitment.LabRecruitmentApplication" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
