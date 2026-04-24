@@ -69,7 +69,7 @@
     </div>
 
     <div class="report-actions">
-      <el-button @click="$router.push('/student/ai-interview')">返回首页</el-button>
+      <el-button @click="router.push(homePath)">返回首页</el-button>
       <el-button type="primary" @click="retry" v-if="!store.isFormal">再来一次</el-button>
     </div>
   </div>
@@ -77,12 +77,16 @@
 
 <script setup>
 import { computed } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAiInterviewStore } from '@/stores/aiInterview'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
 
+const route = useRoute()
 const router = useRouter()
 const store = useAiInterviewStore()
 const report = computed(() => store.report)
+const homePath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview'))
+const sessionPath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview/session'))
 
 const scoreColor = computed(() => {
   const s = report.value?.score || 0
@@ -115,7 +119,7 @@ function retry() {
   store.reset()
   store.setMode('mock')
   store.setModule(moduleId, moduleName)
-  router.push('/student/ai-interview/session')
+  router.push(sessionPath.value)
 }
 </script>
 

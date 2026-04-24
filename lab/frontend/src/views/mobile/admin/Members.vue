@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="m-page">
     <section v-if="!managedLabId" class="panel-card">
       <el-empty description="当前账号没有绑定实验室管理范围。" :image-size="88" />
@@ -27,7 +27,7 @@
             <div><span>联系方式</span><strong>{{ row.email || row.phone || '-' }}</strong></div>
           </div>
 
-          <div class="action-row" v-if="canManageMembers && row.memberRole !== 'lab_admin'">
+          <div class="action-row" v-if="canManageRow(row)">
             <el-button v-if="canPromote(row)" text type="primary" @click="appoint(row)">设为负责人</el-button>
             <el-button text type="danger" @click="remove(row)">移出实验室</el-button>
           </div>
@@ -51,7 +51,6 @@ const rows = ref([])
 const keyword = ref('')
 
 const managedLabId = computed(() => userStore.userInfo?.managedLabId || userStore.userInfo?.labId || null)
-const canManageMembers = computed(() => Boolean(userStore.userInfo?.labManager))
 
 const resetAndFetch = async () => {
   if (!managedLabId.value) {
@@ -80,13 +79,21 @@ const remove = async (row) => {
   await resetAndFetch()
 }
 
-const canPromote = (row) => row.memberRole !== 'leader' && row.memberRole !== 'lab_leader'
+const canManageRow = (row) => {
+  return row.memberRole !== 'lab_admin' && row.userId !== userStore.userInfo?.id
+}
+
+const canPromote = (row) => {
+  return canManageRow(row) && row.memberRole !== 'leader' && row.memberRole !== 'lab_leader'
+}
+
 const roleLabel = (role) => ({
   lab_admin: '管理员',
   lab_leader: '负责人',
   leader: '负责人',
   member: '成员'
 }[role] || '成员')
+
 const roleClass = (role) => ({
   lab_admin: 'danger',
   lab_leader: 'success',

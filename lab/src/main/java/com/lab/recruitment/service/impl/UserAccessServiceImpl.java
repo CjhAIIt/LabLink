@@ -129,10 +129,16 @@ public class UserAccessServiceImpl implements UserAccessService {
         if (profile.getManagedLabId() != null) {
             return profile.getManagedLabId();
         }
-        if (user != null && user.getLabId() != null) {
+        if (user == null) {
+            return null;
+        }
+        if (IDENTITY_STUDENT.equalsIgnoreCase(profile.getPrimaryIdentity())) {
+            return findActiveMemberLabId(user.getId());
+        }
+        if (user.getLabId() != null) {
             return user.getLabId();
         }
-        return findActiveMemberLabId(user == null ? null : user.getId());
+        return findActiveMemberLabId(user.getId());
     }
 
     @Override
@@ -286,14 +292,14 @@ public class UserAccessServiceImpl implements UserAccessService {
         if (profile.isCollegeManager() || profile.isLabManager()) {
             return ROLE_ADMIN;
         }
-        if (IDENTITY_TEACHER.equalsIgnoreCase(profile.getPrimaryIdentity())) {
-            return ROLE_TEACHER;
-        }
         if (user != null && ROLE_SUPER_ADMIN.equalsIgnoreCase(user.getRole())) {
             return ROLE_SUPER_ADMIN;
         }
         if (user != null && ROLE_ADMIN.equalsIgnoreCase(user.getRole()) && !StringUtils.hasText(user.getStudentId())) {
             return ROLE_ADMIN;
+        }
+        if (IDENTITY_TEACHER.equalsIgnoreCase(profile.getPrimaryIdentity())) {
+            return ROLE_TEACHER;
         }
         return ROLE_STUDENT;
     }
@@ -324,10 +330,7 @@ public class UserAccessServiceImpl implements UserAccessService {
             return profile.getManagedLabId();
         }
         if (IDENTITY_STUDENT.equalsIgnoreCase(profile.getPrimaryIdentity())) {
-            Long memberLabId = findActiveMemberLabId(user.getId());
-            if (memberLabId != null) {
-                return memberLabId;
-            }
+            return findActiveMemberLabId(user.getId());
         }
         if (profile.isSchoolDirector() || profile.isCollegeManager()) {
             return null;

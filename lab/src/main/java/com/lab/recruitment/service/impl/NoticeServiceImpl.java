@@ -5,21 +5,28 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lab.recruitment.entity.Lab;
 import com.lab.recruitment.entity.Notice;
 import com.lab.recruitment.entity.User;
+import com.lab.recruitment.mapper.LabMemberMapper;
 import com.lab.recruitment.mapper.NoticeMapper;
 import com.lab.recruitment.service.LabService;
 import com.lab.recruitment.service.NoticeService;
+import com.lab.recruitment.service.SystemNotificationService;
 import com.lab.recruitment.support.CurrentUserAccessor;
+import com.lab.recruitment.support.DataScope;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 @Service
 public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> implements NoticeService {
@@ -32,6 +39,15 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
     @Autowired
     private LabService labService;
 
+    @Autowired
+    private LabMemberMapper labMemberMapper;
+
+    @Autowired
+    private SystemNotificationService systemNotificationService;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
+
     @Value("${app.search.notice-fulltext-enabled:true}")
     private boolean noticeFullTextEnabled;
 
@@ -42,7 +58,11 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
         Long scopedCollegeId = collegeId;
         String normalizedScope = normalizeScope(publishScope);
         String normalizedKeyword = trimToNull(keyword);
-        if (!currentUserAccessor.isSuperAdmin(currentUser) && currentUserAccessor.isLabScopedManager(currentUser)) {
+        if (!currentUserAccessor.isSuperAdmin(currentUser) && currentUserAccessor.isCollegeManager(currentUser)) {
+            DataScope scope = currentUserAccessor.resolveManagementScope(currentUser, collegeId, labId);
+            scopedCollegeId = scope.getCollegeId();
+            scopedLabId = scope.getLabId();
+        } else if (!currentUserAccessor.isSuperAdmin(currentUser) && currentUserAccessor.isLabScopedManager(currentUser)) {
             scopedLabId = currentUserAccessor.resolveLabScope(currentUser, labId);
             Lab currentLab = labService.getById(scopedLabId);
             scopedCollegeId = currentLab == null ? collegeId : currentLab.getCollegeId();
@@ -63,15 +83,13 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
     public List<Map<String, Object>> getLatestNotices(User currentUser, int limit) {
         Long labId = null;
         Long collegeId = null;
-        if (currentUser != null && currentUser.getLabId() != null) {
-            labId = currentUser.getLabId();
-            Lab lab = labService.getById(labId);
-            if (lab != null) {
-                collegeId = lab.getCollegeId();
-            }
-        }
         if (currentUser != null && currentUserAccessor.isSuperAdmin(currentUser)) {
             return baseMapper.selectNoticePageByLike(new Page<>(1, limit), null, null, null, null).getRecords();
+        }
+        if (currentUser != null) {
+            DataScope scope = currentUserAccessor.buildDataScope(currentUser);
+            labId = scope.getLabId();
+            collegeId = scope.getCollegeId();
         }
         return baseMapper.selectLatestNotices(Math.max(limit, 1), collegeId, labId);
     }
@@ -83,7 +101,11 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
         notice.setPublisherId(currentUser.getId());
         notice.setPublishTime(LocalDateTime.now());
         notice.setStatus(notice.getStatus() == null ? 1 : notice.getStatus());
-        return this.save(notice);
+        boolean saved = this.save(notice);
+        if (saved && Integer.valueOf(1).equals(notice.getStatus())) {
+            notifyNoticeReceivers(notice);
+        }
+        return saved;
     }
 
     @Override
@@ -124,6 +146,10 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
         }
         String scope = normalizeScope(notice.getPublishScope());
         if (!currentUserAccessor.isSuperAdmin(currentUser)) {
+            prepareManagedNotice(notice, currentUser, scope);
+            return;
+        }
+        if (!currentUserAccessor.isSuperAdmin(currentUser)) {
             if (currentUser.getLabId() == null) {
                 throw new RuntimeException("当前账号未绑定实验室");
             }
@@ -157,12 +183,98 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
     }
 
     private void assertCanManageNotice(Notice notice, User currentUser) {
+        if (currentUserAccessor.isCollegeManager(currentUser)) {
+            if ("college".equalsIgnoreCase(notice.getPublishScope())) {
+                currentUserAccessor.assertCollegeScope(currentUser, notice.getCollegeId());
+                return;
+            }
+            currentUserAccessor.assertLabScope(currentUser, notice.getLabId());
+            return;
+        }
+        if (!currentUserAccessor.isSuperAdmin(currentUser)) {
+            currentUserAccessor.assertLabScope(currentUser, notice.getLabId());
+            return;
+        }
         if (currentUserAccessor.isSuperAdmin(currentUser)) {
             return;
         }
         if (currentUser.getLabId() == null || !currentUser.getLabId().equals(notice.getLabId())) {
             throw new RuntimeException("无权操作其他实验室公告");
         }
+    }
+
+    private void prepareManagedNotice(Notice notice, User currentUser, String scope) {
+        if (currentUserAccessor.isCollegeManager(currentUser)) {
+            Long managedCollegeId = currentUserAccessor.resolveManagedCollegeId(currentUser);
+            if (managedCollegeId == null) {
+                throw new RuntimeException("当前学院管理员未绑定学院");
+            }
+            if ("lab".equals(scope)) {
+                Long scopedLabId = currentUserAccessor.resolveLabScope(currentUser, notice.getLabId());
+                Lab lab = labService.getById(scopedLabId);
+                notice.setPublishScope("lab");
+                notice.setLabId(scopedLabId);
+                notice.setCollegeId(lab == null ? managedCollegeId : lab.getCollegeId());
+                return;
+            }
+            notice.setPublishScope("college");
+            notice.setCollegeId(managedCollegeId);
+            notice.setLabId(null);
+            return;
+        }
+
+        Long scopedLabId = currentUserAccessor.resolveLabScope(currentUser, notice.getLabId());
+        Lab lab = labService.getById(scopedLabId);
+        notice.setPublishScope("lab");
+        notice.setLabId(scopedLabId);
+        notice.setCollegeId(lab == null ? null : lab.getCollegeId());
+    }
+
+    private void notifyNoticeReceivers(Notice notice) {
+        Set<Long> receiverIds = resolveNoticeReceiverIds(notice);
+        for (Long receiverId : receiverIds) {
+            systemNotificationService.createNotificationAsync(
+                    receiverId,
+                    "新公告：" + notice.getTitle(),
+                    "有一条新的公告，请及时查看。",
+                    "notice",
+                    notice.getId(),
+                    "/student/notices"
+            );
+        }
+    }
+
+    private Set<Long> resolveNoticeReceiverIds(Notice notice) {
+        Set<Long> receiverIds = new LinkedHashSet<>();
+        if (notice == null) {
+            return receiverIds;
+        }
+        if ("lab".equalsIgnoreCase(notice.getPublishScope()) && notice.getLabId() != null) {
+            for (Map<String, Object> member : labMemberMapper.selectActiveMembersByLabId(notice.getLabId())) {
+                Object userId = member.get("userId");
+                if (userId instanceof Number) {
+                    receiverIds.add(((Number) userId).longValue());
+                }
+            }
+            return receiverIds;
+        }
+        List<Object> args = new ArrayList<>();
+        StringBuilder sql = new StringBuilder(
+                "SELECT DISTINCT m.user_id FROM t_lab_member m " +
+                        "INNER JOIN t_lab l ON l.id = m.lab_id AND l.deleted = 0 " +
+                        "WHERE m.deleted = 0 AND m.status = 'active'"
+        );
+        if ("college".equalsIgnoreCase(notice.getPublishScope())) {
+            sql.append(" AND l.college_id = ?");
+            args.add(notice.getCollegeId());
+        }
+        for (Map<String, Object> row : jdbcTemplate.queryForList(sql.toString(), args.toArray())) {
+            Object userId = row.get("user_id");
+            if (userId instanceof Number) {
+                receiverIds.add(((Number) userId).longValue());
+            }
+        }
+        return receiverIds;
     }
 
     private String normalizeScope(String scope) {

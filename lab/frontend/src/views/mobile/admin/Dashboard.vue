@@ -116,7 +116,14 @@ const quickActions = computed(() =>
       ? { path: '/m/admin/attendance', title: '考勤管理', description: '任务、动态码、请假和记录修正' }
       : null,
     userStore.hasPermission('member:manage') ? { path: '/m/admin/members', title: '成员管理', description: '查看成员并进行负责人或移除操作' } : null,
+    userStore.hasPermission('statistics:school:view') || userStore.hasPermission('statistics:college:view') || userStore.hasPermission('statistics:lab:view')
+      ? { path: '/m/admin/statistics', title: '统计分析', description: '查看实验室、成员和资料结构变化' }
+      : null,
+    userStore.hasPermission('member:manage') || userStore.hasPermission('lab:apply:audit')
+      ? { path: '/m/admin/ai-interview-records', title: 'AI 面试记录', description: '按学生查看面试评分、标签和建议' }
+      : null,
     userStore.hasPermission('profile:review') ? { path: '/m/admin/profiles', title: '档案审核', description: '查看资料详情并完成通过或驳回' } : null,
+    userStore.hasPermission('exam:manage') ? { path: '/m/admin/exam-hub', title: '笔试 / 阅卷', description: '管理笔试、题库、阅卷和成绩', } : null,
     userStore.hasPermission('device:manage') ? { path: '/m/admin/devices', title: '设备中心', description: '设备台账、借还记录和维修处理' } : null,
     userStore.hasPermission('notice:manage') ? { path: '/m/admin/notices-manage', title: '公告管理', description: '发布、编辑和删除学校、学院或实验室公告' } : null,
     { path: '/m/admin/notifications', title: '消息中心', description: `未读 ${unreadCount.value} 条，统一处理提醒` },

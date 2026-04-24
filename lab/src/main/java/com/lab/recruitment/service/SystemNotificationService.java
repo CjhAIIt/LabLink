@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.lab.recruitment.entity.SystemNotification;
 import com.lab.recruitment.entity.User;
 
+import java.util.Map;
+
 public interface SystemNotificationService extends IService<SystemNotification> {
 
     SystemNotification createNotification(Long userId, String title, String content, String type, Long relatedId);
@@ -21,6 +23,8 @@ public interface SystemNotificationService extends IService<SystemNotification> 
                                                 Integer isRead, String notificationType);
 
     long countUnread(User currentUser);
+
+    Map<String, Object> getTodoSummary(User currentUser);
 
     boolean markRead(User currentUser, Long notificationId);
 

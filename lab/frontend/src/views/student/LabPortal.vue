@@ -21,7 +21,7 @@
                   {{ overview.lab?.labDesc || '该实验室暂未补充详细介绍。' }}
                 </p>
                 <div class="hero-meta">
-                  <span>指导教师：{{ overview.lab?.advisors || '暂未填写' }}</span>
+                  <span>指导教师：{{ overview.lab?.teacherName || overview.lab?.advisors || '暂未填写' }}</span>
                   <span>当前管理员：{{ overview.lab?.currentAdmins || '暂未填写' }}</span>
                 </div>
               </div>

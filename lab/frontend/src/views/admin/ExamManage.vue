@@ -14,7 +14,31 @@
     </section>
 
     <TablePageCard title="笔试列表" subtitle="笔试中心" :count-label="`${pagination.total} 条`">
-      <el-table v-loading="loading" :data="exams" stripe>
+      <div v-loading="loading" class="exam-mobile-list mobile-only">
+        <article v-for="row in exams" :key="row.id" class="exam-mobile-card">
+          <div class="exam-mobile-card__head">
+            <div>
+              <strong>{{ row.title }}</strong>
+              <span>{{ row.labName || '所属实验室待定' }}</span>
+            </div>
+            <el-tag :type="statusType[row.status] || ''" size="small">{{ statusLabel[row.status] || row.status }}</el-tag>
+          </div>
+          <div class="exam-mobile-card__meta">
+            <span>开始 {{ fmtDT(row.startTime) }}</span>
+            <span>结束 {{ fmtDT(row.endTime) }}</span>
+            <span>时长 {{ row.duration }} 分钟</span>
+            <span>参与 {{ row.participantCount ?? 0 }} 人</span>
+          </div>
+          <p>{{ row.description || '暂无描述' }}</p>
+          <div class="exam-mobile-card__actions">
+            <el-button plain type="primary" @click="openDialog(row)">编辑</el-button>
+            <el-button v-if="row.status === 'draft'" plain type="success" @click="handlePublish(row)">发布</el-button>
+            <el-button plain type="danger" @click="handleDelete(row)">删除</el-button>
+          </div>
+        </article>
+        <el-empty v-if="!loading && !exams.length" description="暂无笔试" />
+      </div>
+      <el-table v-loading="loading" :data="exams" stripe class="desktop-only">
         <el-table-column prop="title" label="笔试标题" min-width="180" show-overflow-tooltip />
         <el-table-column prop="labName" label="所属实验室" min-width="140" />
         <el-table-column label="开始时间" min-width="170">
@@ -204,6 +228,65 @@ onMounted(() => Promise.all([loadLabOptions(), loadExams()]))
 </script>
 
 <style scoped>
+.exam-mobile-list {
+  display: grid;
+  gap: 12px;
+}
+
+.exam-mobile-card {
+  padding: 15px;
+  display: grid;
+  gap: 12px;
+  border-radius: 22px;
+  border: 1px solid rgba(51, 136, 187, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px rgba(23, 32, 51, 0.075);
+}
+
+.exam-mobile-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.exam-mobile-card__head strong {
+  display: block;
+  color: #172033;
+  font-size: 16px;
+}
+
+.exam-mobile-card__head span,
+.exam-mobile-card p,
+.exam-mobile-card__meta {
+  color: #64748b;
+}
+
+.exam-mobile-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exam-mobile-card__meta span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+
+.exam-mobile-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exam-mobile-card__actions .el-button {
+  flex: 1 1 0;
+}
+
 .two-column-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

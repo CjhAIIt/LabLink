@@ -5,14 +5,19 @@ import com.lab.recruitment.service.StatisticsService;
 import com.lab.recruitment.support.CurrentUserAccessor;
 import com.lab.recruitment.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ContentDisposition;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
@@ -58,6 +63,25 @@ public class StatisticsController {
             @RequestParam(required = false) Long labId) {
         User currentUser = currentUserAccessor.getCurrentUser();
         return Result.apiSuccess(statisticsService.getDashboard(currentUser, startDate, endDate, collegeId, labId));
+    }
+
+    @GetMapping("/dashboard/export")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER')")
+    public ResponseEntity<byte[]> exportDashboard(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+            @RequestParam(required = false) Long collegeId,
+            @RequestParam(required = false) Long labId) {
+        User currentUser = currentUserAccessor.getCurrentUser();
+        byte[] report = statisticsService.exportDashboardExcel(currentUser, startDate, endDate, collegeId, labId);
+        String fileName = "lablink-statistics-" + LocalDate.now() + ".xlsx";
+
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"));
+        headers.setContentLength(report.length);
+        headers.setContentDisposition(ContentDisposition.attachment().filename(fileName, StandardCharsets.UTF_8).build());
+
+        return ResponseEntity.ok().headers(headers).body(report);
     }
 
     @GetMapping("/labs")

@@ -72,18 +72,22 @@
 </template>
 
 <script setup>
-import { ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, ref, nextTick, onMounted, onBeforeUnmount, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox } from 'element-plus'
 import { useAiInterviewStore } from '@/stores/aiInterview'
 import { chatWithAI, generateReport, startInterviewSession, finishInterview } from '@/api/aiInterview'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
 
+const route = useRoute()
 const router = useRouter()
 const store = useAiInterviewStore()
 const chatAreaRef = ref(null)
 const userInput = ref('')
 const loadingFirst = ref(false)
 const generatingReport = ref(false)
+const homePath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview'))
+const reportPath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview/report'))
 
 // ---- 语音识别 ----
 const isRecording = ref(false)
@@ -150,7 +154,7 @@ watch(() => store.chatHistory.length, scrollToBottom)
 watch(() => store.isAIThinking, scrollToBottom)
 
 onMounted(() => {
-  if (!store.moduleName) { router.replace('/student/ai-interview'); return }
+  if (!store.moduleName) { router.replace(homePath.value); return }
   store.setPhase('interviewing')
 })
 
@@ -228,12 +232,12 @@ async function goReport() {
   }
   generatingReport.value = false
   store.setPhase('report')
-  router.push('/student/ai-interview/report')
+  router.push(reportPath.value)
 }
 </script>
 
 <style scoped>
-.interview-session { display: flex; flex-direction: column; height: calc(100vh - 80px); max-width: 860px; margin: 0 auto; padding: 0 16px; }
+.interview-session { display: flex; flex-direction: column; min-height: calc(100dvh - 80px); max-width: 860px; margin: 0 auto; padding: 0 16px; }
 
 .session-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 0; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
 .topbar-left { display: flex; align-items: center; gap: 12px; }
@@ -284,4 +288,45 @@ async function goReport() {
 
 .finished-banner { flex-shrink: 0; text-align: center; padding: 28px; border-top: 1px solid #f1f5f9; }
 .finished-banner p { font-size: 14px; color: #64748b; margin: 0 0 14px; }
+
+@media (max-width: 768px) {
+  .interview-session {
+    min-height: calc(100dvh - 24px);
+    padding: 0 4px;
+  }
+
+  .session-topbar,
+  .topbar-right,
+  .topbar-left {
+    flex-wrap: wrap;
+  }
+
+  .session-topbar {
+    gap: 10px;
+    padding-top: 8px;
+  }
+
+  .chat-area {
+    padding: 16px 0;
+  }
+
+  .chat-msg {
+    max-width: 100%;
+  }
+
+  .msg-bubble {
+    padding: 12px 14px;
+    font-size: 13px;
+  }
+
+  .input-area {
+    padding-bottom: calc(16px + env(safe-area-inset-bottom));
+  }
+
+  .input-wrap {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    align-items: end;
+  }
+}
 </style>

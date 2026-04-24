@@ -283,8 +283,24 @@ const maintenanceHandleForm = reactive({ id: null, maintenanceStatus: 'IN_PROGRE
 
 const canSelectCollege = computed(() => Boolean(userStore.userInfo?.schoolDirector))
 const canSelectLab = computed(() => !userStore.userInfo?.labManager)
-const fixedLabLabel = computed(() => scopeFilters.labId ? (labOptions.value.find((item) => item.id === scopeFilters.labId)?.labName || `实验室 #${scopeFilters.labId}`) : '当前未固定')
-const scopeSummary = computed(() => scopeFilters.labId ? `实验室范围 #${scopeFilters.labId}` : (scopeFilters.collegeId ? `学院范围 #${scopeFilters.collegeId}` : '当前管理范围'))
+const selectedCollegeLabel = computed(() => {
+  if (!scopeFilters.collegeId) return ''
+  return collegeOptions.value.find((item) => Number(item.id) === Number(scopeFilters.collegeId))?.collegeName
+    || userStore.userInfo?.collegeName
+    || userStore.userInfo?.college
+    || '当前学院'
+})
+const fixedLabLabel = computed(() => {
+  if (!scopeFilters.labId) return '当前未固定'
+  return labOptions.value.find((item) => Number(item.id) === Number(scopeFilters.labId))?.labName
+    || userStore.userInfo?.labName
+    || '实验室名称待同步'
+})
+const scopeSummary = computed(() => {
+  if (scopeFilters.labId) return `实验室范围：${fixedLabLabel.value}`
+  if (scopeFilters.collegeId) return `学院范围：${selectedCollegeLabel.value}`
+  return '当前管理范围'
+})
 const scopeParams = computed(() => ({ collegeId: scopeFilters.collegeId || undefined, labId: scopeFilters.labId || undefined }))
 
 const loadColleges = async () => {

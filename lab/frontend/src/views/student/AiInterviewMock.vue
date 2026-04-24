@@ -1,7 +1,7 @@
 <template>
   <div class="mock-interview">
     <div class="page-header">
-      <button class="back-btn" @click="$router.push('/student/ai-interview')">
+      <button class="back-btn" @click="router.push(homePath)">
         <el-icon><ArrowLeft /></el-icon> 返回
       </button>
       <div>
@@ -46,15 +46,20 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { useAiInterviewStore } from '@/stores/aiInterview'
 import { getInterviewModules } from '@/api/aiInterview'
+import { normalizeInterviewModules } from '@/utils/aiInterview'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
 
+const route = useRoute()
 const router = useRouter()
 const store = useAiInterviewStore()
 const selectedModule = ref(null)
 const starting = ref(false)
+const homePath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview'))
+const sessionPath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview/session'))
 
 // 默认模块（后端未就绪时的 fallback）
 const defaultModules = [
@@ -73,23 +78,28 @@ const modules = ref(defaultModules)
 
 const selectedModuleName = computed(() => {
   const m = modules.value.find(m => m.id === selectedModule.value)
-  return m ? m.name : ''
+  return m ? (m.name || m.moduleName || '') : ''
 })
 
 onMounted(async () => {
   try {
     const res = await getInterviewModules()
-    if (res?.data?.length) modules.value = res.data
+    modules.value = normalizeInterviewModules(res?.data, defaultModules)
   } catch { /* use defaults */ }
 })
 
 function startMock() {
   starting.value = true
   const mod = modules.value.find(m => m.id === selectedModule.value)
+  const moduleName = mod?.name || mod?.moduleName || ''
+  if (!mod || !moduleName) {
+    starting.value = false
+    return
+  }
   store.reset()
   store.setMode('mock')
-  store.setModule(mod.id, mod.name)
-  router.push('/student/ai-interview/session')
+  store.setModule(mod.id, moduleName)
+  router.push(sessionPath.value)
 }
 </script>
 

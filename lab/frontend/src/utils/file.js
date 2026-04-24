@@ -127,7 +127,7 @@ export function getFileExtension(rawUrl) {
 export function getFilePreviewType(rawUrl) {
   const extension = getFileExtension(rawUrl)
 
-  if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(extension)) {
+  if (['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg'].includes(extension)) {
     return 'image'
   }
 

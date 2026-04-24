@@ -15,7 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/admin/ai-interview")
-@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER')")
 public class AiInterviewAdminController {
 
     @Autowired
@@ -68,7 +68,7 @@ public class AiInterviewAdminController {
     @GetMapping("/records")
     public Result<?> queryRecords(AiInterviewDTO.RecordQuery query) {
         try {
-            Page<AiInterviewRecord> page = aiInterviewService.queryRecords(query);
+            Page<Map<String, Object>> page = aiInterviewService.queryRecordViews(query);
             Map<String, Object> data = new HashMap<>();
             data.put("records", page.getRecords());
             data.put("total", page.getTotal());
@@ -82,7 +82,7 @@ public class AiInterviewAdminController {
     @GetMapping("/records/{id}")
     public Result<?> getRecordDetail(@PathVariable Long id) {
         try {
-            AiInterviewRecord record = aiInterviewService.getRecordDetail(id);
+            Map<String, Object> record = aiInterviewService.getRecordDetailView(id);
             if (record == null) return Result.error("记录不存在");
             return Result.success(record);
         } catch (Exception e) {

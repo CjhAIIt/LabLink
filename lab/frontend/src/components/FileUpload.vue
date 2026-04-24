@@ -177,7 +177,7 @@ function matchesAcceptRule(file, rule) {
   if (rule.endsWith('/*')) {
     if (fileType.startsWith(rule.slice(0, -1))) return true
     if (rule === 'image/*') {
-      return ['.jpg', '.jpeg', '.png', '.gif', '.webp'].some((e) =>
+      return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.svg'].some((e) =>
         fileName.endsWith(e)
       )
     }

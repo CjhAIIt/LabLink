@@ -268,6 +268,9 @@ public class LabSpaceServiceImpl implements LabSpaceService {
     }
 
     private Long resolveLabScope(User currentUser, Long requestedLabId) {
+        if (currentUserAccessor != null && currentUser != null) {
+            return currentUserAccessor.resolveLabScope(currentUser, requestedLabId);
+        }
         if (currentUser == null) {
             throw new RuntimeException("当前用户不能为空");
         }

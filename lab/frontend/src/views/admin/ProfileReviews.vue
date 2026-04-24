@@ -99,6 +99,28 @@
           <el-descriptions-item label="状态">
             <StatusTag :value="detailProfile.status" preset="profile" />
           </el-descriptions-item>
+          <el-descriptions-item label="资料附件" :span="2">
+            <el-link
+              v-if="detailProfile.attachmentUrl"
+              :href="resolveFileUrl(detailProfile.attachmentUrl)"
+              target="_blank"
+              type="primary"
+            >
+              {{ getFileNameFromUrl(detailProfile.attachmentUrl, '成员资料附件') }}
+            </el-link>
+            <span v-else>-</span>
+          </el-descriptions-item>
+          <el-descriptions-item label="简历材料" :span="2">
+            <el-link
+              v-if="detailProfile.resumeUrl && detailProfile.resumeUrl !== detailProfile.attachmentUrl"
+              :href="resolveFileUrl(detailProfile.resumeUrl)"
+              target="_blank"
+              type="primary"
+            >
+              {{ getFileNameFromUrl(detailProfile.resumeUrl, '已上传简历') }}
+            </el-link>
+            <span v-else>{{ detailProfile.resumeUrl ? '同资料附件' : '-' }}</span>
+          </el-descriptions-item>
           <el-descriptions-item label="提交时间">{{ formatDateTime(detailProfile.submittedAt) || '-' }}</el-descriptions-item>
           <el-descriptions-item label="最近审核">{{ formatDateTime(detailProfile.lastReviewTime) || '-' }}</el-descriptions-item>
         </el-descriptions>
@@ -117,6 +139,14 @@
             >
               <div class="timeline-title">版本 {{ item.versionNo }} · {{ item.reviewStatus }}</div>
               <div class="timeline-text">{{ item.reviewComment || '无审核意见' }}</div>
+              <el-link
+                v-if="item.snapshot?.attachmentUrl"
+                :href="resolveFileUrl(item.snapshot.attachmentUrl)"
+                target="_blank"
+                type="primary"
+              >
+                查看该版本附件
+              </el-link>
             </el-timeline-item>
           </el-timeline>
           <el-empty v-else description="暂无审核历史" />
@@ -149,6 +179,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import TablePageCard from '@/components/common/TablePageCard.vue'
+import { getFileNameFromUrl, resolveFileUrl } from '@/utils/file'
 import {
   approveProfileReview,
   getPendingProfileReviewPage,

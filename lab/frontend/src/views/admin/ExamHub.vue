@@ -84,7 +84,28 @@
           <el-button type="primary" @click="showQuestionDialog()"><el-icon class="el-icon--left"><Plus /></el-icon>新增题目</el-button>
         </div>
       </div>
-      <el-table v-loading="qLoading" :data="questions" stripe class="hub-table">
+      <div v-loading="qLoading" class="exam-mobile-list mobile-only">
+        <article v-for="row in questions" :key="row.id" class="exam-mobile-card">
+          <div class="exam-mobile-card__head">
+            <div>
+              <strong>{{ row.title || '未命名题目' }}</strong>
+              <span>{{ qTypeLabel(row.questionType) }} · {{ diffLabel(row.difficulty) }}</span>
+            </div>
+            <el-tag :type="diffType(row.difficulty)" size="small">{{ diffLabel(row.difficulty) }}</el-tag>
+          </div>
+          <p>{{ row.content || row.description || '暂无题目内容摘要' }}</p>
+          <div class="exam-mobile-card__meta">
+            <span>分值 {{ row.score ?? '-' }}</span>
+            <span>{{ row.tags || '未设置标签' }}</span>
+          </div>
+          <div class="exam-mobile-card__actions">
+            <el-button plain type="primary" @click="showQuestionDialog(row)">编辑</el-button>
+            <el-button plain type="danger" @click="handleDeleteQuestion(row)">删除</el-button>
+          </div>
+        </article>
+        <el-empty v-if="!qLoading && !questions.length" description="暂无题目" />
+      </div>
+      <el-table v-loading="qLoading" :data="questions" stripe class="hub-table desktop-only">
         <el-table-column prop="title" label="题目" min-width="240" show-overflow-tooltip />
         <el-table-column label="题型" width="100">
           <template #default="{ row }"><el-tag size="small" effect="plain">{{ qTypeLabel(row.questionType) }}</el-tag></template>
@@ -107,26 +128,52 @@
       <div class="section-bar">
         <h2>阅卷中心</h2>
         <div class="section-bar__actions grading-actions">
-          <el-select v-model="gradingExamId" placeholder="选择笔试" class="grading-actions__select" @change="loadGradingList">
+          <el-select v-model="gradingExamId" clearable placeholder="全部笔试" class="grading-actions__select" @change="loadGradingList">
             <el-option v-for="e in exams" :key="e.id" :label="e.title" :value="e.id" />
           </el-select>
+          <el-input v-model="gradingKeyword" clearable placeholder="姓名/学号/实验室" style="width: 180px" @keyup.enter="loadGradingList" />
+          <el-button @click="loadGradingList">查询</el-button>
           <el-button :disabled="!gradingExamId" @click="handlePublishScores">发布成绩</el-button>
           <el-button type="primary" :disabled="!gradingExamId" @click="showInviteDialog = true">发送面试邀请</el-button>
         </div>
       </div>
-      <el-table v-loading="gradingLoading" :data="gradingList" stripe class="hub-table">
+      <div v-loading="gradingLoading" class="exam-mobile-list mobile-only">
+        <article v-for="row in gradingList" :key="row.id || row.attemptId" class="exam-mobile-card">
+          <div class="exam-mobile-card__head">
+            <div>
+              <strong>{{ row.studentName || '未命名学生' }}</strong>
+              <span>{{ row.studentNo || row.studentId || '-' }} · {{ row.labName || '实验室待定' }}</span>
+            </div>
+            <el-tag :type="attemptStatusType(row.statusKey)" size="small">{{ row.statusLabel || attemptStatusLabel(row.status) }}</el-tag>
+          </div>
+          <div class="exam-mobile-card__score">
+            <div><span>客观分</span><strong>{{ row.autoScore ?? '-' }}</strong></div>
+            <div><span>主观分</span><strong>{{ row.manualScore ?? '-' }}</strong></div>
+            <div><span>总分</span><strong>{{ row.totalScore ?? '-' }}</strong></div>
+          </div>
+          <p>提交时间：{{ formatDate(row.submitTime) }}；切屏 {{ row.switchCount ?? 0 }} 次</p>
+          <div class="exam-mobile-card__actions">
+            <el-button type="primary" @click="openGradingDrawer(row)">查看详情</el-button>
+          </div>
+        </article>
+        <el-empty v-if="!gradingLoading && !gradingList.length" description="暂无阅卷记录" />
+      </div>
+      <el-table v-loading="gradingLoading" :data="gradingList" stripe class="hub-table desktop-only">
+        <el-table-column prop="examTitle" label="笔试" min-width="160" show-overflow-tooltip />
         <el-table-column prop="studentName" label="姓名" width="120" />
-        <el-table-column prop="studentId" label="学号" width="130" />
+        <el-table-column prop="studentNo" label="学号" width="130" />
+        <el-table-column prop="college" label="学院" min-width="130" show-overflow-tooltip />
+        <el-table-column prop="labName" label="申请实验室" min-width="150" show-overflow-tooltip />
         <el-table-column label="提交时间" width="170"><template #default="{ row }">{{ formatDate(row.submitTime) }}</template></el-table-column>
         <el-table-column prop="autoScore" label="客观分" width="80" align="center" />
         <el-table-column prop="manualScore" label="主观分" width="80" align="center" />
         <el-table-column prop="totalScore" label="总分" width="70" align="center" />
         <el-table-column prop="switchCount" label="切屏" width="60" align="center" />
-        <el-table-column label="状态" width="90">
-          <template #default="{ row }"><el-tag :type="row.status === 'graded' ? 'success' : 'warning'" size="small">{{ row.status === 'graded' ? '已阅' : '待阅' }}</el-tag></template>
+        <el-table-column label="状态" width="110">
+          <template #default="{ row }"><el-tag :type="attemptStatusType(row.statusKey)" size="small">{{ row.statusLabel || attemptStatusLabel(row.status) }}</el-tag></template>
         </el-table-column>
         <el-table-column label="操作" width="80" fixed="right">
-          <template #default="{ row }"><el-button link type="primary" size="small" @click="openGradingDrawer(row)">阅卷</el-button></template>
+          <template #default="{ row }"><el-button link type="primary" size="small" @click="openGradingDrawer(row)">详情</el-button></template>
         </el-table-column>
       </el-table>
     </section>
@@ -276,7 +323,9 @@
       <div v-if="currentAttempt" class="grading-drawer">
         <div class="grading-student">
           <strong>{{ currentAttempt.studentName }}</strong>
-          <span>{{ currentAttempt.studentId }}</span>
+          <span>{{ currentAttempt.studentNo }}</span>
+          <span>{{ currentAttempt.college || '-' }}</span>
+          <span>{{ currentAttempt.labName || '-' }}</span>
           <el-tag size="small">切屏 {{ currentAttempt.switchCount }} 次</el-tag>
         </div>
         <div v-for="(ans, i) in currentAnswers" :key="i" class="grading-item">
@@ -479,6 +528,7 @@ const handleDeleteQuestion = async (q) => {
 
 // ========== Grading ==========
 const gradingExamId = ref(null)
+const gradingKeyword = ref('')
 const gradingList = ref([])
 const gradingLoading = ref(false)
 const gradingDrawerVisible = ref(false)
@@ -490,7 +540,7 @@ const inviteForm = reactive({ title: '', description: '' })
 const handleSendInvitations = async () => {
   if (!inviteForm.title) return ElMessage.warning('请填写面试标题')
   try {
-    const passedIds = gradingList.value.filter(r => r.totalScore >= (exams.value.find(e => e.id === gradingExamId.value)?.passScore || 60)).map(r => r.studentId)
+    const passedIds = gradingList.value.filter(r => r.totalScore >= (exams.value.find(e => e.id === gradingExamId.value)?.passScore || 60)).map(r => r.studentUserId || r.studentId)
     if (!passedIds.length) return ElMessage.warning('暂无通过的学生')
     await sendInterviewInvitations({ examId: gradingExamId.value, studentIds: passedIds, title: inviteForm.title, description: inviteForm.description })
     ElMessage.success(`已向 ${passedIds.length} 名学生发送面试邀请`)
@@ -499,10 +549,9 @@ const handleSendInvitations = async () => {
 }
 
 const loadGradingList = async () => {
-  if (!gradingExamId.value) return
   gradingLoading.value = true
   try {
-    const res = await getAdminGradingList({ examId: gradingExamId.value, pageNum: 1, pageSize: 200 })
+    const res = await getAdminGradingList({ examId: gradingExamId.value || undefined, keyword: gradingKeyword.value || undefined, pageNum: 1, pageSize: 200 })
     gradingList.value = res.data?.records || res.data?.list || res.data || []
     overview.submissionCount = gradingList.value.length
   } finally { gradingLoading.value = false }
@@ -512,14 +561,15 @@ const openGradingDrawer = async (row) => {
   currentAttempt.value = row
   try {
     const res = await getAdminStudentAnswer(row.id)
-    currentAnswers.value = res.data?.answers || res.data || []
+    currentAttempt.value = { ...row, ...(res.data || {}) }
+    currentAnswers.value = res.data?.answers || []
   } catch { currentAnswers.value = [] }
   gradingDrawerVisible.value = true
 }
 
 const submitGrading = async () => {
   if (!currentAttempt.value) return
-  const scores = currentAnswers.value.map(a => ({ questionId: a.questionId, score: a.score || 0, graderRemark: a.graderRemark || '' }))
+  const scores = currentAnswers.value.map(a => ({ id: a.id, questionId: a.questionId, score: a.score || 0, graderRemark: a.graderRemark || '' }))
   await submitAdminGrading(currentAttempt.value.id, { scores })
   ElMessage.success('阅卷已保存'); gradingDrawerVisible.value = false; await loadGradingList()
 }
@@ -592,11 +642,14 @@ const examStatusType = (s) => ({ draft: 'info', published: 'success', ongoing: '
 const qTypeLabel = (t) => ({ single_choice: '单选', fill_blank: '填空', programming: '编程', short_answer: '简答', multi_choice: '多选', judge: '判断' }[t] || t)
 const diffLabel = (d) => ({ easy: '简单', medium: '中等', hard: '困难' }[d] || d)
 const diffType = (d) => ({ easy: 'success', medium: 'warning', hard: 'danger' }[d] || 'info')
+const attemptStatusLabel = (s) => ({ 0: '未开始', 1: '进行中', 2: '已提交', 3: '已批改', 4: '成绩已发布' }[s] || s || '未开始')
+const attemptStatusType = (s) => ({ in_progress: 'warning', submitted: 'primary', graded: 'success', published: 'success', not_started: 'info' }[s] || 'info')
 const formatDate = (v) => v ? dayjs(v).format('MM-DD HH:mm') : '-'
 
 // ========== Lifecycle ==========
 onMounted(async () => {
   await Promise.all([loadExams(), loadQuestions()])
+  await loadGradingList()
   window.addEventListener('resize', handleResize)
 })
 onUnmounted(() => {
@@ -704,5 +757,181 @@ onUnmounted(() => {
   .testcase-row__body { grid-template-columns: 1fr; }
   .grading-actions { width: 100%; justify-content: flex-start; }
   .grading-actions__select { width: min(100%, 280px); }
+}
+
+@media (max-width: 768px) {
+  .hub-page {
+    padding: 0;
+    gap: 16px;
+  }
+
+  .hub-header {
+    padding: 22px;
+    border-radius: 26px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #15324b, #197a78 58%, #2aa3a1);
+    box-shadow: 0 22px 48px rgba(15, 118, 110, 0.2);
+  }
+
+  .hub-header__info h1,
+  .hub-header__info p {
+    color: #ffffff;
+  }
+
+  .hub-header__stats {
+    width: 100%;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .hub-stat {
+    background: rgba(255, 255, 255, 0.13);
+    border-color: rgba(255, 255, 255, 0.16);
+  }
+
+  .hub-tabs {
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    border-radius: 22px;
+    scrollbar-width: none;
+  }
+
+  .hub-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .hub-tab {
+    flex: 0 0 auto;
+    min-height: 44px;
+    border-radius: 16px;
+  }
+
+  .hub-tab.active {
+    background: #197a78;
+    box-shadow: 0 10px 22px rgba(15, 118, 110, 0.18);
+  }
+
+  .hub-section {
+    padding: 16px;
+    border-radius: 24px;
+  }
+
+  .section-bar {
+    align-items: stretch;
+  }
+
+  .section-bar__actions,
+  .grading-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    width: 100%;
+  }
+
+  .section-bar__actions :deep(.el-input),
+  .section-bar__actions :deep(.el-select),
+  .section-bar__actions :deep(.el-button),
+  .grading-actions__select {
+    width: 100% !important;
+  }
+
+  .exam-card,
+  .exam-mobile-card,
+  .stats-card,
+  .chart-card {
+    border-radius: 22px;
+    border: 1px solid rgba(15, 118, 110, 0.12);
+    box-shadow: 0 14px 34px rgba(23, 32, 51, 0.075);
+  }
+
+  .exam-card:hover {
+    transform: none;
+  }
+
+  .exam-mobile-list {
+    display: grid;
+    gap: 12px;
+  }
+
+  .exam-mobile-card {
+    padding: 15px;
+    display: grid;
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.96);
+  }
+
+  .exam-mobile-card__head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: flex-start;
+  }
+
+  .exam-mobile-card__head strong {
+    display: block;
+    color: #172033;
+    font-size: 16px;
+  }
+
+  .exam-mobile-card__head span,
+  .exam-mobile-card p,
+  .exam-mobile-card__meta {
+    color: #64748b;
+  }
+
+  .exam-mobile-card p {
+    margin: 0;
+    line-height: 1.7;
+  }
+
+  .exam-mobile-card__meta,
+  .exam-mobile-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .exam-mobile-card__score {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .exam-mobile-card__score div {
+    padding: 10px;
+    border-radius: 14px;
+    background: #f8fafc;
+    display: grid;
+    gap: 4px;
+  }
+
+  .exam-mobile-card__score span {
+    color: #94a3b8;
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  .exam-mobile-card__score strong {
+    color: #172033;
+    font-size: 18px;
+  }
+
+  .stats-charts,
+  .stats-cards {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 430px) {
+  .hub-header__stats,
+  .exam-mobile-card__score {
+    grid-template-columns: 1fr;
+  }
+
+  .exam-mobile-card__head {
+    flex-direction: column;
+  }
+
+  .exam-mobile-card__actions .el-button {
+    flex: 1 1 0;
+  }
 }
 </style>

@@ -27,7 +27,9 @@ public interface AiInterviewService {
 
     // ========== 管理端 ==========
     Page<AiInterviewRecord> queryRecords(AiInterviewDTO.RecordQuery query);
+    Page<Map<String, Object>> queryRecordViews(AiInterviewDTO.RecordQuery query);
     AiInterviewRecord getRecordDetail(Long id);
+    Map<String, Object> getRecordDetailView(Long id);
     void invalidateRecord(Long id);
     void resetStudentChance(Long studentId);
 

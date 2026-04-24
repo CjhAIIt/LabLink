@@ -17,7 +17,14 @@
 
     <TablePageCard title="消息列表" subtitle="站内消息" :count-label="`${pagination.total} 条`">
       <template #filters>
-        <SearchToolbar :show-keyword="false" @search="handleSearch" @reset="resetFilters">
+        <SearchToolbar
+          :show-keyword="false"
+          collapsible-on-mobile
+          collapse-title="消息筛选"
+          :collapse-summary="filterSummary"
+          @search="handleSearch"
+          @reset="resetFilters"
+        >
           <el-form-item label="阅读状态">
             <el-select v-model="filters.isRead" clearable placeholder="全部" style="width: 180px">
               <el-option label="未读" :value="0" />
@@ -29,7 +36,34 @@
           </el-form-item>
         </SearchToolbar>
       </template>
-      <el-table v-loading="loading" :data="rows" stripe>
+      <div class="desktop-mobile-card-list mobile-only">
+        <article v-for="row in rows" :key="row.id" class="desktop-mobile-card">
+          <div class="desktop-mobile-card__header">
+            <div class="desktop-mobile-card__title-wrap">
+              <strong class="desktop-mobile-card__title">{{ row.title || '系统消息' }}</strong>
+              <span class="desktop-mobile-card__subtitle">{{ row.notificationType || '通知' }}</span>
+            </div>
+            <StatusTag
+              :value="row.isRead"
+              :label-map="{ 0: '未读', 1: '已读' }"
+              :type-map="{ 0: 'danger', 1: 'info' }"
+            />
+          </div>
+          <div class="desktop-mobile-card__summary">{{ row.content || '暂无内容' }}</div>
+          <div class="desktop-mobile-card__grid">
+            <div class="desktop-mobile-card__line">
+              <span class="desktop-mobile-card__line-label">创建时间</span>
+              <span class="desktop-mobile-card__line-value">{{ formatDateTime(row.createTime) }}</span>
+            </div>
+          </div>
+          <div class="desktop-mobile-card__actions">
+            <el-button v-if="row.isRead !== 1" size="large" @click="markRead(row)">标记已读</el-button>
+            <el-button v-if="row.redirectPath" size="large" type="primary" plain @click="openNotification(row)">打开</el-button>
+          </div>
+        </article>
+      </div>
+
+      <el-table v-loading="loading" :data="rows" stripe class="desktop-only">
         <el-table-column label="状态" width="110">
           <template #default="{ row }">
             <StatusTag
@@ -58,7 +92,7 @@
           v-model:page-size="pagination.size"
           :page-sizes="[10, 20, 50]"
           :total="pagination.total"
-          layout="total, sizes, prev, pager, next, jumper"
+          :layout="paginationLayout"
           @size-change="fetchRows"
           @current-change="fetchRows"
         />
@@ -68,7 +102,7 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import SearchToolbar from '@/components/common/SearchToolbar.vue'
@@ -80,11 +114,13 @@ import {
   markAllNotificationsRead,
   markNotificationRead
 } from '@/api/notifications'
+import { useViewport } from '@/composables/useViewport'
 
 const router = useRouter()
 const loading = ref(false)
 const rows = ref([])
 const unreadCount = ref(0)
+const { isPhoneWide } = useViewport()
 
 const filters = reactive({
   isRead: '',
@@ -96,6 +132,18 @@ const pagination = reactive({
   size: 10,
   total: 0
 })
+
+const filterSummary = computed(() => {
+  const parts = []
+  if (filters.isRead !== '') {
+    parts.push(filters.isRead === 1 ? '已读' : '未读')
+  }
+  if (filters.notificationType.trim()) {
+    parts.push(filters.notificationType.trim())
+  }
+  return parts.length ? parts.join(' / ') : '全部消息'
+})
+const paginationLayout = computed(() => (isPhoneWide.value ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper'))
 
 const fetchUnreadCount = async () => {
   const response = await getUnreadNotificationCount()
@@ -120,6 +168,7 @@ const fetchRows = async () => {
 
 const refresh = async () => {
   await Promise.all([fetchUnreadCount(), fetchRows()])
+  window.dispatchEvent(new CustomEvent('lablink:notifications-refresh'))
 }
 
 const handleSearch = () => {
@@ -151,6 +200,7 @@ const openNotification = async (row) => {
     await markNotificationRead(row.id)
   }
   if (row.redirectPath) {
+    window.dispatchEvent(new CustomEvent('lablink:notifications-refresh'))
     await router.push(row.redirectPath)
     return
   }

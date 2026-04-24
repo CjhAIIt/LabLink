@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="shell admin-shell">
     <aside class="sidebar" :class="{ 'is-collapsed': isCollapse }">
       <div class="sidebar-inner">
@@ -6,11 +6,14 @@
           <BrandLogo title="LabLink" subtitle="高校实验室管理平台" tone="dark" size="sm" />
         </div>
 
-        <el-menu :default-active="$route.fullPath" router class="sidebar-menu" :collapse="false">
-          <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
-            <el-icon><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </el-menu-item>
+        <el-menu :default-active="route.fullPath" router class="sidebar-menu" :collapse="false">
+          <template v-for="group in menuGroups" :key="group.title">
+            <div class="sidebar-group-title">{{ group.title }}</div>
+            <el-menu-item v-for="item in group.items" :key="item.path" :index="item.path">
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </el-menu-item>
+          </template>
         </el-menu>
       </div>
     </aside>
@@ -19,31 +22,34 @@
     <div class="main-shell">
       <header class="topbar">
         <div class="topbar-left">
-          <el-button class="collapse-btn" text @click="toggleCollapse">
+          <el-button class="collapse-btn" text :title="isCollapse ? '展开侧边栏' : '收起侧边栏'" @click="toggleCollapse">
             <el-icon :size="20">
               <component :is="isCollapse ? Expand : Fold" />
             </el-icon>
           </el-button>
           <div class="topbar-title">
-            <p class="topbar-label">管理后台</p>
-            <h2>{{ $route.meta.title || '工作台' }}</h2>
+            <p class="topbar-label">管理中台</p>
+            <h2>{{ route.meta.title || '工作台' }}</h2>
           </div>
         </div>
-        <el-dropdown @command="handleCommand">
-          <div class="user-chip">
-            <el-avatar :size="34">{{ userInitial }}</el-avatar>
-            <div>
-              <strong>{{ userStore.realName || '管理员' }}</strong>
-              <span>{{ roleLabel }}</span>
+        <div class="topbar-actions">
+          <TopbarNotification path="/admin/notifications" />
+          <el-dropdown @command="handleCommand">
+            <div class="user-chip">
+              <el-avatar :size="34">{{ userInitial }}</el-avatar>
+              <div>
+                <strong>{{ userStore.realName || '管理员' }}</strong>
+                <span>{{ roleLabel }}</span>
+              </div>
             </div>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人资料</el-dropdown-item>
-              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </header>
 
       <main class="content">
@@ -61,7 +67,8 @@ import { useRoute, useRouter } from 'vue-router'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { useUserStore } from '@/stores/user'
 import { ensureAuthContext } from '@/utils/auth-context'
-import { resolveDesktopMenuItems } from '@/utils/portal-menu'
+import TopbarNotification from '@/components/common/TopbarNotification.vue'
+import { resolveDesktopMenuGroups, resolveDesktopMenuItems } from '@/utils/portal-menu'
 
 const route = useRoute()
 const router = useRouter()
@@ -116,10 +123,17 @@ const fallbackMenuItems = computed(() =>
     isSchoolDirector.value || isCollegeManager.value || isLabManager.value
       ? { path: '/admin/labs', label: '实验室管理', icon: 'FolderOpened' }
       : null,
+    isLabManager.value ? { path: '/admin/lab-info', label: '实验室资料', icon: 'Files' } : null,
     canAuditCreateApplies.value ? { path: '/admin/create-applies', label: '创建审批', icon: 'Tickets' } : null,
     canAuditTeacherRegister.value ? { path: '/admin/teacher-register-applies', label: '教师注册审批', icon: 'UserFilled' } : null,
     isSchoolDirector.value || isCollegeManager.value || isLabManager.value
       ? { path: '/admin/attendance-tasks', label: '考勤管理', icon: 'Calendar' }
+      : null,
+    isSchoolDirector.value || isCollegeManager.value || isLabManager.value
+      ? { path: '/admin/exam-hub', label: '笔试中心', icon: 'EditPen' }
+      : null,
+    isSchoolDirector.value || isCollegeManager.value || isLabManager.value
+      ? { path: '/admin/ai-interview-records', label: 'AI 面试记录', icon: 'ChatDotRound' }
       : null,
     isSchoolDirector.value || isCollegeManager.value || isLabManager.value
       ? { path: '/admin/applications', label: '入组申请', icon: 'Tickets' }
@@ -141,12 +155,12 @@ const fallbackMenuItems = computed(() =>
     isSchoolDirector.value || isCollegeManager.value || isLabManager.value
       ? { path: '/admin/audit', label: '审计日志', icon: 'Tickets' }
       : null,
-    { path: '/admin/notifications', label: '消息中心', icon: 'Bell' },
     { path: '/admin/profile', label: '个人资料', icon: 'UserFilled' }
   ].filter(Boolean)
 )
 
 const menuItems = computed(() => resolveDesktopMenuItems(userStore.menus, fallbackMenuItems.value))
+const menuGroups = computed(() => resolveDesktopMenuGroups(menuItems.value, 'admin'))
 
 const ensureContext = async () => {
   await ensureAuthContext(userStore, { force: true })
@@ -157,6 +171,7 @@ const handleCommand = async (command) => {
     await router.push('/admin/profile')
     return
   }
+
   if (command === 'logout') {
     await ElMessageBox.confirm('确认退出当前账号吗？', '退出登录', { type: 'warning' })
     userStore.clearUserInfo()
@@ -186,9 +201,13 @@ onBeforeUnmount(() => {
 .shell {
   min-height: 100vh;
   display: flex;
-  background-color: #ffffff;
-  overflow: hidden;
+  background:
+    radial-gradient(circle at top left, rgba(186, 230, 253, 0.16), transparent 28%),
+    linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);
+  overflow-x: hidden;
+  overflow-y: visible;
   position: relative;
+  align-items: flex-start;
 }
 
 .sidebar {
@@ -199,6 +218,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   flex-shrink: 0;
   border-right: 1px solid #e5e5e5;
+  align-self: flex-start;
 }
 
 .sidebar.is-collapsed {
@@ -253,12 +273,26 @@ onBeforeUnmount(() => {
   font-weight: 600;
 }
 
+.sidebar-group-title {
+  margin: 16px 12px 6px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-group-title:first-child {
+  margin-top: 0;
+}
+
 .main-shell {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 100vh;
+  min-height: 100vh;
+  height: auto;
+  background: transparent;
 }
 
 .sidebar-mask {
@@ -318,6 +352,13 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 .user-chip {
   display: flex;
   align-items: center;
@@ -328,12 +369,11 @@ onBeforeUnmount(() => {
   border: 1px solid #e2e8f0;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   cursor: pointer;
+  transition: all 0.2s;
 }
 
-.user-chip strong {
-  display: block;
-  color: #0f172a;
-  font-size: 14px;
+.user-chip:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
 }
 
 .user-chip span {
@@ -342,29 +382,105 @@ onBeforeUnmount(() => {
   font-size: 12px;
 }
 
+.user-chip strong {
+  font-size: 14px;
+  color: #1e293b;
+}
+
 .content {
   flex: 1;
   min-height: 0;
-  overflow: auto;
-  padding: 24px;
-  background: #f8fafc;
+  overflow: visible;
+  padding: 0 24px calc(24px + env(safe-area-inset-bottom));
+  background: transparent;
+}
+
+@media (min-width: 961px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
 }
 
 @media (max-width: 960px) {
   .sidebar {
     position: fixed;
     top: 0;
-    bottom: 0;
     left: 0;
-    z-index: 100;
+    z-index: 120;
+    height: 100dvh;
+    border-right: 1px solid #e5e5e5;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
   }
 
-  .topbar {
-    padding: 14px 16px;
+  .sidebar.is-collapsed {
+    transform: translateX(-100%);
+    opacity: 0;
+    margin-left: 0;
+    pointer-events: none;
   }
 
   .content {
-    padding: 16px 12px;
+    padding: 0 16px 24px;
+  }
+
+  .topbar {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-shell {
+    height: 100dvh;
+  }
+
+  .topbar {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .topbar-left {
+    gap: 12px;
+  }
+
+  .topbar-actions {
+    gap: 8px;
+  }
+
+  .topbar-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+
+  .topbar h2 {
+    font-size: 16px;
+  }
+
+  .user-chip {
+    max-width: 132px;
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  .user-chip div {
+    min-width: 0;
+  }
+
+  .user-chip span {
+    display: none;
+  }
+
+  .user-chip strong {
+    display: block;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .content {
+    padding: 0 12px 16px;
   }
 }
 </style>

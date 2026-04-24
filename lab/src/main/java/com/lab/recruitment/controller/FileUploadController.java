@@ -61,13 +61,13 @@ public class FileUploadController {
     public ResponseEntity<Resource> viewFile(@RequestParam("path") String path,
                                              @RequestParam(value = "token", required = false) String token) {
         try {
-            if (!hasFileAccess(token)) {
-                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-            }
-
             Path resolvedPath = resolveStoragePath(path);
             if (resolvedPath == null || !Files.exists(resolvedPath) || Files.isDirectory(resolvedPath)) {
                 return ResponseEntity.notFound().build();
+            }
+
+            if (!isPublicUploadPath(resolvedPath) && !hasFileAccess(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
             }
 
             Resource resource = new UrlResource(resolvedPath.toUri());
@@ -93,6 +93,12 @@ public class FileUploadController {
             return protectedPath;
         }
         return fileStorageService.resolvePublicPath(rawPath);
+    }
+
+    private boolean isPublicUploadPath(Path resolvedPath) {
+        Path uploadRoot = fileStorageService.getUploadRoot();
+        return uploadRoot != null
+                && resolvedPath.normalize().startsWith(uploadRoot.normalize());
     }
 
     private boolean hasFileAccess(String token) {

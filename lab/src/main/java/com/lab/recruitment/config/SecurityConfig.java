@@ -111,7 +111,7 @@ public class SecurityConfig {
                     "/api/user/login",
                     "/api/user/register"
             ).permitAll()
-            .antMatchers("/file/view").permitAll()
+            .antMatchers("/file/view", "/api/file/view").permitAll()
             .antMatchers(HttpMethod.GET, "/files/*/preview", "/api/files/*/preview").permitAll()
             .antMatchers(HttpMethod.GET, "/files/*/download", "/api/files/*/download").permitAll()
             .antMatchers(HttpMethod.GET, "/colleges/options", "/api/colleges/options").permitAll()

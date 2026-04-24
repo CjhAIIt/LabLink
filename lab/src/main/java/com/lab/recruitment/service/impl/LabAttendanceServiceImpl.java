@@ -42,12 +42,14 @@ public class LabAttendanceServiceImpl extends ServiceImpl<LabAttendanceMapper, L
 
     @Override
     public List<LabAttendanceMemberVO> getDailyAttendance(Long labId, String attendanceDate) {
-        QueryWrapper<User> memberQuery = new QueryWrapper<>();
-        memberQuery.eq("lab_id", labId)
-                .eq("role", "student")
-                .orderByAsc("student_id")
-                .orderByAsc("id");
-        List<User> members = userService.list(memberQuery);
+        List<Map<String, Object>> members = jdbcTemplate.queryForList(
+                "SELECT u.id, u.real_name AS realName, u.student_id AS studentId, u.major " +
+                        "FROM t_lab_member m " +
+                        "JOIN t_user u ON u.id = m.user_id AND u.deleted = 0 " +
+                        "WHERE m.deleted = 0 AND m.status = 'active' AND m.lab_id = ? " +
+                        "ORDER BY u.student_id ASC, u.id ASC",
+                labId
+        );
 
         QueryWrapper<LabAttendance> attendanceQuery = new QueryWrapper<>();
         attendanceQuery.eq("lab_id", labId)
@@ -60,13 +62,17 @@ public class LabAttendanceServiceImpl extends ServiceImpl<LabAttendanceMapper, L
         }
 
         List<LabAttendanceMemberVO> result = new ArrayList<>();
-        for (User member : members) {
-            LabAttendance attendance = attendanceMap.get(member.getId());
+        for (Map<String, Object> member : members) {
+            Long memberUserId = getLongValue(member.get("id"));
+            if (memberUserId == null) {
+                continue;
+            }
+            LabAttendance attendance = attendanceMap.get(memberUserId);
             LabAttendanceMemberVO item = new LabAttendanceMemberVO();
-            item.setUserId(member.getId());
-            item.setRealName(member.getRealName());
-            item.setStudentId(member.getStudentId());
-            item.setMajor(member.getMajor());
+            item.setUserId(memberUserId);
+            item.setRealName(asString(member.get("realName")));
+            item.setStudentId(asString(member.get("studentId")));
+            item.setMajor(asString(member.get("major")));
             item.setAttendanceDate(attendanceDate);
             if (attendance != null) {
                 item.setStatus(attendance.getStatus());
@@ -94,7 +100,7 @@ public class LabAttendanceServiceImpl extends ServiceImpl<LabAttendanceMapper, L
         if (member == null || !"student".equals(member.getRole())) {
             throw new RuntimeException("Lab member not found");
         }
-        if (member.getLabId() == null || !member.getLabId().equals(labId)) {
+        if (!isActiveLabMember(labId, userId)) {
             throw new RuntimeException("This student does not belong to your lab");
         }
 
@@ -139,7 +145,7 @@ public class LabAttendanceServiceImpl extends ServiceImpl<LabAttendanceMapper, L
         }
 
         User member = userService.getById(userId);
-        if (member == null || member.getLabId() == null || !member.getLabId().equals(labId)) {
+        if (member == null || !isActiveLabMember(labId, userId)) {
             throw new RuntimeException("Current user does not belong to this lab");
         }
 
@@ -165,7 +171,9 @@ public class LabAttendanceServiceImpl extends ServiceImpl<LabAttendanceMapper, L
         attendance.setStatus(status);
         attendance.setReason(StringUtils.hasText(reason) ? reason.trim() : null);
         attendance.setConfirmedBy(userId);
-        attendance.setConfirmTime(LocalDateTime.now());
+        LocalDateTime now = LocalDateTime.now();
+        attendance.setCheckinTime(now);
+        attendance.setConfirmTime(now);
         return attendance.getId() == null ? this.save(attendance) : this.updateById(attendance);
     }
 
@@ -227,6 +235,19 @@ public class LabAttendanceServiceImpl extends ServiceImpl<LabAttendanceMapper, L
 
     private boolean requiresReason(Integer status) {
         return status != null && (status == STATUS_LEAVE || status == STATUS_ABSENT);
+    }
+
+    private boolean isActiveLabMember(Long labId, Long userId) {
+        if (labId == null || userId == null) {
+            return false;
+        }
+        Long count = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM t_lab_member WHERE deleted = 0 AND status = 'active' AND lab_id = ? AND user_id = ?",
+                Long.class,
+                labId,
+                userId
+        );
+        return count != null && count > 0;
     }
 
     private Map<Integer, Long> fetchStatusCounter(String sql, Object... args) {
@@ -308,5 +329,19 @@ public class LabAttendanceServiceImpl extends ServiceImpl<LabAttendanceMapper, L
 
     private double round(double value) {
         return Math.round(value * 100D) / 100D;
+    }
+
+    private Long getLongValue(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        return Long.parseLong(String.valueOf(value));
+    }
+
+    private String asString(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 }

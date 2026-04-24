@@ -65,6 +65,12 @@ public class Lab {
     
     @TableField("current_admins")
     private String currentAdmins;
+
+    @TableField("logo_url")
+    private String logoUrl;
+
+    @TableField("cover_image_url")
+    private String coverImageUrl;
     
     @TableField(value = "create_time", fill = FieldFill.INSERT)
     private LocalDateTime createTime;

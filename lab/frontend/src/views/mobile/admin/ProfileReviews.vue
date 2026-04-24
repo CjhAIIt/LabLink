@@ -92,6 +92,22 @@
 
         <section class="detail-card">
           <header class="section-head">
+            <h3>资料附件</h3>
+          </header>
+          <a
+            v-if="detailProfile.attachmentUrl"
+            class="file-link"
+            :href="resolveFileUrl(detailProfile.attachmentUrl)"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {{ getFileNameFromUrl(detailProfile.attachmentUrl, '成员资料附件') }}
+          </a>
+          <span v-else class="muted">暂无附件</span>
+        </section>
+
+        <section class="detail-card">
+          <header class="section-head">
             <h3>审核历史</h3>
           </header>
           <div v-if="reviewHistory.length" class="timeline-list">
@@ -141,6 +157,7 @@ import {
   getProfileReviews,
   rejectProfileReview
 } from '@/api/profile'
+import { getFileNameFromUrl, resolveFileUrl } from '@/utils/file'
 
 const pageSize = 8
 const activeTab = ref('pending')

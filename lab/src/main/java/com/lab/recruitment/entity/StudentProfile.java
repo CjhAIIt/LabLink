@@ -55,6 +55,9 @@ public class StudentProfile {
     @TableField("introduction")
     private String introduction;
 
+    @TableField("attachment_url")
+    private String attachmentUrl;
+
     @TableField("status")
     private String status;
 

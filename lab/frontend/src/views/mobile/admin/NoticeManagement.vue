@@ -257,7 +257,7 @@ const loadLabs = async (collegeId = undefined) => {
   if (isLabManager.value && managedLabId.value && !labs.value.some((item) => Number(item.id) === Number(managedLabId.value))) {
     labs.value.unshift({
       id: managedLabId.value,
-      labName: userStore.userInfo?.labName || `实验室#${managedLabId.value}`
+      labName: userStore.userInfo?.labName || '实验室名称待同步'
     })
   }
 }

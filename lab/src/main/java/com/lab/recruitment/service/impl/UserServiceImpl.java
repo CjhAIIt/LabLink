@@ -36,10 +36,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     private static final String STUDENT_ROLE = "student";
     private static final int NOT_DELETED = 0;
     private static final int DELETED = 1;
-    private static final Pattern STUDENT_ID_PATTERN = Pattern.compile("\\d{3,20}");
+    private static final Pattern STUDENT_ID_PATTERN = Pattern.compile("^3\\d{7,13}$");
     private static final Pattern PHONE_PATTERN = Pattern.compile("^1[3-9][0-9]{9}$");
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+$");
-    private static final Pattern CHINESE_REAL_NAME_PATTERN = Pattern.compile("^[\\p{IsHan}·]{2,50}$");
+    private static final Pattern CHINESE_REAL_NAME_PATTERN = Pattern.compile("^[\\p{IsHan}·]{2,5}$");
 
     @Autowired
     private PasswordEncoder passwordEncoder;
@@ -88,6 +88,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         validateStudentId(registerDTO.getStudentId());
         validateRegisterInput(registerDTO);
         ensureActiveRegistrationIsAllowed(registerDTO);
+        emailAuthCodeService.verifyRegisterCode(registerDTO.getStudentId(), registerDTO.getEmail(), registerDTO.getEmailCode());
 
         User deletedUser = findDeletedStudent(registerDTO.getStudentId());
         if (deletedUser != null) {
@@ -187,7 +188,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         loginVO.setRealName(user.getRealName());
         loginVO.setRole(profile.getDisplayRole());
         Long resolvedLabId = userAccessService.resolveManagedLabId(user);
-        loginVO.setLabId(resolvedLabId != null ? resolvedLabId : user.getLabId());
+        loginVO.setLabId(resolvedLabId != null || userAccessService.isStudentIdentity(user) ? resolvedLabId : user.getLabId());
         loginVO.setAvatar(user.getAvatar());
         loginVO.setPrimaryIdentity(profile.getPrimaryIdentity());
         loginVO.setLabMemberRole(profile.getLabMemberRole());
@@ -434,7 +435,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         registerDTO.setRealName(trimToNull(registerDTO.getRealName()));
         registerDTO.setCollege(trimToNull(registerDTO.getCollege()));
         registerDTO.setMajor(trimToNull(registerDTO.getMajor()));
-        registerDTO.setGrade(trimToNull(registerDTO.getGrade()));
+        registerDTO.setGrade(deriveGradeFromStudentId(registerDTO.getStudentId()));
         registerDTO.setPhone(trimToNull(registerDTO.getPhone()));
         registerDTO.setEmail(normalizeEmail(registerDTO.getEmail()));
         registerDTO.setEmailCode(trimToNull(registerDTO.getEmailCode()));
@@ -493,7 +494,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private void validateStudentId(String studentId) {
         if (!StringUtils.hasText(studentId) || !STUDENT_ID_PATTERN.matcher(studentId).matches()) {
-            throw new RuntimeException("学号必须为 3 到 20 位纯数字");
+            throw new RuntimeException("学号必须为3开头的8到14位纯数字");
+        }
+        int gradeCode = Integer.parseInt(studentId.substring(1, 3));
+        if (gradeCode < 20 || gradeCode > 40) {
+            throw new RuntimeException("学号第2~3位需为有效年级，如23表示2023级");
         }
     }
 
@@ -502,8 +507,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             throw new RuntimeException("真实姓名不能为空");
         }
         if (!CHINESE_REAL_NAME_PATTERN.matcher(realName).matches()) {
-            throw new RuntimeException("真实姓名必须为中文");
+            throw new RuntimeException("真实姓名需为2到5个中文字符，不能全是空格");
         }
+    }
+
+    private String deriveGradeFromStudentId(String studentId) {
+        validateStudentId(studentId);
+        return "20" + studentId.substring(1, 3) + "级";
     }
 
     private void validateEmail(String email) {

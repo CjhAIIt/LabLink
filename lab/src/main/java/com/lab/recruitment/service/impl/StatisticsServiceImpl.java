@@ -5,11 +5,20 @@ import com.lab.recruitment.entity.User;
 import com.lab.recruitment.service.StatisticsService;
 import com.lab.recruitment.support.CurrentUserAccessor;
 import com.lab.recruitment.support.DataScope;
+import org.apache.poi.ss.usermodel.Cell;
+import org.apache.poi.ss.usermodel.CellStyle;
+import org.apache.poi.ss.usermodel.Font;
+import org.apache.poi.ss.usermodel.Row;
+import org.apache.poi.ss.usermodel.Sheet;
+import org.apache.poi.ss.usermodel.Workbook;
+import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
@@ -41,7 +50,7 @@ public class StatisticsServiceImpl implements StatisticsService {
         if (collegeId != null) {
             return buildCollegeOverview(collegeId);
         }
-        Long labId = currentUserAccessor.resolveLabScope(currentUser, currentUser.getLabId());
+        Long labId = currentUserAccessor.resolveLabScope(currentUser, null);
         return buildLabOverview(labId);
     }
 
@@ -95,6 +104,33 @@ public class StatisticsServiceImpl implements StatisticsService {
         result.put("summary", summary);
         result.put("pending", pending);
         return result;
+    }
+
+    @Override
+    public byte[] exportDashboardExcel(User currentUser, LocalDate startDate, LocalDate endDate,
+                                       Long collegeId, Long labId) {
+        DateWindow window = resolveDateWindow(startDate, endDate);
+        Map<String, Object> dashboard = getDashboard(currentUser, window.startDate, window.endDate, collegeId, labId);
+        List<Map<String, Object>> labs = getLabDimension(currentUser, window.startDate, window.endDate, collegeId, labId);
+        List<Map<String, Object>> members = getMemberDimension(currentUser, window.startDate, window.endDate, collegeId, labId);
+        Map<String, Object> attendance = getAttendanceDimension(currentUser, window.startDate, window.endDate, collegeId, labId);
+        Map<String, Object> devices = getDeviceDimension(currentUser, window.startDate, window.endDate, collegeId, labId);
+        Map<String, Object> profiles = getProfileDimension(currentUser, window.startDate, window.endDate, collegeId, labId);
+
+        try (Workbook workbook = new XSSFWorkbook();
+             ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            CellStyle headerStyle = createExportHeaderStyle(workbook);
+            writeExportSheet(workbook, headerStyle, "Summary", dashboard);
+            writeExportSheet(workbook, headerStyle, "Labs", labs);
+            writeExportSheet(workbook, headerStyle, "Members", members);
+            writeExportSheet(workbook, headerStyle, "Attendance", attendance);
+            writeExportSheet(workbook, headerStyle, "Devices", devices);
+            writeExportSheet(workbook, headerStyle, "Profiles", profiles);
+            workbook.write(out);
+            return out.toByteArray();
+        } catch (IOException e) {
+            throw new RuntimeException("导出统计报表失败", e);
+        }
     }
 
     @Override
@@ -255,9 +291,6 @@ public class StatisticsServiceImpl implements StatisticsService {
         if (targetLabId == null) {
             DataScope baseScope = currentUserAccessor.buildDataScope(currentUser);
             targetLabId = baseScope.getLabId();
-        }
-        if (targetLabId == null) {
-            targetLabId = currentUser.getLabId();
         }
         if (targetLabId == null) {
             throw new RuntimeException("当前账号未绑定可统计的数据范围");
@@ -1224,6 +1257,147 @@ public class StatisticsServiceImpl implements StatisticsService {
 
     private double round(double value) {
         return Math.round(value * 100D) / 100D;
+    }
+
+    private CellStyle createExportHeaderStyle(Workbook workbook) {
+        Font font = workbook.createFont();
+        font.setBold(true);
+        CellStyle style = workbook.createCellStyle();
+        style.setFont(font);
+        return style;
+    }
+
+    private void writeExportSheet(Workbook workbook, CellStyle headerStyle, String sheetName, Object source) {
+        Sheet sheet = workbook.createSheet(sheetName);
+        Row header = sheet.createRow(0);
+        writeExportCell(header, 0, "Section", headerStyle);
+        writeExportCell(header, 1, "Name", headerStyle);
+        writeExportCell(header, 2, "Value", headerStyle);
+
+        int nextRow = appendExportRows(sheet, 1, sheetName, source);
+        if (nextRow == 1) {
+            writeExportRow(sheet, nextRow, sheetName, "No data", "");
+        }
+        autosizeExportColumns(sheet, 3);
+    }
+
+    private int appendExportRows(Sheet sheet, int rowIndex, String section, Object source) {
+        if (source instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) source;
+            if (map.isEmpty()) {
+                writeExportRow(sheet, rowIndex++, section, "empty", "");
+                return rowIndex;
+            }
+            for (Map.Entry<?, ?> entry : map.entrySet()) {
+                String name = stringifyExportValue(entry.getKey());
+                Object value = entry.getValue();
+                if (isSimpleExportValue(value)) {
+                    writeExportRow(sheet, rowIndex++, section, name, value);
+                } else {
+                    rowIndex = appendExportRows(sheet, rowIndex, joinExportSection(section, name), value);
+                }
+            }
+            return rowIndex;
+        }
+
+        if (source instanceof Iterable) {
+            int index = 1;
+            boolean hasRows = false;
+            for (Object item : (Iterable<?>) source) {
+                hasRows = true;
+                String itemName = deriveExportItemName(item, index);
+                if (isSimpleExportValue(item)) {
+                    writeExportRow(sheet, rowIndex++, section, itemName, item);
+                } else {
+                    rowIndex = appendExportRows(sheet, rowIndex, joinExportSection(section, itemName), item);
+                }
+                index++;
+            }
+            if (!hasRows) {
+                writeExportRow(sheet, rowIndex++, section, "empty", "");
+            }
+            return rowIndex;
+        }
+
+        writeExportRow(sheet, rowIndex++, section, "value", source);
+        return rowIndex;
+    }
+
+    private void writeExportRow(Sheet sheet, int rowIndex, String section, String name, Object value) {
+        Row row = sheet.createRow(rowIndex);
+        writeExportCell(row, 0, section, null);
+        writeExportCell(row, 1, name, null);
+        writeExportCell(row, 2, value, null);
+    }
+
+    private void writeExportCell(Row row, int columnIndex, Object value, CellStyle style) {
+        Cell cell = row.createCell(columnIndex);
+        if (style != null) {
+            cell.setCellStyle(style);
+        }
+        if (value instanceof Number) {
+            cell.setCellValue(((Number) value).doubleValue());
+            return;
+        }
+        if (value instanceof Boolean) {
+            cell.setCellValue((Boolean) value);
+            return;
+        }
+        cell.setCellValue(stringifyExportValue(value));
+    }
+
+    private boolean isSimpleExportValue(Object value) {
+        return value == null
+                || value instanceof CharSequence
+                || value instanceof Number
+                || value instanceof Boolean
+                || value instanceof LocalDate
+                || value instanceof YearMonth
+                || value instanceof java.time.temporal.TemporalAccessor
+                || value instanceof java.util.Date
+                || value.getClass().isEnum();
+    }
+
+    private String deriveExportItemName(Object item, int index) {
+        if (item instanceof Map) {
+            Map<?, ?> map = (Map<?, ?>) item;
+            for (String key : new String[]{"title", "label", "name", "key", "id"}) {
+                Object value = map.get(key);
+                if (value != null) {
+                    String text = stringifyExportValue(value);
+                    if (!text.isEmpty()) {
+                        return text;
+                    }
+                }
+            }
+        }
+        return "Item " + index;
+    }
+
+    private String joinExportSection(String section, String name) {
+        if (section == null || section.isEmpty()) {
+            return name;
+        }
+        if (name == null || name.isEmpty()) {
+            return section;
+        }
+        return section + " / " + name;
+    }
+
+    private String stringifyExportValue(Object value) {
+        if (value == null) {
+            return "";
+        }
+        String text = String.valueOf(value);
+        return text.length() > 32760 ? text.substring(0, 32760) : text;
+    }
+
+    private void autosizeExportColumns(Sheet sheet, int columnCount) {
+        for (int i = 0; i < columnCount; i++) {
+            sheet.autoSizeColumn(i);
+            int width = Math.max(sheet.getColumnWidth(i), 18 * 256);
+            sheet.setColumnWidth(i, Math.min(width, 60 * 256));
+        }
     }
 
     private static final class DateWindow {

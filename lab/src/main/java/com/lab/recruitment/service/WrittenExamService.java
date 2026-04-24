@@ -36,9 +36,9 @@ public interface WrittenExamService extends IService<WrittenExam> {
 
     void savePaperQuestions(Long examId, List<WrittenExamPaperQuestion> questions);
 
-    IPage<WrittenExamAttempt> getGradingList(Page<WrittenExamAttempt> page, Long examId);
+    IPage<Map<String, Object>> getGradingList(Page<?> page, Long examId, Integer status, String keyword);
 
-    WrittenExamAttempt getStudentAttemptDetail(Long attemptId);
+    Map<String, Object> getStudentAttemptDetail(Long attemptId);
 
     void submitGrading(Long attemptId, List<WrittenExamAnswer> scores, String remark);
 
@@ -71,6 +71,8 @@ public interface WrittenExamService extends IService<WrittenExam> {
     // ==================== Judge ====================
 
     Map<String, Object> judgeCode(Long questionId, String code, String language);
+
+    Map<String, Object> runCode(Long questionId, String code, String language, String input);
 
     void sendInterviewInvitations(Long examId, List<Long> studentIds, String title, String description);
 

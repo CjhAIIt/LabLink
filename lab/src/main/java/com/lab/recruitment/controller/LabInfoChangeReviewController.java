@@ -48,7 +48,7 @@ public class LabInfoChangeReviewController {
     }
 
     @GetMapping("/history")
-    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER')")
     public Result<List<Map<String, Object>>> getReviewHistory(@RequestParam(required = false) Long labId) {
         try {
             User currentUser = currentUserAccessor.getCurrentUser();

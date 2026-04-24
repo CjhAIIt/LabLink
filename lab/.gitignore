@@ -1,13 +1,22 @@
 # Build output
 /target/
 /frontend/dist/
+/frontend/build/
 
 # Private environment files
+/.env
 /.env.cloud
+/.env.local
+/.env.*.local
+!/.env.example
+!/.env.cloud.example
+!/.env.local.example
 
 # Runtime artifacts
 /logs/
 /uploads/
+/uploads_protected/
+/backup/
 /temp-upload-test.pdf
 /*.zip
 /*.tar
@@ -28,8 +37,39 @@
 /deploy-tools/node_modules/
 /frontend/node_modules/
 /frontend/.vite/
+/frontend/.cache/
+/frontend/.eslintcache
+/frontend/.stylelintcache
+/frontend/npm-debug.log*
+/frontend/yarn-debug.log*
+/frontend/pnpm-debug.log*
+
+# Java / Maven
+*.class
+*.jar.original
+*.war
+*.ear
+*.log
+hs_err_pid*
+replay_pid*
 
 # IDE files
 /.idea/
 /.vscode/
 /.vercel/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Temporary
+*.tmp
+*.temp
+*.bak
+*.old
+*.orig
+*.swp
+*.swo
+*.pid

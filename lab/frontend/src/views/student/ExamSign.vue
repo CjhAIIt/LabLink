@@ -50,10 +50,12 @@ import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { submitExamSignature } from '@/api/writtenExam'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
 
 const route = useRoute()
 const router = useRouter()
 const examId = route.params.examId
+const examBasePath = computed(() => resolveSurfacePathByRoute(route.path, '/student/exam-center'))
 
 const agreed = ref(false)
 const signatureName = ref('')
@@ -67,7 +69,7 @@ const handleSubmit = async () => {
   try {
     await submitExamSignature({ examId, signature: signatureName.value.trim() })
     ElMessage.success('签名成功，即将进入考试')
-    router.push(`/student/exam-center/${examId}/take`)
+    router.push(`${examBasePath.value}/${examId}/take`)
   } catch (e) {
     ElMessage.error('签名提交失败，请重试')
   } finally {
@@ -163,5 +165,31 @@ const handleSubmit = async () => {
   border-radius: 10px;
   font-size: 16px;
   height: 48px;
+}
+
+@media (max-width: 768px) {
+  .exam-sign-wrapper {
+    padding: 16px 12px;
+    min-height: auto;
+  }
+
+  .exam-sign-card {
+    padding: 24px 18px;
+    border-radius: 16px;
+  }
+
+  .sign-title {
+    font-size: 20px;
+    margin-bottom: 22px;
+  }
+
+  .pledge-card {
+    padding: 18px 16px;
+  }
+
+  .action-section .el-button {
+    width: 100%;
+    min-width: 0;
+  }
 }
 </style>

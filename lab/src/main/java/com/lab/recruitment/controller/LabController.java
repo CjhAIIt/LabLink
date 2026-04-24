@@ -43,7 +43,7 @@ public class LabController {
     private LabInfoChangeReviewService labInfoChangeReviewService;
 
     @PutMapping("/update-info")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER')")
     public Result<Object> updateLabInfo(@RequestBody Lab lab) {
         try {
             return Result.success("Lab info change submitted", labInfoChangeReviewService.submitChange(

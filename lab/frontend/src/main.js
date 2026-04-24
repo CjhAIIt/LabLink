@@ -5,6 +5,8 @@ import router from './router'
 import ElementPlus from 'element-plus'
 import 'element-plus/dist/index.css'
 import './assets/css/global.css'
+import './assets/css/mobile-responsive.css'
+import './assets/css/mobile-app.css'
 import request from './utils/request'
 
 const app = createApp(App)

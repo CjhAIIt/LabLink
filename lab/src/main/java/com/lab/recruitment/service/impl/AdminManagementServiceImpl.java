@@ -1,18 +1,22 @@
 package com.lab.recruitment.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.lab.recruitment.entity.Lab;
 import com.lab.recruitment.entity.LabMember;
 import com.lab.recruitment.entity.User;
+import com.lab.recruitment.mapper.LabMapper;
 import com.lab.recruitment.mapper.LabMemberMapper;
 import com.lab.recruitment.mapper.UserMapper;
 import com.lab.recruitment.service.AdminManagementService;
 import com.lab.recruitment.service.LabMemberService;
+import com.lab.recruitment.service.PlatformCacheService;
 import com.lab.recruitment.service.UserAccessService;
 import com.lab.recruitment.support.CurrentUserAccessor;
 import com.lab.recruitment.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -32,7 +36,13 @@ public class AdminManagementServiceImpl implements AdminManagementService {
     private LabMemberMapper labMemberMapper;
 
     @Autowired
+    private LabMapper labMapper;
+
+    @Autowired
     private LabMemberService labMemberService;
+
+    @Autowired
+    private PlatformCacheService platformCacheService;
 
     @Autowired
     private UserAccessService userAccessService;
@@ -207,6 +217,8 @@ public class AdminManagementServiceImpl implements AdminManagementService {
     }
 
     private void refreshLabAdminUsers(Long labId, Long currentAdminUserId) {
+        syncLabCurrentAdminSnapshot(labId);
+
         Set<Long> refreshUserIds = new LinkedHashSet<>();
         if (currentAdminUserId != null) {
             refreshUserIds.add(currentAdminUserId);
@@ -236,6 +248,34 @@ public class AdminManagementServiceImpl implements AdminManagementService {
         for (Long refreshUserId : refreshUserIds) {
             userAccessService.refreshCompatibilityAccess(refreshUserId);
         }
+    }
+
+    private void syncLabCurrentAdminSnapshot(Long labId) {
+        if (labId == null) {
+            return;
+        }
+        Lab update = new Lab();
+        update.setId(labId);
+        update.setCurrentAdmins(resolveCurrentLabAdminName(labId));
+        labMapper.updateById(update);
+        platformCacheService.evictLabDetailCache(labId);
+    }
+
+    private String resolveCurrentLabAdminName(Long labId) {
+        return displayUserName(getCurrentLabAdminUser(labId));
+    }
+
+    private String displayUserName(User user) {
+        if (user == null) {
+            return "";
+        }
+        if (StringUtils.hasText(user.getRealName())) {
+            return user.getRealName().trim();
+        }
+        if (StringUtils.hasText(user.getUsername())) {
+            return user.getUsername().trim();
+        }
+        return "";
     }
 
     private User getCurrentLabAdminUser(Long labId) {

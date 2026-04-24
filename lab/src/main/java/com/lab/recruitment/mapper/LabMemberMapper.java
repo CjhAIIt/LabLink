@@ -53,7 +53,7 @@ public interface LabMemberMapper extends BaseMapper<LabMember> {
             "<script>",
             "SELECT",
             "  m.id, m.lab_id AS labId, m.user_id AS userId, m.member_role AS memberRole,",
-            "  m.join_date AS joinDate, m.status, u.real_name AS realName, u.student_id AS studentId,",
+            "  m.join_date AS joinDate, m.status, u.username, u.real_name AS realName, u.student_id AS studentId,",
             "  u.major, u.grade",
             "FROM t_lab_member m",
             "LEFT JOIN t_user u ON u.id = m.user_id AND u.deleted = 0",

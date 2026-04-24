@@ -7,6 +7,7 @@ import com.lab.recruitment.service.WrittenExamService;
 import com.lab.recruitment.utils.Result;
 import com.alibaba.fastjson2.JSON;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,6 +16,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/written-exam/admin")
+@PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN', 'TEACHER')")
 public class WrittenExamAdminController {
 
     @Autowired
@@ -146,10 +148,12 @@ public class WrittenExamAdminController {
     @GetMapping("/grading")
     public Result<?> getGradingList(@RequestParam(defaultValue = "1") Integer pageNum,
                                     @RequestParam(defaultValue = "10") Integer pageSize,
-                                    @RequestParam(required = false) Long examId) {
+                                    @RequestParam(required = false) Long examId,
+                                    @RequestParam(required = false) Integer status,
+                                    @RequestParam(required = false) String keyword) {
         try {
-            Page<WrittenExamAttempt> page = new Page<>(pageNum, pageSize);
-            return Result.success(writtenExamService.getGradingList(page, examId));
+            Page<?> page = new Page<>(pageNum, pageSize);
+            return Result.success(writtenExamService.getGradingList(page, examId, status, keyword));
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

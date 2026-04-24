@@ -6,6 +6,8 @@ import com.lab.recruitment.entity.Delivery;
 import com.lab.recruitment.entity.User;
 import com.lab.recruitment.service.DeliveryService;
 import com.lab.recruitment.service.UserService;
+import com.lab.recruitment.support.CurrentUserAccessor;
+import com.lab.recruitment.support.DataScope;
 import com.lab.recruitment.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -30,6 +32,9 @@ public class DeliveryController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private CurrentUserAccessor currentUserAccessor;
 
     @PostMapping("/deliver")
     @PreAuthorize("hasRole('STUDENT')")
@@ -68,11 +73,12 @@ public class DeliveryController {
             String username = SecurityContextHolder.getContext().getAuthentication().getName();
             User user = userService.findByUsername(username);
 
-            if (user != null && "admin".equals(user.getRole())) {
-                if (user.getLabId() == null) {
+            if (user != null) {
+                DataScope scope = currentUserAccessor.resolveManagementScope(user, null, labId);
+                labId = scope.getLabId();
+                if (labId == null && !scope.isSchoolLevel()) {
                     return Result.success(new Page<>());
                 }
-                labId = user.getLabId();
             }
 
             Page<Map<String, Object>> deliveryPage = deliveryService.getDeliveryPage(
@@ -112,7 +118,7 @@ public class DeliveryController {
     }
 
     @PostMapping("/audit/{deliveryId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public Result<Object> audit(@PathVariable Long deliveryId,
                                 @RequestParam Integer auditStatus,
                                 @RequestParam(required = false) String auditRemark) {
@@ -126,7 +132,7 @@ public class DeliveryController {
     }
 
     @PostMapping("/admit/{deliveryId}")
-    @PreAuthorize("hasRole('ADMIN')")
+    @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public Result<Object> admit(@PathVariable Long deliveryId) {
         try {
             assertCurrentAdminOwnsDelivery(deliveryId);
@@ -165,6 +171,7 @@ public class DeliveryController {
     @PreAuthorize("hasAnyRole('ADMIN', 'SUPER_ADMIN')")
     public Result<Map<String, Object>> getStatistics(@PathVariable Long labId) {
         try {
+            currentUserAccessor.assertLabScope(getCurrentUser(), labId);
             return Result.success(deliveryService.getStatistics(labId));
         } catch (Exception e) {
             return Result.error(e.getMessage());
@@ -181,6 +188,15 @@ public class DeliveryController {
     }
 
     private void assertCurrentAdminOwnsDelivery(Long deliveryId) {
+        Delivery scopedDelivery = deliveryService.getById(deliveryId);
+        if (scopedDelivery == null) {
+            throw new RuntimeException("投递记录不存在");
+        }
+        currentUserAccessor.assertLabScope(getCurrentUser(), scopedDelivery.getLabId());
+        return;
+    }
+
+    private void assertCurrentAdminOwnsDeliveryLegacy(Long deliveryId) {
         User currentUser = getCurrentUser();
         if (!"admin".equals(currentUser.getRole())) {
             throw new RuntimeException("只有实验室管理员可以审核投递");

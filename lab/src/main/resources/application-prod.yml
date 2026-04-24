@@ -1,0 +1,50 @@
+server:
+  port: ${SERVER_PORT:8081}
+  forward-headers-strategy: framework
+
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+  flyway:
+    enabled: ${APP_SCHEMA_MIGRATION_ENABLED:true}
+    validate-on-migrate: true
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 20MB
+
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: ${JWT_EXPIRATION:86400000}
+
+file:
+  upload-path: ${FILE_UPLOAD_PATH:/opt/lablink/uploads/public/}
+  protected-upload-path: ${FILE_PROTECTED_UPLOAD_PATH:/opt/lablink/uploads/protected/}
+
+logging:
+  file:
+    name: ${APP_LOG_FILE:/opt/lablink/logs/application.log}
+  level:
+    com.lab.recruitment: INFO
+    org.springframework.security: INFO
+    org.springframework.web: INFO
+
+app:
+  schema:
+    runtime-update-enabled: ${APP_SCHEMA_RUNTIME_UPDATE_ENABLED:false}
+  security:
+    trust-forward-headers: true
+    allow-credentials: false
+    allowed-origins:
+      - ${APP_ALLOWED_ORIGIN_PRIMARY:https://lablink.example.com}
+      - ${APP_ALLOWED_ORIGIN_SECONDARY:https://www.lablink.example.com}
+
+lablink:
+  cache:
+    redis:
+      enabled: ${LABLINK_CACHE_REDIS_ENABLED:false}
+  messaging:
+    rabbit:
+      enabled: ${LABLINK_MQ_RABBIT_ENABLED:false}

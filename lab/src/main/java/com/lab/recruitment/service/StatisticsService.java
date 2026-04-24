@@ -15,6 +15,9 @@ public interface StatisticsService {
     Map<String, Object> getDashboard(User currentUser, LocalDate startDate, LocalDate endDate,
                                      Long collegeId, Long labId);
 
+    byte[] exportDashboardExcel(User currentUser, LocalDate startDate, LocalDate endDate,
+                                Long collegeId, Long labId);
+
     List<Map<String, Object>> getLabDimension(User currentUser, LocalDate startDate, LocalDate endDate,
                                               Long collegeId, Long labId);
 

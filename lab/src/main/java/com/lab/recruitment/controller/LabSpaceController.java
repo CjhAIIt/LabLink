@@ -9,6 +9,7 @@ import com.lab.recruitment.entity.LabSpaceFolder;
 import com.lab.recruitment.entity.User;
 import com.lab.recruitment.service.LabAttendanceService;
 import com.lab.recruitment.service.LabExitApplicationService;
+import com.lab.recruitment.service.LabMemberService;
 import com.lab.recruitment.service.LabService;
 import com.lab.recruitment.service.LabSpaceService;
 import com.lab.recruitment.service.UserService;
@@ -48,6 +49,9 @@ public class LabSpaceController {
     private LabAttendanceService labAttendanceService;
 
     @Autowired
+    private LabMemberService labMemberService;
+
+    @Autowired
     private LabExitApplicationService labExitApplicationService;
 
     @Autowired
@@ -62,31 +66,26 @@ public class LabSpaceController {
         try {
             User currentUser = getCurrentUser();
             Long scopedLabId = resolveReadableLabId(currentUser, labId);
-            Lab lab = labService.getById(scopedLabId);
+            Lab lab = labService.getLabById(scopedLabId);
             if (lab == null) {
                 return Result.error("实验室不存在");
             }
 
-            QueryWrapper<User> memberQuery = new QueryWrapper<>();
-            memberQuery.eq("lab_id", scopedLabId)
-                    .eq("role", "student")
-                    .orderByAsc("student_id")
-                    .orderByAsc("id");
-            List<User> members = userService.list(memberQuery);
+            List<Map<String, Object>> members = labMemberService.getActiveMembers(scopedLabId, currentUser);
             List<Map<String, Object>> memberItems = new ArrayList<>();
-            for (User member : members) {
+            for (Map<String, Object> member : members) {
                 Map<String, Object> memberItem = new HashMap<>();
-                memberItem.put("id", member.getId());
-                memberItem.put("username", member.getUsername());
-                memberItem.put("realName", member.getRealName());
-                memberItem.put("studentId", member.getStudentId());
-                memberItem.put("major", member.getMajor());
+                memberItem.put("id", member.get("userId"));
+                memberItem.put("username", member.get("username"));
+                memberItem.put("realName", member.get("realName"));
+                memberItem.put("studentId", member.get("studentId"));
+                memberItem.put("major", member.get("major"));
                 memberItems.add(memberItem);
             }
 
             Map<String, Object> data = new HashMap<>();
             data.put("lab", lab);
-            data.put("memberCount", members.size());
+            data.put("memberCount", memberItems.size());
             data.put("members", memberItems);
             data.put("attendanceSummary", labAttendanceService.getAttendanceSummary(scopedLabId,
                     currentUserAccessor.isAdmin(currentUser) || currentUserAccessor.isTeacherIdentity(currentUser)
@@ -158,10 +157,8 @@ public class LabSpaceController {
         try {
             User currentUser = getCurrentUser();
             if (!currentUserAccessor.isAdmin(currentUser) && !currentUserAccessor.isTeacherIdentity(currentUser)) {
-                if (currentUser.getLabId() == null) {
-                    return Result.error("你尚未加入任何实验室");
-                }
-                return Result.success(labAttendanceService.getAttendanceSummary(currentUser.getLabId(), currentUser.getId()));
+                Long scopedLabId = currentUserAccessor.resolveLabScope(currentUser, null);
+                return Result.success(labAttendanceService.getAttendanceSummary(scopedLabId, currentUser.getId()));
             }
             Long scopedLabId = resolveReadableLabId(currentUser, labId);
             return Result.success(labAttendanceService.getAttendanceSummary(scopedLabId, null));
@@ -175,16 +172,14 @@ public class LabSpaceController {
     public Result<Boolean> signIn(@RequestBody Map<String, Object> request) {
         try {
             User currentUser = getCurrentUser();
-            if (currentUser.getLabId() == null) {
-                return Result.error("你尚未加入任何实验室");
-            }
+            Long scopedLabId = currentUserAccessor.resolveLabScope(currentUser, null);
             String attendanceDate = request.get("attendanceDate") == null
                     ? LocalDate.now().toString()
                     : String.valueOf(request.get("attendanceDate"));
             Integer status = getIntegerValue(request.get("status"));
             String reason = request.get("reason") == null ? null : String.valueOf(request.get("reason"));
             return Result.success(labAttendanceService.studentSignIn(
-                    currentUser.getLabId(),
+                    scopedLabId,
                     currentUser.getId(),
                     attendanceDate,
                     status,
@@ -401,13 +396,11 @@ public class LabSpaceController {
 
     private Long resolveReadableLabId(User currentUser, Long requestedLabId) {
         if (!currentUserAccessor.isAdmin(currentUser) && !currentUserAccessor.isTeacherIdentity(currentUser)) {
-            if (currentUser.getLabId() == null) {
-                throw new RuntimeException("当前账号未绑定任何实验室");
-            }
-            if (requestedLabId != null && !currentUser.getLabId().equals(requestedLabId)) {
+            Long scopedLabId = currentUserAccessor.resolveLabScope(currentUser, requestedLabId);
+            if (requestedLabId != null && !scopedLabId.equals(requestedLabId)) {
                 throw new RuntimeException("无权访问其他实验室的数据");
             }
-            return currentUser.getLabId();
+            return scopedLabId;
         }
         return currentUserAccessor.resolveLabScope(currentUser, requestedLabId);
     }

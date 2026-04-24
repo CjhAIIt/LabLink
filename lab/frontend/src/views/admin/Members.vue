@@ -17,6 +17,7 @@
         </el-form-item>
         <el-form-item label="成员角色">
           <el-select v-model="filters.memberRole" clearable placeholder="全部角色" style="width: 140px">
+            <el-option label="管理员" value="lab_admin" />
             <el-option label="负责人" value="lab_leader" />
             <el-option label="普通成员" value="member" />
           </el-select>
@@ -40,8 +41,8 @@
         <el-table-column prop="major" label="专业" min-width="150" />
         <el-table-column prop="memberRole" label="角色" min-width="110">
           <template #default="{ row }">
-            <el-tag :type="row.memberRole === 'lab_leader' ? 'success' : 'info'">
-              {{ row.memberRole === 'lab_leader' ? '负责人' : '成员' }}
+            <el-tag :type="roleTagType(row.memberRole)">
+              {{ roleLabel(row.memberRole) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -57,14 +58,19 @@
         <el-table-column label="操作" fixed="right" min-width="220">
           <template #default="{ row }">
             <el-button
-              v-if="row.status === 'active' && row.memberRole !== 'lab_leader'"
+              v-if="canAppointLeader(row)"
               link
               type="primary"
               @click="handleAppointLeader(row)"
             >
               任命负责人
             </el-button>
-            <el-button v-if="row.status === 'active'" link type="danger" @click="handleRemove(row)">
+            <el-button
+              v-if="canRemoveMember(row)"
+              link
+              type="danger"
+              @click="handleRemove(row)"
+            >
               移出实验室
             </el-button>
           </template>
@@ -90,7 +96,9 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
 import TablePageCard from '@/components/common/TablePageCard.vue'
 import { appointLeader, getLabMemberPage, removeLabMember } from '@/api/labMembers'
+import { useUserStore } from '@/stores/user'
 
+const userStore = useUserStore()
 const loading = ref(false)
 const members = ref([])
 
@@ -105,6 +113,33 @@ const filters = reactive({
   memberRole: '',
   status: 'active'
 })
+
+const roleLabel = (memberRole) => ({
+  lab_admin: '管理员',
+  lab_leader: '负责人',
+  leader: '负责人',
+  member: '成员'
+}[memberRole] || '成员')
+
+const roleTagType = (memberRole) => ({
+  lab_admin: 'danger',
+  lab_leader: 'success',
+  leader: 'success',
+  member: 'info'
+}[memberRole] || 'info')
+
+const canAppointLeader = (row) => {
+  return row.status === 'active'
+    && row.memberRole !== 'lab_admin'
+    && row.memberRole !== 'lab_leader'
+    && row.memberRole !== 'leader'
+}
+
+const canRemoveMember = (row) => {
+  return row.status === 'active'
+    && row.memberRole !== 'lab_admin'
+    && row.userId !== userStore.userInfo?.id
+}
 
 const loadMembers = async () => {
   loading.value = true

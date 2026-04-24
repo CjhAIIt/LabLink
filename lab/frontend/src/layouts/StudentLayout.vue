@@ -1,23 +1,26 @@
 <template>
   <div class="shell student-shell">
-    <aside class="sidebar" :class="{ 'is-collapsed': isCollapse }">
+    <aside v-if="!isFullScreenRoute" class="sidebar" :class="{ 'is-collapsed': isCollapse }">
       <div class="sidebar-inner">
         <div class="sidebar-brand">
           <BrandLogo title="LabLink" subtitle="高校实验室管理平台" tone="dark" size="sm" />
         </div>
 
         <el-menu :default-active="$route.path" router class="sidebar-menu" :collapse="false">
-          <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
-            <el-icon><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </el-menu-item>
+          <template v-for="group in menuGroups" :key="group.title">
+            <div class="sidebar-group-title">{{ group.title }}</div>
+            <el-menu-item v-for="item in group.items" :key="item.path" :index="item.path">
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </el-menu-item>
+          </template>
         </el-menu>
       </div>
     </aside>
-    <div v-if="sidebarVisible" class="sidebar-mask" @click="closeSidebar"></div>
+    <div v-if="sidebarVisible && !isFullScreenRoute" class="sidebar-mask" @click="closeSidebar"></div>
 
     <div class="main-shell">
-      <header class="topbar">
+      <header v-if="!isFullScreenRoute" class="topbar">
         <div class="topbar-left">
           <el-button class="collapse-btn" text @click="toggleCollapse">
             <el-icon :size="20">
@@ -29,24 +32,27 @@
             <h2>{{ $route.meta.title || '工作台' }}</h2>
           </div>
         </div>
-        <el-dropdown @command="handleCommand">
-          <div class="user-chip">
-            <el-avatar :size="34">{{ userInitial }}</el-avatar>
-            <div>
-              <strong>{{ userStore.realName || '学生' }}</strong>
-              <span>{{ joinedLabLabel }}</span>
+        <div class="topbar-actions">
+          <TopbarNotification path="/student/notifications" />
+          <el-dropdown @command="handleCommand">
+            <div class="user-chip">
+              <el-avatar :size="34">{{ userInitial }}</el-avatar>
+              <div>
+                <strong>{{ userStore.realName || '学生' }}</strong>
+                <span>{{ joinedLabLabel }}</span>
+              </div>
             </div>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人资料</el-dropdown-item>
-              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </header>
 
-      <main class="content">
+      <main class="content" :class="{ 'content--fullscreen': isFullScreenRoute }">
         <router-view />
       </main>
     </div>
@@ -61,11 +67,13 @@ import { useRoute, useRouter } from 'vue-router'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { useUserStore } from '@/stores/user'
 import { ensureAuthContext } from '@/utils/auth-context'
-import { resolveDesktopMenuItems } from '@/utils/portal-menu'
+import TopbarNotification from '@/components/common/TopbarNotification.vue'
+import { resolveDesktopMenuGroups, resolveDesktopMenuItems } from '@/utils/portal-menu'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const isFullScreenRoute = computed(() => Boolean(route.meta?.fullScreen))
 
 const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth <= 960 : false)
 const isCollapse = ref(isMobile.value)
@@ -92,12 +100,10 @@ const closeSidebar = () => {
 }
 
 const userInitial = computed(() => userStore.realName?.charAt(0) || 'S')
-const hasLabAccess = computed(() => Boolean(userStore.userInfo?.labId))
+const hasLabAccess = computed(() => Boolean(userStore.userInfo?.labId && userStore.userInfo?.labName))
 const canApplyLab = computed(() => userStore.hasPermission('lab:apply:self'))
 
-const joinedLabLabel = computed(() =>
-  hasLabAccess.value ? `已加入实验室 #${userStore.userInfo.labId}` : '尚未加入实验室'
-)
+const joinedLabLabel = computed(() => userStore.userInfo?.labName || '暂未加入实验室')
 
 const fallbackMenuItems = computed(() =>
   [
@@ -106,18 +112,17 @@ const fallbackMenuItems = computed(() =>
     canApplyLab.value ? { path: '/student/applications', label: '我的申请', icon: 'Tickets' } : null,
     hasLabAccess.value ? { path: '/student/my-lab', label: '我的实验室', icon: 'UserFilled' } : null,
     hasLabAccess.value ? { path: '/student/attendance', label: '我的考勤', icon: 'Calendar' } : null,
-    { path: '/student/check-in', label: '拍照打卡', icon: 'Camera' },
     hasLabAccess.value ? { path: '/student/space', label: '资料空间', icon: 'Files' } : null,
-    { path: '/student/notifications', label: '消息中心', icon: 'Bell' },
     { path: '/student/notices', label: '公告通知', icon: 'Bell' },
     { path: '/student/profile', label: '个人资料', icon: 'User' }
   ].filter(Boolean)
 )
 
 const menuItems = computed(() => resolveDesktopMenuItems(userStore.menus, fallbackMenuItems.value))
+const menuGroups = computed(() => resolveDesktopMenuGroups(menuItems.value, 'student'))
 
 const ensureContext = async () => {
-  await ensureAuthContext(userStore)
+  await ensureAuthContext(userStore, { force: true })
 }
 
 const handleCommand = async (command) => {
@@ -155,8 +160,10 @@ onBeforeUnmount(() => {
   min-height: 100vh;
   display: flex;
   background-color: #ffffff;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   position: relative;
+  align-items: flex-start;
 }
 
 .sidebar {
@@ -167,6 +174,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   flex-shrink: 0;
   border-right: 1px solid #e5e5e5;
+  align-self: flex-start;
 }
 
 .sidebar.is-collapsed {
@@ -221,12 +229,25 @@ onBeforeUnmount(() => {
   font-weight: 600;
 }
 
+.sidebar-group-title {
+  margin: 16px 12px 6px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-group-title:first-child {
+  margin-top: 0;
+}
+
 .main-shell {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 100vh;
+  min-height: 100vh;
+  height: auto;
 }
 
 .sidebar-mask {
@@ -286,6 +307,13 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 .user-chip {
   display: flex;
   align-items: center;
@@ -316,9 +344,24 @@ onBeforeUnmount(() => {
 
 .content {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: visible;
   padding: 0 24px 24px;
   background-color: #ffffff;
+}
+
+@media (min-width: 961px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+}
+
+.content.content--fullscreen {
+  padding: 0;
+  overflow: hidden;
+  background: #dfe6f1;
 }
 
 @media (max-width: 960px) {
@@ -343,6 +386,10 @@ onBeforeUnmount(() => {
     padding: 0 16px 24px;
   }
 
+  .content.content--fullscreen {
+    padding: 0;
+  }
+
   .topbar {
     padding: 16px;
   }
@@ -360,6 +407,10 @@ onBeforeUnmount(() => {
 
   .topbar-left {
     gap: 12px;
+  }
+
+  .topbar-actions {
+    gap: 8px;
   }
 
   .topbar-label {
@@ -395,6 +446,10 @@ onBeforeUnmount(() => {
 
   .content {
     padding: 0 12px 16px;
+  }
+
+  .content.content--fullscreen {
+    padding: 0;
   }
 }
 </style>
