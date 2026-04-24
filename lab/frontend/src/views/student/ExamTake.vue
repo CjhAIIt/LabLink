@@ -102,6 +102,26 @@
               </div>
             </div>
 
+            <!-- Judge (True/False) -->
+            <div v-else-if="currentQuestion.type === 'judge'" class="choice-list">
+              <div
+                class="choice-card"
+                :class="{ 'choice-card--selected': currentAnswer.answer === 'true' }"
+                @click="setAnswer('true')"
+              >
+                <span class="choice-key">✓</span>
+                <span class="choice-text">正确</span>
+              </div>
+              <div
+                class="choice-card"
+                :class="{ 'choice-card--selected': currentAnswer.answer === 'false' }"
+                @click="setAnswer('false')"
+              >
+                <span class="choice-key">✗</span>
+                <span class="choice-text">错误</span>
+              </div>
+            </div>
+
             <!-- Fill Blank -->
             <div v-else-if="currentQuestion.type === 'fill_blank'" class="fill-area">
               <el-input
@@ -125,6 +145,12 @@
                   <el-option label="C" value="c" />
                   <el-option label="C++" value="cpp" />
                 </el-select>
+                <el-button size="small" :loading="compiling" @click="runCode('debug')">
+                  <el-icon><VideoPlay /></el-icon> 编译运行
+                </el-button>
+                <el-button size="small" type="primary" :loading="compiling" @click="runCode('submit')">
+                  <el-icon><CircleCheckFilled /></el-icon> 提交判题
+                </el-button>
               </div>
               <div class="code-editor">
                 <div class="line-gutter" ref="gutterRef">
@@ -140,6 +166,17 @@
                   @scroll="syncScroll"
                   @input="markUnsaved"
                 ></textarea>
+              </div>
+              <div v-if="codeResult" class="code-result" :class="`code-result--${codeResultType}`">
+                <div class="code-result__header">
+                  <el-tag :type="codeResultType" size="small" effect="dark">{{ codeResultLabel }}</el-tag>
+                  <span v-if="codeResult.time" class="code-result__meta">耗时: {{ codeResult.time }}s</span>
+                  <span v-if="codeResult.memory" class="code-result__meta">内存: {{ codeResult.memory }}KB</span>
+                </div>
+                <pre v-if="codeResult.stdout" class="code-result__output">{{ codeResult.stdout }}</pre>
+                <pre v-if="codeResult.stderr" class="code-result__output code-result__error">{{ codeResult.stderr }}</pre>
+                <pre v-if="codeResult.compile_output" class="code-result__output code-result__error">{{ codeResult.compile_output }}</pre>
+                <pre v-if="codeResult.message" class="code-result__output">{{ codeResult.message }}</pre>
               </div>
             </div>
           </div>
@@ -180,15 +217,18 @@ import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
 import {
   WarningFilled, EditPen, Timer, Loading, CircleCheckFilled,
-  InfoFilled, ArrowLeft, ArrowRight, StarFilled
+  InfoFilled, ArrowLeft, ArrowRight, StarFilled, VideoPlay
 } from '@element-plus/icons-vue'
 import {
-  startExam, saveExamAnswer, submitExamPaper, getExamProgress, reportCheatEvent
+  startExam, saveExamAnswer, submitExamPaper, getExamProgress, reportCheatEvent,
+  runExamCode, judgeExamCode
 } from '@/api/writtenExam'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
 
 const route = useRoute()
 const router = useRouter()
 const examId = route.params.examId
+const examBasePath = computed(() => resolveSurfacePathByRoute(route.path, '/student/exam-center'))
 
 const examTitle = ref('')
 const questions = ref([])
@@ -201,6 +241,8 @@ const autoSaveStatus = ref('unsaved')
 const showCheatWarning = ref(false)
 const gutterRef = ref(null)
 const codeRef = ref(null)
+const compiling = ref(false)
+const codeResult = ref(null)
 
 let timerInterval = null
 let autoSaveInterval = null
@@ -247,12 +289,12 @@ function isAnswered(qid) {
 }
 
 function questionTypeLabel(type) {
-  const map = { single_choice: '单选题', fill_blank: '填空题', programming: '编程题' }
+  const map = { single_choice: '单选题', judge: '判断题', fill_blank: '填空题', programming: '编程题' }
   return map[type] || type
 }
 
 function questionTagType(type) {
-  const map = { single_choice: 'primary', fill_blank: 'success', programming: 'warning' }
+  const map = { single_choice: 'primary', judge: 'info', fill_blank: 'success', programming: 'warning' }
   return map[type] || 'info'
 }
 
@@ -284,6 +326,54 @@ function insertTab(e) {
 function syncScroll() {
   if (gutterRef.value && codeRef.value) {
     gutterRef.value.scrollTop = codeRef.value.scrollTop
+  }
+}
+
+const codeResultType = computed(() => {
+  if (!codeResult.value) return 'info'
+  const s = codeResult.value.status
+  if (s === 'success' || codeResult.value.correct === true) return 'success'
+  if (s === 'wrong_answer') return 'warning'
+  return 'danger'
+})
+
+const codeResultLabel = computed(() => {
+  if (!codeResult.value) return ''
+  const s = codeResult.value.status
+  if (codeResult.value.correct === true) return 'Accepted'
+  if (s === 'success') return '编译通过'
+  if (s === 'wrong_answer') return 'Wrong Answer'
+  if (s === 'compile_error') return '编译错误'
+  if (s === 'runtime_error') return '运行错误'
+  if (s === 'time_limit') return '超时'
+  return '执行结果'
+})
+
+async function runCode(mode) {
+  if (!currentQuestion.value || !currentAnswer.value.code?.trim()) {
+    return ElMessage.warning('请先编写代码')
+  }
+  compiling.value = true
+  codeResult.value = null
+  try {
+    const payload = {
+      questionId: currentQuestion.value.id,
+      language: currentAnswer.value.language || 'java',
+      code: currentAnswer.value.code
+    }
+    let res
+    if (mode === 'submit') {
+      res = await judgeExamCode(payload)
+    } else {
+      payload.input = ''
+      res = await runExamCode(payload)
+    }
+    codeResult.value = res.data
+    markUnsaved()
+  } catch (e) {
+    codeResult.value = { status: 'error', message: e.response?.data?.message || '编译运行失败，请稍后重试' }
+  } finally {
+    compiling.value = false
   }
 }
 
@@ -342,7 +432,7 @@ async function doSubmit() {
     cleanup()
     localStorage.removeItem(STORAGE_KEY)
     ElMessage.success('试卷已提交')
-    router.replace(`/student/exam-center/${examId}/result`)
+    router.replace(`${examBasePath.value}/${examId}/result`)
   } catch { ElMessage.error('提交失败，请重试') }
 }
 
@@ -383,6 +473,10 @@ function cleanup() {
   document.removeEventListener('visibilitychange', handleVisibilityChange)
   window.removeEventListener('beforeunload', handleBeforeUnload)
 }
+
+watch(currentIndex, () => {
+  codeResult.value = null
+})
 
 onMounted(async () => {
   document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -529,6 +623,21 @@ onBeforeUnmount(() => { cleanup() })
   padding: 10px 14px; font-family: Consolas, 'Courier New', monospace;
   font-size: 14px; line-height: 22px; resize: none; tab-size: 2;
 }
+/* Code result */
+.code-result {
+  border: 1px solid #e4e7ed; border-radius: 8px; padding: 14px 18px; background: #fafafa;
+}
+.code-result--success { border-color: #b3e19d; background: #f0f9eb; }
+.code-result--warning { border-color: #f3d19e; background: #fdf6ec; }
+.code-result--danger { border-color: #fab6b6; background: #fef0f0; }
+.code-result__header { display: flex; align-items: center; gap: 12px; margin-bottom: 8px; }
+.code-result__meta { font-size: 12px; color: #909399; }
+.code-result__output {
+  margin: 6px 0 0; padding: 10px 14px; border-radius: 6px; background: #1e1e1e; color: #d4d4d4;
+  font-family: Consolas, 'Courier New', monospace; font-size: 13px; line-height: 1.6;
+  white-space: pre-wrap; word-break: break-word; max-height: 200px; overflow-y: auto;
+}
+.code-result__error { color: #f56c6c; }
 /* Bottom bar */
 .bottom-bar {
   height: 60px; background: #fff; border-top: 1px solid #e4e7ed;
@@ -546,4 +655,75 @@ onBeforeUnmount(() => { cleanup() })
 .main-area::-webkit-scrollbar, .sidebar::-webkit-scrollbar { width: 6px; }
 .main-area::-webkit-scrollbar-thumb, .sidebar::-webkit-scrollbar-thumb { background: #e4e7ed; border-radius: 3px; }
 .main-area::-webkit-scrollbar-track, .sidebar::-webkit-scrollbar-track { background: transparent; }
+
+@media (max-width: 768px) {
+  .top-bar {
+    height: auto;
+    padding: 10px 12px;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .top-bar__left,
+  .top-bar__center,
+  .top-bar__right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .exam-body {
+    flex-direction: column;
+  }
+
+  .sidebar {
+    width: 100%;
+    border-right: 0;
+    border-bottom: 1px solid #e4e7ed;
+    padding: 12px;
+  }
+
+  .nav-grid {
+    grid-template-columns: repeat(auto-fill, minmax(40px, 1fr));
+  }
+
+  .main-area {
+    padding: 12px;
+  }
+
+  .question-card {
+    padding: 18px 16px;
+    border-radius: 14px;
+  }
+
+  .question-header,
+  .code-toolbar {
+    flex-wrap: wrap;
+  }
+
+  .question-score {
+    margin-left: 0;
+  }
+
+  .code-editor {
+    height: 300px;
+  }
+
+  .bottom-bar {
+    height: auto;
+    padding: 12px;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .bottom-bar__left,
+  .bottom-bar__right {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .bottom-bar :deep(.el-button) {
+    flex: 1 1 140px;
+    min-height: 44px;
+  }
+}
 </style>

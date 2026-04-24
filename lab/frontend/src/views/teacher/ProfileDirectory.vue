@@ -77,6 +77,17 @@
           <el-descriptions-item label="状态">
             <StatusTag :value="detailProfile.status" preset="profile" />
           </el-descriptions-item>
+          <el-descriptions-item label="资料附件" :span="2">
+            <el-link
+              v-if="detailProfile.attachmentUrl"
+              :href="resolveFileUrl(detailProfile.attachmentUrl)"
+              target="_blank"
+              type="primary"
+            >
+              {{ getFileNameFromUrl(detailProfile.attachmentUrl, '成员资料附件') }}
+            </el-link>
+            <span v-else>-</span>
+          </el-descriptions-item>
         </el-descriptions>
 
         <TablePageCard class="detail-section" title="个人介绍" subtitle="资料详情">
@@ -131,6 +142,7 @@ import SearchToolbar from '@/components/common/SearchToolbar.vue'
 import StatusTag from '@/components/common/StatusTag.vue'
 import TablePageCard from '@/components/common/TablePageCard.vue'
 import { getProfileArchives, getProfileDetail, getProfilePage, getProfileReviews } from '@/api/profile'
+import { getFileNameFromUrl, resolveFileUrl } from '@/utils/file'
 
 const loading = ref(false)
 const detailLoading = ref(false)

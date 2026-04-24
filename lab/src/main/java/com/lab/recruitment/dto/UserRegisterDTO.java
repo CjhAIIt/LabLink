@@ -19,12 +19,12 @@ public class UserRegisterDTO {
     private String password;
 
     @NotBlank(message = "真实姓名不能为空")
-    @Size(max = 50, message = "真实姓名长度不能超过 50 位")
-    @Pattern(regexp = "^[\\p{IsHan}·]{2,50}$", message = "真实姓名必须为中文")
+    @Size(min = 2, max = 5, message = "真实姓名长度必须为2到5个字符")
+    @Pattern(regexp = "^[\\p{IsHan}·]{2,5}$", message = "真实姓名需为2到5个中文字符，不能全是空格")
     private String realName;
 
     @NotBlank(message = "学号不能为空")
-    @Pattern(regexp = "^\\d{3,20}$", message = "学号必须为 3 到 20 位纯数字")
+    @Pattern(regexp = "^3\\d{7,13}$", message = "学号必须为3开头的8到14位纯数字")
     private String studentId;
 
     @Size(max = 100, message = "学院名称长度不能超过 100 位")
@@ -45,6 +45,8 @@ public class UserRegisterDTO {
     @Email(message = "邮箱格式不正确")
     private String email;
 
+    @NotBlank(message = "验证码不能为空")
+    @Pattern(regexp = "^\\d{6}$", message = "验证码必须为 6 位数字")
     private String emailCode;
 
     private String role = "student";

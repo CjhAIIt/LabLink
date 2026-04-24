@@ -33,7 +33,29 @@
     </section>
 
     <TablePageCard title="题目列表" subtitle="题库中心" :count-label="`${pagination.total} 条`">
-      <el-table v-loading="loading" :data="questions" stripe>
+      <div v-loading="loading" class="exam-mobile-list mobile-only">
+        <article v-for="row in questions" :key="row.id" class="exam-mobile-card">
+          <div class="exam-mobile-card__head">
+            <div>
+              <strong>{{ row.title || '未命名题目' }}</strong>
+              <span>{{ typeLabels[row.questionType] || row.questionType }} · {{ diffLabels[row.difficulty] || row.difficulty }}</span>
+            </div>
+            <el-tag :type="diffType[row.difficulty] || ''" size="small">{{ diffLabels[row.difficulty] || row.difficulty }}</el-tag>
+          </div>
+          <div class="exam-mobile-card__meta">
+            <span>分值 {{ row.score ?? '-' }}</span>
+            <span>归属 {{ row.labName || '公共' }}</span>
+            <span>标签 {{ row.tags || '未设置' }}</span>
+          </div>
+          <p>{{ row.content || '暂无题目内容' }}</p>
+          <div class="exam-mobile-card__actions">
+            <el-button plain type="primary" @click="openDialog(row)">编辑</el-button>
+            <el-button plain type="danger" @click="handleDelete(row)">删除</el-button>
+          </div>
+        </article>
+        <el-empty v-if="!loading && !questions.length" description="暂无题目" />
+      </div>
+      <el-table v-loading="loading" :data="questions" stripe class="desktop-only">
         <el-table-column prop="title" label="题目标题" min-width="200" show-overflow-tooltip />
         <el-table-column label="题型" min-width="100">
           <template #default="{ row }">
@@ -228,6 +250,65 @@ onMounted(() => loadQuestions())
 </script>
 
 <style scoped>
+.exam-mobile-list {
+  display: grid;
+  gap: 12px;
+}
+
+.exam-mobile-card {
+  padding: 15px;
+  display: grid;
+  gap: 12px;
+  border-radius: 22px;
+  border: 1px solid rgba(51, 136, 187, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px rgba(23, 32, 51, 0.075);
+}
+
+.exam-mobile-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.exam-mobile-card__head strong {
+  display: block;
+  color: #172033;
+  font-size: 16px;
+}
+
+.exam-mobile-card__head span,
+.exam-mobile-card p,
+.exam-mobile-card__meta {
+  color: #64748b;
+}
+
+.exam-mobile-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exam-mobile-card__meta span {
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: #f8fafc;
+}
+
+.exam-mobile-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.exam-mobile-card__actions .el-button {
+  flex: 1 1 0;
+}
+
 .two-column-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

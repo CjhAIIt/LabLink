@@ -1,74 +1,90 @@
 <template>
-  <div class="m-page">
-    <section class="hero-card">
+  <MobilePageContainer>
+    <section class="attendance-hero">
       <div>
-        <p class="eyebrow">Student Check-in</p>
-        <h1>{{ querySessionId ? '二维码签到' : '移动签到' }}</h1>
-        <p>{{ querySessionId ? '当前页面已携带会话参数，可直接签到。' : '管理员创建会话后，输入 6 位签到码完成签到。' }}</p>
+        <span class="mobile-kicker">Check-in</span>
+        <h1>{{ querySessionId ? '二维码签到' : '今日考勤' }}</h1>
+        <p>{{ isSessionActive ? '当前有可用签到会话，请在有效时间内完成打卡。' : '暂无进行中的签到会话，可先查看最近考勤记录。' }}</p>
       </div>
-      <button class="refresh-btn" type="button" @click="loadPageData">刷新</button>
+      <button class="attendance-refresh" type="button" :disabled="loading" @click="loadPageData">刷新</button>
     </section>
 
-    <section v-if="!userStore.userInfo?.labId" class="empty-card">
-      <el-empty description="加入实验室后才能使用签到功能" :image-size="86" />
-    </section>
+    <MobileEmptyState
+      v-if="!userStore.userInfo?.labId"
+      icon="OfficeBuilding"
+      title="加入实验室后才能打卡"
+      description="你还没有加入实验室，可以先去实验室广场寻找合适的团队。"
+    >
+      <el-button type="primary" @click="$router.push('/m/student/labs')">前往实验室广场</el-button>
+    </MobileEmptyState>
 
     <template v-else>
-      <section class="panel-card">
-        <header class="panel-head">
-          <h2>签到入口</h2>
-          <span class="status-chip">{{ isSessionActive ? '可签到' : '暂无会话' }}</span>
-        </header>
-        <el-form label-position="top">
-          <el-form-item v-if="!querySessionId" label="签到码">
-            <el-input v-model="signCode" maxlength="6" placeholder="输入 6 位签到码" inputmode="numeric" autofocus />
-          </el-form-item>
-          <el-button type="primary" :loading="signing" @click="handleSign">
+      <section class="checkin-card" :class="{ active: isSessionActive }">
+        <div class="checkin-card__header">
+          <div>
+            <span>今日状态</span>
+            <h2>{{ isSessionActive ? '可以签到' : '等待签到会话' }}</h2>
+          </div>
+          <MobileStatusTag :type="isSessionActive ? 'active' : 'default'" :label="isSessionActive ? '可打卡' : '暂无会话'" />
+        </div>
+
+        <div v-if="isSessionActive || querySessionId" class="checkin-code-panel">
+          <label v-if="!querySessionId">
+            <span>签到码</span>
+            <el-input
+              v-model="signCode"
+              maxlength="6"
+              placeholder="输入 6 位签到码"
+              inputmode="numeric"
+              autofocus
+              @keyup.enter="handleSign"
+            />
+          </label>
+          <el-button type="primary" size="large" :loading="signing" @click="handleSign">
             {{ querySessionId ? '立即签到' : '提交签到' }}
           </el-button>
-        </el-form>
+        </div>
+
+        <p class="checkin-card__hint">
+          {{ isSessionActive ? `剩余 ${activeSession.remainingSeconds || 0} 秒，结束后需要联系管理员处理异常。` : '管理员生成签到码后，这里会显示可打卡状态。' }}
+        </p>
       </section>
 
-      <section class="grid-card">
-        <article class="info-card">
-          <span>会话编号</span>
-          <strong>{{ activeSession.sessionNo || '-' }}</strong>
-        </article>
-        <article class="info-card">
-          <span>剩余时间</span>
-          <strong>{{ isSessionActive ? `${activeSession.remainingSeconds || 0} 秒` : '-' }}</strong>
-        </article>
-        <article class="info-card">
-          <span>结束时间</span>
-          <strong>{{ formatDateTime(activeSession.expireTime) }}</strong>
-        </article>
-        <article class="info-card">
-          <span>提示</span>
-          <strong>{{ isSessionActive ? '结果会自动生成' : '等待管理员创建会话' }}</strong>
-        </article>
+      <section class="attendance-stat-grid">
+        <MobileStatCard label="会话编号" :value="activeSession.sessionNo || '-'" description="当前签到会话" />
+        <MobileStatCard label="剩余时间" :value="isSessionActive ? `${activeSession.remainingSeconds || 0}s` : '-'" description="动态码有效期" accent="#16A97A" />
+        <MobileStatCard label="本周记录" :value="weekStats.total" description="最近 7 天记录数" accent="#19A7B8" />
+        <MobileStatCard label="异常提醒" :value="weekStats.abnormal" description="缺勤、请假或忘签" accent="#D9861F" />
       </section>
 
-      <section class="panel-card">
-        <header class="panel-head">
-          <h2>最近记录</h2>
-          <span>{{ historyTotal }} 条</span>
+      <section class="attendance-section">
+        <header>
+          <div>
+            <h2>最近记录</h2>
+            <p>共 {{ historyTotal }} 条，默认展示最近 10 条。</p>
+          </div>
         </header>
-        <div v-if="historyRows.length" class="record-list">
-          <article v-for="row in historyRows" :key="row.id || row.attendanceDate" class="record-card">
+
+        <div v-if="historyRows.length" class="attendance-record-list">
+          <article v-for="row in historyRows" :key="row.id || row.attendanceDate" class="attendance-record-card">
             <div>
               <strong>{{ row.attendanceDate || '-' }}</strong>
               <p>{{ attendanceStatusLabel(row) }}</p>
               <small>{{ row.reason || '无备注' }}</small>
             </div>
-            <div class="record-side">
-              <span class="status-chip light">{{ formatDateTime(row.checkinTime || row.confirmTime) || '-' }}</span>
-            </div>
+            <MobileStatusTag type="primary" :label="formatDateTime(row.checkinTime || row.confirmTime) || '未打卡'" />
           </article>
         </div>
-        <el-empty v-else description="暂无考勤记录" :image-size="72" />
+
+        <MobileEmptyState
+          v-else
+          icon="Calendar"
+          title="暂无考勤记录"
+          description="首次签到后，这里会展示你的历史记录和异常提醒。"
+        />
       </section>
     </template>
-  </div>
+  </MobilePageContainer>
 </template>
 
 <script setup>
@@ -78,6 +94,10 @@ import { useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getActiveAttendanceSession, signAttendanceSession } from '@/api/attendance'
 import { getMyAttendance } from '@/api/labSpace'
+import MobileEmptyState from '@/components/mobile/MobileEmptyState.vue'
+import MobilePageContainer from '@/components/mobile/MobilePageContainer.vue'
+import MobileStatCard from '@/components/mobile/MobileStatCard.vue'
+import MobileStatusTag from '@/components/mobile/MobileStatusTag.vue'
 import { useUserStore } from '@/stores/user'
 import { createSessionCountdown } from '@/utils/attendanceSession'
 import { getAttendanceStatusText } from '@/utils/attendance-status'
@@ -87,6 +107,7 @@ const userStore = useUserStore()
 const querySessionId = computed(() => route.query.sessionId || '')
 const signCode = ref('')
 const signing = ref(false)
+const loading = ref(false)
 const historyRows = ref([])
 const historyTotal = ref(0)
 
@@ -99,6 +120,22 @@ const activeSession = reactive({
 })
 const sessionCountdown = createSessionCountdown(activeSession)
 const isSessionActive = computed(() => activeSession.status === 'active')
+
+const weekStats = computed(() => {
+  const start = dayjs().subtract(6, 'day').startOf('day')
+  const rows = historyRows.value.filter((row) => {
+    const value = dayjs(row.attendanceDate || row.checkinTime || row.confirmTime)
+    return value.isValid() && !value.isBefore(start)
+  })
+  const abnormal = rows.filter((row) => {
+    const text = attendanceStatusLabel(row)
+    return /缺勤|异常|请假|忘记|迟到/.test(text)
+  }).length
+  return {
+    total: rows.length,
+    abnormal
+  }
+})
 
 const loadActiveSession = async () => {
   const response = await getActiveAttendanceSession()
@@ -120,7 +157,12 @@ const loadHistory = async () => {
 }
 
 const loadPageData = async () => {
-  await Promise.all([loadActiveSession(), loadHistory()])
+  loading.value = true
+  try {
+    await Promise.all([loadActiveSession(), loadHistory()])
+  } finally {
+    loading.value = false
+  }
 }
 
 const handleSign = async () => {
@@ -144,8 +186,7 @@ const handleSign = async () => {
 }
 
 const attendanceStatusLabel = (record) => getAttendanceStatusText(record)
-
-const formatDateTime = (value) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm:ss') : '')
+const formatDateTime = (value) => (value ? dayjs(value).format('MM-DD HH:mm') : '')
 
 onMounted(() => {
   loadPageData()
@@ -157,117 +198,167 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-.m-page {
+.attendance-hero {
+  padding: 22px;
+  border-radius: 26px;
+  color: #ffffff;
+  background: linear-gradient(135deg, #15324b, #176b9a 48%, #16a97a);
+  box-shadow: 0 22px 48px rgba(23, 107, 154, 0.22);
+  display: grid;
+  gap: 16px;
+}
+
+.mobile-kicker {
+  width: fit-content;
+  min-height: 28px;
+  display: inline-flex;
+  align-items: center;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.13);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.attendance-hero h1 {
+  margin: 12px 0 8px;
+  font-size: 28px;
+  line-height: 1.12;
+}
+
+.attendance-hero p {
+  margin: 0;
+  color: rgba(240, 249, 255, 0.88);
+  line-height: 1.68;
+}
+
+.attendance-refresh {
+  width: fit-content;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 16px;
+  color: #ffffff;
+  background: rgba(255, 255, 255, 0.12);
+  font-weight: 900;
+}
+
+.checkin-card,
+.attendance-section,
+.attendance-record-card {
+  border-radius: 24px;
+  border: 1px solid rgba(51, 136, 187, 0.12);
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 38px rgba(23, 32, 51, 0.08);
+}
+
+.checkin-card {
+  padding: 18px;
+  display: grid;
+  gap: 16px;
+}
+
+.checkin-card.active {
+  border-color: rgba(22, 169, 122, 0.22);
+  background: linear-gradient(180deg, #effdf8, rgba(255, 255, 255, 0.96));
+}
+
+.checkin-card__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.checkin-card__header span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.checkin-card__header h2 {
+  margin: 5px 0 0;
+  color: #172033;
+  font-size: 24px;
+}
+
+.checkin-code-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.checkin-code-panel label {
+  display: grid;
+  gap: 8px;
+}
+
+.checkin-code-panel label span {
+  color: #64748b;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.checkin-card__hint {
+  margin: 0;
+  color: #64748b;
+  line-height: 1.65;
+}
+
+.attendance-stat-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.attendance-section {
+  padding: 17px;
   display: grid;
   gap: 14px;
 }
 
-.hero-card,
-.panel-card,
-.grid-card,
-.info-card,
-.record-card,
-.empty-card {
-  border-radius: 22px;
-  background: rgba(255, 255, 255, 0.96);
-  border: 1px solid rgba(226, 232, 240, 0.92);
-}
-
-.hero-card {
-  padding: 18px;
-  background: linear-gradient(145deg, rgba(15, 23, 42, 0.94), rgba(22, 163, 74, 0.88));
-  color: #f8fafc;
-  display: flex;
-  justify-content: space-between;
-  gap: 16px;
-}
-
-.eyebrow {
-  margin: 0 0 8px;
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.hero-card h1,
-.panel-head h2 {
+.attendance-section header h2 {
   margin: 0;
+  color: #172033;
+  font-size: 18px;
 }
 
-.hero-card p {
-  color: rgba(226, 232, 240, 0.9);
+.attendance-section header p {
+  margin: 5px 0 0;
+  color: #64748b;
 }
 
-.refresh-btn {
-  height: fit-content;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.12);
-  color: #fff;
-  border-radius: 14px;
-  padding: 10px 14px;
-}
-
-.panel-card,
-.grid-card {
-  padding: 14px;
-}
-
-.grid-card,
-.record-list {
+.attendance-record-list {
   display: grid;
   gap: 10px;
 }
 
-.grid-card {
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-}
-
-.info-card,
-.record-card {
+.attendance-record-card {
   padding: 14px;
-}
-
-.panel-head,
-.record-card {
   display: flex;
   justify-content: space-between;
-  gap: 12px;
   align-items: flex-start;
+  gap: 12px;
 }
 
-.info-card span,
-.record-card p,
-.record-card small {
+.attendance-record-card strong {
+  color: #172033;
+}
+
+.attendance-record-card p,
+.attendance-record-card small {
+  margin: 5px 0 0;
   color: #64748b;
+  line-height: 1.45;
 }
 
-.info-card strong,
-.record-card strong {
-  color: #0f172a;
-}
-
-.status-chip {
-  padding: 6px 10px;
-  border-radius: 999px;
-  background: rgba(219, 234, 254, 0.9);
-  color: #2563eb;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.status-chip.light {
-  background: rgba(15, 23, 42, 0.06);
-  color: #334155;
-}
-
-.record-side {
-  display: grid;
-  justify-items: end;
-}
-
-@media (max-width: 480px) {
-  .grid-card {
+@media (max-width: 430px) {
+  .attendance-stat-grid {
     grid-template-columns: 1fr;
+  }
+
+  .attendance-record-card,
+  .checkin-card__header {
+    flex-direction: column;
   }
 }
 </style>

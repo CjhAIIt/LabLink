@@ -10,6 +10,8 @@ import com.lab.recruitment.entity.User;
 import com.lab.recruitment.mapper.DeliveryMapper;
 import com.lab.recruitment.service.DeliveryService;
 import com.lab.recruitment.service.LabService;
+import com.lab.recruitment.service.LabMemberService;
+import com.lab.recruitment.service.UserAccessService;
 import com.lab.recruitment.service.UserService;
 import com.lab.recruitment.service.WrittenExamService;
 import org.springframework.beans.BeanUtils;
@@ -42,6 +44,12 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
     private LabService labService;
 
     @Autowired
+    private UserAccessService userAccessService;
+
+    @Autowired
+    private LabMemberService labMemberService;
+
+    @Autowired
     private WrittenExamService writtenExamService;
 
     @Override
@@ -53,7 +61,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
-        if (user.getLabId() != null) {
+        if (userAccessService.resolveManagedLabId(user) != null) {
             throw new RuntimeException("你已加入实验室，如需重新投递请先提交退出申请。");
         }
 
@@ -65,17 +73,8 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
         if (lab.getStatus() == null || lab.getStatus() != 1) {
             throw new RuntimeException("该实验室当前未开启招新");
         }
-        if (!writtenExamService.canEnterInterview(deliveryDTO.getLabId(), user.getId())) {
-            throw new RuntimeException(writtenExamService.getInterviewRequirementMessage(deliveryDTO.getLabId(), user.getId()));
-        }
-
-        String attachmentUrl = normalizeUrls(deliveryDTO.getAttachmentUrl());
-        if (!StringUtils.hasText(attachmentUrl)) {
-            attachmentUrl = normalizeUrls(user.getResume());
-        }
-        if (!StringUtils.hasText(attachmentUrl)) {
-            throw new RuntimeException("请先上传简历再投递");
-        }
+        String attachmentUrl = resolveAttachmentUrl(deliveryDTO, user);
+        checkDeliveryEligibility(deliveryDTO.getLabId(), user);
 
         QueryWrapper<Delivery> deliveryQuery = new QueryWrapper<>();
         deliveryQuery.eq("user_id", user.getId());
@@ -204,7 +203,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
         }
 
         User user = userService.getById(delivery.getUserId());
-        if (user != null && user.getLabId() != null) {
+        if (user != null && userAccessService.resolveManagedLabId(user) != null) {
             throw new RuntimeException("该学生已加入其他实验室");
         }
 
@@ -235,7 +234,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
         if (user == null) {
             throw new RuntimeException("用户不存在");
         }
-        if (user.getLabId() != null) {
+        if (userAccessService.resolveManagedLabId(user) != null) {
             throw new RuntimeException("你已加入其他实验室");
         }
 
@@ -255,8 +254,8 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
                 "学生接受 offer 并加入实验室。"));
         this.updateById(delivery);
 
-        user.setLabId(delivery.getLabId());
-        userService.updateById(user);
+        labMemberService.activateMember(delivery.getLabId(), userId, "member", null, "Accepted delivery offer");
+        userAccessService.refreshCompatibilityAccess(userId);
         labService.syncCurrentMemberCount(delivery.getLabId());
 
         QueryWrapper<Delivery> otherOfferQuery = new QueryWrapper<>();
@@ -315,7 +314,7 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
         Map<String, Object> summary = new HashMap<>();
         summary.put("pendingOfferCount", Math.toIntExact(this.count(countQuery)));
         summary.put("offers", baseMapper.selectPendingOfferList(username));
-        summary.put("joinedLabId", user.getLabId());
+        summary.put("joinedLabId", userAccessService.resolveManagedLabId(user));
         return summary;
     }
 
@@ -340,6 +339,26 @@ public class DeliveryServiceImpl extends ServiceImpl<DeliveryMapper, Delivery> i
             return message;
         }
         return originalRemark + System.lineSeparator() + message;
+    }
+
+    private String resolveAttachmentUrl(DeliveryDTO deliveryDTO, User user) {
+        String attachmentUrl = normalizeUrls(deliveryDTO.getAttachmentUrl());
+        if (!StringUtils.hasText(attachmentUrl)) {
+            attachmentUrl = normalizeUrls(user.getResume());
+        }
+        if (!StringUtils.hasText(attachmentUrl)) {
+            throw new RuntimeException("请先上传简历后再投递");
+        }
+        return attachmentUrl;
+    }
+
+    private void checkDeliveryEligibility(Long labId, User user) {
+        if (!userAccessService.isStudentIdentity(user)) {
+            throw new RuntimeException("仅学生账号可以投递实验室");
+        }
+        if (!writtenExamService.canEnterInterview(labId, user.getId())) {
+            throw new RuntimeException(writtenExamService.getInterviewRequirementMessage(labId, user.getId()));
+        }
     }
 
     private String normalizeUrls(String rawUrls) {

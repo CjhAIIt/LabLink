@@ -1,5 +1,6 @@
 package com.lab.recruitment.controller;
 
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lab.recruitment.dto.WrittenExamConfigDTO;
 import com.lab.recruitment.dto.WrittenExamSubmitDTO;
@@ -19,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 
@@ -31,6 +33,9 @@ public class WrittenExamController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private HttpServletRequest httpServletRequest;
 
     @GetMapping("/admin/config")
     @PreAuthorize("hasRole('ADMIN')")
@@ -111,6 +116,115 @@ public class WrittenExamController {
         }
     }
 
+    @GetMapping("/student/result/{labId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Map<String, Object>> getStudentSubmissionResult(@PathVariable Long labId) {
+        try {
+            return Result.success(writtenExamService.getStudentSubmission(getCurrentUser(), labId));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @GetMapping("/student/eligibility/{examId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Map<String, Object>> checkExamEligibility(@PathVariable Long examId) {
+        try {
+            return Result.success(writtenExamService.checkEligibility(examId, getCurrentUser().getId()));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @GetMapping("/student/detail/{examId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Map<String, Object>> getExamDetail(@PathVariable Long examId) {
+        try {
+            return Result.success(writtenExamService.getExamDetail(examId, getCurrentUser().getId()));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/student/signature")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Boolean> submitExamSignature(@RequestBody Map<String, Object> request) {
+        try {
+            Long examId = Long.parseLong(String.valueOf(request.get("examId")));
+            String signatureName = request.get("signatureName") == null ? null : String.valueOf(request.get("signatureName"));
+            writtenExamService.submitSignature(
+                    examId,
+                    getCurrentUser().getId(),
+                    signatureName,
+                    resolveClientIp(),
+                    httpServletRequest.getHeader("User-Agent")
+            );
+            return Result.success(true);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/student/start/{examId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Map<String, Object>> startStudentExam(@PathVariable Long examId) {
+        try {
+            return Result.success(writtenExamService.startExam(examId, getCurrentUser().getId()));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/student/save-answer")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Boolean> saveStudentAnswer(@RequestBody Map<String, Object> request) {
+        try {
+            Long examId = Long.parseLong(String.valueOf(request.get("examId")));
+            Object answers = request.get("answers");
+            writtenExamService.saveAnswer(examId, getCurrentUser().getId(), JSON.toJSONString(answers));
+            return Result.success(true);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/student/submit-paper")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Boolean> submitExamPaper(@RequestBody Map<String, Object> request) {
+        try {
+            Long examId = Long.parseLong(String.valueOf(request.get("examId")));
+            Object answers = request.get("answers");
+            writtenExamService.submitPaper(examId, getCurrentUser().getId(), JSON.toJSONString(answers));
+            return Result.success(true);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @GetMapping("/student/progress/{examId}")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Map<String, Object>> getStudentExamProgress(@PathVariable Long examId) {
+        try {
+            return Result.success(writtenExamService.getProgress(examId, getCurrentUser().getId()));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/student/cheat-report")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Boolean> reportCheatEvent(@RequestBody Map<String, Object> request) {
+        try {
+            Long examId = Long.parseLong(String.valueOf(request.get("examId")));
+            String eventType = request.get("eventType") == null ? null : String.valueOf(request.get("eventType"));
+            String detail = request.get("detail") == null ? null : String.valueOf(request.get("detail"));
+            writtenExamService.reportCheatEvent(examId, getCurrentUser().getId(), eventType, detail, resolveClientIp());
+            return Result.success(true);
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
     @PostMapping("/student/submit")
     @PreAuthorize("hasRole('STUDENT')")
     public Result<Map<String, Object>> submitExam(@RequestBody WrittenExamSubmitDTO submitDTO) {
@@ -152,6 +266,33 @@ public class WrittenExamController {
         }
     }
 
+    @PostMapping("/student/run-code")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Map<String, Object>> runCode(@RequestBody Map<String, Object> request) {
+        try {
+            Long questionId = Long.parseLong(String.valueOf(request.get("questionId")));
+            String code = String.valueOf(request.get("code"));
+            String language = String.valueOf(request.get("language"));
+            String input = request.get("input") == null ? "" : String.valueOf(request.get("input"));
+            return Result.success(writtenExamService.runCode(questionId, code, language, input));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/student/judge-code")
+    @PreAuthorize("hasRole('STUDENT')")
+    public Result<Map<String, Object>> judgeCode(@RequestBody Map<String, Object> request) {
+        try {
+            Long questionId = Long.parseLong(String.valueOf(request.get("questionId")));
+            String code = String.valueOf(request.get("code"));
+            String language = String.valueOf(request.get("language"));
+            return Result.success(writtenExamService.judgeCode(questionId, code, language));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
     private User getCurrentUser() {
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         User user = userService.findByUsername(username);
@@ -159,5 +300,17 @@ public class WrittenExamController {
             throw new RuntimeException("User not found");
         }
         return user;
+    }
+
+    private String resolveClientIp() {
+        String forwarded = httpServletRequest.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        String realIp = httpServletRequest.getHeader("X-Real-IP");
+        if (realIp != null && !realIp.isBlank()) {
+            return realIp.trim();
+        }
+        return httpServletRequest.getRemoteAddr();
     }
 }

@@ -1,7 +1,7 @@
 <template>
   <div class="formal-interview">
     <div class="page-header">
-      <button class="back-btn" @click="$router.push('/student/ai-interview')">
+      <button class="back-btn" @click="router.push(homePath)">
         <el-icon><ArrowLeft /></el-icon> 返回
       </button>
       <div>
@@ -77,18 +77,23 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import { useAiInterviewStore } from '@/stores/aiInterview'
 import { getFormalChances, getInterviewModules, getMyFormalRecords } from '@/api/aiInterview'
+import { normalizeInterviewModules } from '@/utils/aiInterview'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
 
+const route = useRoute()
 const router = useRouter()
 const store = useAiInterviewStore()
 const chances = ref(2)
 const selectedModule = ref(null)
 const starting = ref(false)
 const records = ref([])
+const homePath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview'))
+const sessionPath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview/session'))
 
 const defaultModules = [
   { id: 1, name: 'Java 基础', description: '面向对象、集合、多线程、JVM', icon: '☕', color: 'linear-gradient(135deg,#f97316,#ea580c)' },
@@ -103,12 +108,15 @@ const defaultModules = [
 ]
 const modules = ref(defaultModules)
 
-const selectedModuleName = computed(() => modules.value.find(m => m.id === selectedModule.value)?.name || '')
+const selectedModuleName = computed(() => {
+  const mod = modules.value.find(m => m.id === selectedModule.value)
+  return mod?.name || mod?.moduleName || ''
+})
 const scoreClass = (s) => s >= 80 ? 'high' : s >= 60 ? 'mid' : 'low'
 
 onMounted(async () => {
   try { const r = await getFormalChances(); chances.value = r?.data?.remaining ?? 2 } catch {}
-  try { const r = await getInterviewModules(); if (r?.data?.length) modules.value = r.data } catch {}
+  try { const r = await getInterviewModules(); modules.value = normalizeInterviewModules(r?.data, defaultModules) } catch {}
   try { const r = await getMyFormalRecords(); if (r?.data?.length) records.value = r.data } catch {}
 })
 
@@ -117,10 +125,15 @@ async function confirmStart() {
     await ElMessageBox.confirm('正式面试开始后将消耗 1 次机会，确定开始？', '确认', { type: 'warning', confirmButtonText: '开始', cancelButtonText: '取消' })
     starting.value = true
     const mod = modules.value.find(m => m.id === selectedModule.value)
+    const moduleName = mod?.name || mod?.moduleName || ''
+    if (!mod || !moduleName) {
+      starting.value = false
+      return
+    }
     store.reset()
     store.setMode('formal')
-    store.setModule(mod.id, mod.name)
-    router.push('/student/ai-interview/session')
+    store.setModule(mod.id, moduleName)
+    router.push(sessionPath.value)
   } catch { /* cancelled */ }
 }
 </script>

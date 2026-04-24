@@ -57,6 +57,17 @@ public class NotificationController {
         }
     }
 
+    @GetMapping("/todo-summary")
+    @PreAuthorize("isAuthenticated()")
+    public Result<Map<String, Object>> getTodoSummary() {
+        try {
+            User currentUser = currentUserAccessor.getCurrentUser();
+            return Result.apiSuccess(systemNotificationService.getTodoSummary(currentUser));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
     @PostMapping("/read/{notificationId}")
     @PreAuthorize("isAuthenticated()")
     public Result<Boolean> markRead(@PathVariable Long notificationId) {

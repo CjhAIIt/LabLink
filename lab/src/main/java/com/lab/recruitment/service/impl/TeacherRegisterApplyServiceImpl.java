@@ -77,6 +77,7 @@ public class TeacherRegisterApplyServiceImpl implements TeacherRegisterApplyServ
     public boolean submitRegisterApply(TeacherRegisterDTO registerDTO) {
         String teacherNo = normalizeTeacherNo(registerDTO.getTeacherNo());
         String email = normalizeEmail(registerDTO.getEmail());
+        String emailCode = trimToNull(registerDTO.getEmailCode());
 
         validateTeacherNo(teacherNo);
         validateRealName(trimToNull(registerDTO.getRealName()));
@@ -85,6 +86,7 @@ public class TeacherRegisterApplyServiceImpl implements TeacherRegisterApplyServ
         ensureCollegeExists(registerDTO.getCollegeId());
         ensurePassword(registerDTO.getPassword());
         ensureTeacherRegisterAvailable(teacherNo, email);
+        emailAuthCodeService.verifyRegisterCode(teacherNo, email, emailCode);
 
         TeacherRegisterApply apply = new TeacherRegisterApply();
         apply.setTeacherNo(teacherNo);

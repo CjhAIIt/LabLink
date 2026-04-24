@@ -12,6 +12,7 @@ CREATE TABLE IF NOT EXISTS t_student_profile (
     email VARCHAR(128) NULL,
     direction VARCHAR(128) NULL,
     introduction TEXT NULL,
+    attachment_url VARCHAR(1024) NULL,
     status VARCHAR(32) NOT NULL DEFAULT 'DRAFT',
     current_version INT NOT NULL DEFAULT 0,
     submitted_at DATETIME NULL,

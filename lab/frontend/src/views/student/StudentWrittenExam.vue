@@ -69,6 +69,7 @@
           <div class="topbar-group">
             <el-select v-model="filters.questionType" clearable placeholder="题型" style="width: 160px">
               <el-option label="单选题" value="single_choice" />
+              <el-option label="判断题" value="judge" />
               <el-option label="填空题" value="fill_blank" />
               <el-option label="编程题" value="programming" />
             </el-select>
@@ -118,10 +119,10 @@
               <p>{{ currentQuestion.content || '暂无题目描述' }}</p>
             </section>
 
-            <section v-if="currentQuestion.questionType === 'single_choice'" class="detail-block">
+            <section v-if="['single_choice', 'judge'].includes(currentQuestion.questionType)" class="detail-block">
               <h4>选项</h4>
               <div class="option-list">
-                <div v-for="option in currentQuestion.options || []" :key="option.label" class="option-row">
+                <div v-for="option in normalizedOptions" :key="option.label" class="option-row">
                   <strong>{{ option.label }}.</strong>
                   <span>{{ option.text }}</span>
                 </div>
@@ -193,9 +194,9 @@
             </div>
 
             <div v-else class="objective-wrap">
-              <template v-if="currentQuestion.questionType === 'single_choice'">
+              <template v-if="['single_choice', 'judge'].includes(currentQuestion.questionType)">
                 <label
-                  v-for="option in currentQuestion.options || []"
+                  v-for="option in normalizedOptions"
                   :key="option.label"
                   class="objective-item"
                   :class="{ active: textAnswer === option.label }"
@@ -273,7 +274,7 @@ const examAnswers = reactive({})
 const runtimeEnvironmentStatus = reactive({})
 const runtimeEnvironmentDetails = reactive({})
 
-const questionTypeLabelMap = { single_choice: '单选题', fill_blank: '填空题', programming: '编程题' }
+const questionTypeLabelMap = { single_choice: '单选题', judge: '判断题', fill_blank: '填空题', programming: '编程题' }
 const languageLabelMap = { java: 'Java', python: 'Python', c: 'C', cpp: 'C++' }
 const codeTemplates = {
   java: `import java.util.*;\n\npublic class Main {\n  public static void main(String[] args) {\n    Scanner scanner = new Scanner(System.in);\n    // TODO: write your solution here\n  }\n}`,
@@ -293,6 +294,7 @@ const pageSubtitle = computed(() => practiceMode.value ? '共享题库题目可�
 const currentTypeLabel = computed(() => currentQuestion.value ? questionTypeLabelMap[currentQuestion.value.questionType] : '题目')
 const suggestedLanguage = computed(() => getTrackById(trackCode.value).preferredLanguage || 'java')
 const normalizedTags = computed(() => normalizeTags(currentQuestion.value?.tags))
+const normalizedOptions = computed(() => normalizeOptions(currentQuestion.value))
 const sampleCase = computed(() => parseSampleCase(currentQuestion.value?.sampleCase))
 const currentAllowedLanguages = computed(() => {
   const configuredLanguages = currentQuestion.value?.allowedLanguages?.length
@@ -488,6 +490,16 @@ const goNext = async () => { if (!questionList.value.length) return; syncCurrent
 const refreshCurrentMode = () => practiceMode.value ? fetchPracticeQuestions() : fetchExamQuestions()
 const handlePageSizeChange = () => { pagination.pageNum = 1; fetchPracticeQuestions() }
 const parseSampleCase = (value) => { if (!value) return { input: '', output: '' }; if (typeof value === 'object') return value; try { return JSON.parse(value) } catch { return { input: '', output: '' } } }
+const normalizeOptions = (question) => {
+  if (!question) return []
+  if (question.questionType === 'judge') {
+    return [
+      { label: 'true', text: '正确' },
+      { label: 'false', text: '错误' }
+    ]
+  }
+  return Array.isArray(question.options) ? question.options : []
+}
 const normalizeTags = (value) => { if (!value) return []; if (Array.isArray(value)) return value; if (typeof value === 'string') { try { return JSON.parse(value) } catch { return value.split(',').map((item) => item.trim()).filter(Boolean) } } return [] }
 const handleEditorScroll = (event) => { if (lineGutterRef.value) lineGutterRef.value.scrollTop = event.target.scrollTop }
 const formatDateTime = (value) => { const date = value instanceof Date ? value : new Date(value); if (Number.isNaN(date.getTime())) return '-'; const year = date.getFullYear(); const month = String(date.getMonth() + 1).padStart(2, '0'); const day = String(date.getDate()).padStart(2, '0'); const hour = String(date.getHours()).padStart(2, '0'); const minute = String(date.getMinutes()).padStart(2, '0'); return `${year}-${month}-${day} ${hour}:${minute}` }

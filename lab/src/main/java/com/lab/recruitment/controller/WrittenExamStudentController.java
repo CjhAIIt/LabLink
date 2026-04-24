@@ -1,5 +1,6 @@
 package com.lab.recruitment.controller;
 
+import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lab.recruitment.entity.User;
 import com.lab.recruitment.service.UserService;
@@ -13,7 +14,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @RestController
-@RequestMapping("/written-exam/student")
+@RequestMapping("/written-exam/student-exams")
 public class WrittenExamStudentController {
 
     @Autowired
@@ -79,7 +80,7 @@ public class WrittenExamStudentController {
     public Result<?> saveAnswer(@RequestBody Map<String, Object> body) {
         try {
             Long examId = Long.parseLong(String.valueOf(body.get("examId")));
-            String answersJson = body.get("answers") == null ? null : String.valueOf(body.get("answers"));
+            String answersJson = body.get("answers") == null ? null : JSON.toJSONString(body.get("answers"));
             writtenExamService.saveAnswer(examId, getCurrentUserId(), answersJson);
             return Result.success(true);
         } catch (Exception e) {
@@ -91,7 +92,7 @@ public class WrittenExamStudentController {
     public Result<?> submitPaper(@RequestBody Map<String, Object> body) {
         try {
             Long examId = Long.parseLong(String.valueOf(body.get("examId")));
-            String answersJson = body.get("answers") == null ? null : String.valueOf(body.get("answers"));
+            String answersJson = body.get("answers") == null ? null : JSON.toJSONString(body.get("answers"));
             writtenExamService.submitPaper(examId, getCurrentUserId(), answersJson);
             return Result.success(true);
         } catch (Exception e) {
@@ -122,10 +123,35 @@ public class WrittenExamStudentController {
         }
     }
 
-    @GetMapping("/submission/{examId}")
+    @GetMapping("/result/{examId}")
     public Result<?> getSubmissionResult(@PathVariable Long examId) {
         try {
             return Result.success(writtenExamService.getSubmissionResult(examId, getCurrentUserId()));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/run-code")
+    public Result<?> runCode(@RequestBody Map<String, Object> body) {
+        try {
+            Long questionId = Long.parseLong(String.valueOf(body.get("questionId")));
+            String code = String.valueOf(body.get("code"));
+            String language = String.valueOf(body.get("language"));
+            String input = body.get("input") == null ? "" : String.valueOf(body.get("input"));
+            return Result.success(writtenExamService.runCode(questionId, code, language, input));
+        } catch (Exception e) {
+            return Result.error(e.getMessage());
+        }
+    }
+
+    @PostMapping("/judge-code")
+    public Result<?> judgeCode(@RequestBody Map<String, Object> body) {
+        try {
+            Long questionId = Long.parseLong(String.valueOf(body.get("questionId")));
+            String code = String.valueOf(body.get("code"));
+            String language = String.valueOf(body.get("language"));
+            return Result.success(writtenExamService.judgeCode(questionId, code, language));
         } catch (Exception e) {
             return Result.error(e.getMessage());
         }

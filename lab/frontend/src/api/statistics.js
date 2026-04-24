@@ -32,6 +32,15 @@ export function getStatisticsDashboard(params) {
   })
 }
 
+export function exportStatisticsDashboard(params) {
+  return request({
+    url: '/api/statistics/dashboard/export',
+    method: 'get',
+    params: buildParams(params),
+    responseType: 'blob'
+  })
+}
+
 export function getStatisticsLabs(params) {
   return request({
     url: '/api/statistics/labs',

@@ -35,6 +35,10 @@ public class AuthContextServiceImpl implements AuthContextService {
     public UserProfileVO buildContext(User user) {
         UserAccessProfile profile = userAccessService.buildProfile(user);
         Long resolvedLabId = userAccessService.resolveManagedLabId(user);
+        Long contextLabId = resolvedLabId;
+        if (contextLabId == null && !UserAccessServiceImpl.IDENTITY_STUDENT.equalsIgnoreCase(profile.getPrimaryIdentity())) {
+            contextLabId = user.getLabId();
+        }
 
         UserProfileVO profileVO = new UserProfileVO();
         profileVO.setId(user.getId());
@@ -49,9 +53,9 @@ public class AuthContextServiceImpl implements AuthContextService {
         profileVO.setEmail(user.getEmail());
         profileVO.setAvatar(user.getAvatar());
         profileVO.setResume(user.getResume());
-        profileVO.setLabId(resolvedLabId != null ? resolvedLabId : user.getLabId());
+        profileVO.setLabId(contextLabId);
         profileVO.setManagedLabId(profile.getManagedLabId());
-        profileVO.setLabName(resolveLabName(resolvedLabId != null ? resolvedLabId : user.getLabId()));
+        profileVO.setLabName(resolveLabName(contextLabId));
         profileVO.setCanEdit(user.getCanEdit());
         profileVO.setStatus(user.getStatus());
         profileVO.setPrimaryIdentity(profile.getPrimaryIdentity());
@@ -85,7 +89,12 @@ public class AuthContextServiceImpl implements AuthContextService {
             }
             if (profile.isSchoolDirector() || profile.isCollegeManager() || profile.isLabManager()) {
                 menus.add(menu("admin:labs", "/admin/labs", null, "实验室管理", "FolderOpened"));
+                if (profile.isLabManager()) {
+                    menus.add(menu("admin:lab-info", "/admin/lab-info", null, "实验室资料", "Files"));
+                }
                 menus.add(menu("admin:attendance", "/admin/attendance-tasks", null, "考勤管理", "Calendar"));
+                menus.add(menu("admin:exam-hub", "/admin/exam-hub", null, "笔试中心", "EditPen"));
+                menus.add(menu("admin:ai-interview-records", "/admin/ai-interview-records", null, "AI 面试记录", "ChatDotRound"));
                 menus.add(menu("admin:applications", "/admin/applications", null, "入组申请", "Tickets"));
                 menus.add(menu("admin:members", "/admin/members", null, "成员管理", "UserFilled"));
                 menus.add(menu("admin:workspace", "/admin/workspace", null, "资料空间", "Files"));
@@ -99,7 +108,6 @@ public class AuthContextServiceImpl implements AuthContextService {
                 menus.add(menu("admin:create-applies", "/admin/create-applies", null, "创建审批", "Tickets"));
                 menus.add(menu("admin:teacher-register-applies", "/admin/teacher-register-applies", null, "教师注册审批", "UserFilled"));
             }
-            menus.add(menu("admin:notifications", "/admin/notifications", null, "消息中心", "Bell"));
             menus.add(menu("admin:profile", "/admin/profile", null, "个人资料", "UserFilled"));
             return menus;
         }
@@ -109,10 +117,12 @@ public class AuthContextServiceImpl implements AuthContextService {
             menus.add(menu("teacher:create-applies", "/teacher/create-applies", "/m/teacher/create-applies", "创建申请", "Tickets"));
             if (resolvedLabId != null) {
                 menus.add(menu("teacher:attendance", "/teacher/attendance", "/m/teacher/attendance", "考勤查看", "Calendar"));
+                menus.add(menu("teacher:exam-hub", "/teacher/exam-hub", null, "笔试中心", "EditPen"));
+                menus.add(menu("teacher:ai-interview-records", "/teacher/ai-interview-records", null, "AI 面试记录", "ChatDotRound"));
+                menus.add(menu("teacher:lab-info", "/teacher/lab-info", null, "实验室资料", "Files"));
                 menus.add(menu("teacher:profiles", "/teacher/profiles", null, "成员资料", "Files"));
                 menus.add(menu("teacher:workspace", "/teacher/workspace", null, "资料空间", "Files"));
             }
-            menus.add(menu("teacher:notifications", "/teacher/notifications", null, "消息中心", "Bell"));
             menus.add(menu("teacher:notices", "/teacher/notices", null, "公告通知", "Bell"));
             menus.add(menu("teacher:profile", "/teacher/profile", "/m/teacher/profile", "个人资料", "User"));
             return menus;
@@ -124,9 +134,10 @@ public class AuthContextServiceImpl implements AuthContextService {
         if (resolvedLabId != null) {
             menus.add(menu("student:my-lab", "/student/my-lab", null, "我的实验室", "UserFilled"));
             menus.add(menu("student:attendance", "/student/attendance", null, "我的考勤", "Calendar"));
+            menus.add(menu("student:exam-center", "/student/exam-center", null, "笔试中心", "EditPen"));
+            menus.add(menu("student:ai-interview", "/student/ai-interview", null, "AI 智能面试", "ChatDotRound"));
             menus.add(menu("student:space", "/student/space", null, "资料空间", "Files"));
         }
-        menus.add(menu("student:notifications", "/student/notifications", null, "消息中心", "Bell"));
         menus.add(menu("student:notices", "/student/notices", "/m/student/notices", "公告通知", "Bell"));
         menus.add(menu("student:profile", "/student/profile", "/m/student/profile", "个人资料", "User"));
         return menus;
@@ -156,6 +167,8 @@ public class AuthContextServiceImpl implements AuthContextService {
             permissions.add("statistics:school:view");
             permissions.add("attendance:task:manage");
             permissions.add("attendance:record:manage");
+            permissions.add("exam:manage");
+            permissions.add("ai-interview:record:view");
             permissions.add("device:manage");
             permissions.add("notice:manage");
             permissions.add("workspace:school:view");
@@ -172,6 +185,8 @@ public class AuthContextServiceImpl implements AuthContextService {
             permissions.add("search:global:view");
             permissions.add("attendance:task:manage");
             permissions.add("attendance:record:manage");
+            permissions.add("exam:manage");
+            permissions.add("ai-interview:record:view");
             permissions.add("device:manage");
             permissions.add("notice:manage");
             permissions.add("workspace:college:view");
@@ -186,6 +201,8 @@ public class AuthContextServiceImpl implements AuthContextService {
             permissions.add("member:manage");
             permissions.add("profile:review");
             permissions.add("attendance:record:manage");
+            permissions.add("exam:manage");
+            permissions.add("ai-interview:record:view");
             permissions.add("device:manage");
             permissions.add("notice:manage");
             permissions.add("workspace:lab:manage");
@@ -196,8 +213,12 @@ public class AuthContextServiceImpl implements AuthContextService {
         if (UserAccessServiceImpl.IDENTITY_TEACHER.equalsIgnoreCase(profile.getPrimaryIdentity())) {
             permissions.add("teacher:portal:view");
             permissions.add("lab:create:apply");
+            permissions.add("lab:profile:submit");
+            permissions.add("workspace:lab:manage");
             permissions.add("profile:view");
             permissions.add("attendance:view");
+            permissions.add("exam:manage");
+            permissions.add("ai-interview:record:view");
             permissions.add("device:view");
             permissions.add("statistics:view");
         }
@@ -206,6 +227,8 @@ public class AuthContextServiceImpl implements AuthContextService {
             permissions.add("student:portal:view");
             permissions.add("lab:apply:self");
             permissions.add("attendance:self:view");
+            permissions.add("exam:self:view");
+            permissions.add("ai-interview:self:view");
             permissions.add("device:view");
             permissions.add("workspace:self:view");
         }
@@ -239,6 +262,9 @@ public class AuthContextServiceImpl implements AuthContextService {
             return null;
         }
         Lab lab = labMapper.selectById(labId);
-        return lab == null ? null : lab.getLabName();
+        if (lab == null || (lab.getDeleted() != null && lab.getDeleted() == 1)) {
+            return null;
+        }
+        return lab.getLabName();
     }
 }

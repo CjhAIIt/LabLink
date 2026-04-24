@@ -534,6 +534,7 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         } catch (DuplicateKeyException exception) {
             throw new RuntimeException("Already signed in this session");
         }
+        upsertRealtimeSignedAttendance(session, userId, record.getSignTime());
 
         Map<String, Object> result = new LinkedHashMap<>();
         result.put("sessionId", session.getId());
@@ -541,6 +542,40 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
         result.put("signMethod", record.getSignMethod());
         result.put("message", "Sign in success");
         return result;
+    }
+
+    private void upsertRealtimeSignedAttendance(AttendanceSession session, Long userId, LocalDateTime signTime) {
+        if (session == null || session.getLabId() == null || userId == null) {
+            return;
+        }
+        String attendanceDate = resolveAttendanceDate(session);
+        LocalDateTime now = signTime == null ? LocalDateTime.now() : signTime;
+        LabAttendance attendance = findAttendance(session.getLabId(), userId, attendanceDate);
+        if (attendance == null) {
+            attendance = new LabAttendance();
+            attendance.setLabId(session.getLabId());
+            attendance.setUserId(userId);
+            attendance.setAttendanceDate(attendanceDate);
+            attendance.setExportFlag(0);
+        }
+        attendance.setSessionId(session.getId());
+        attendance.setStatus(ATTENDANCE_STATUS_SIGNED);
+        attendance.setCheckinTime(now);
+        attendance.setTagType(null);
+        attendance.setReason(null);
+        attendance.setConfirmedBy(userId);
+        attendance.setConfirmTime(now);
+        attendance.setDeleted(0);
+
+        if (attendance.getId() == null) {
+            try {
+                labAttendanceMapper.insert(attendance);
+            } catch (DuplicateKeyException exception) {
+                restoreSoftDeletedAttendance(attendance, now);
+            }
+            return;
+        }
+        labAttendanceMapper.updateById(attendance);
     }
 
     @Transactional
@@ -607,9 +642,16 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
                 attendance.setConfirmedBy(operatorId);
                 attendance.setConfirmTime(now);
             }
+            attendance.setDeleted(0);
 
             if (attendance.getId() == null) {
-                labAttendanceMapper.insert(attendance);
+                try {
+                    labAttendanceMapper.insert(attendance);
+                } catch (DuplicateKeyException exception) {
+                    restoreSoftDeletedAttendance(attendance, now);
+                }
+            } else if (Objects.equals(attendance.getDeleted(), 1)) {
+                updateAttendanceIncludingDeleted(attendance, now);
             } else {
                 labAttendanceMapper.updateById(attendance);
             }
@@ -867,6 +909,45 @@ public class AttendanceSessionServiceImpl implements AttendanceSessionService {
                 .eq("deleted", 0)
                 .last("LIMIT 1");
         return labAttendanceMapper.selectOne(queryWrapper);
+    }
+
+    private void restoreSoftDeletedAttendance(LabAttendance attendance, LocalDateTime now) {
+        List<Long> existingIds = jdbcTemplate.queryForList(
+                "SELECT id FROM t_lab_attendance " +
+                        "WHERE lab_id = ? AND user_id = ? AND attendance_date = ? " +
+                        "ORDER BY deleted ASC, id DESC LIMIT 1",
+                Long.class,
+                attendance.getLabId(),
+                attendance.getUserId(),
+                attendance.getAttendanceDate()
+        );
+        if (existingIds.isEmpty()) {
+            throw new DuplicateKeyException("Duplicate attendance key but existing attendance row was not found");
+        }
+        attendance.setId(existingIds.get(0));
+        updateAttendanceIncludingDeleted(attendance, now);
+    }
+
+    private void updateAttendanceIncludingDeleted(LabAttendance attendance, LocalDateTime now) {
+        int updated = jdbcTemplate.update(
+                "UPDATE t_lab_attendance SET " +
+                        "session_id = ?, checkin_time = ?, status = ?, tag_type = ?, reason = ?, " +
+                        "confirmed_by = ?, confirm_time = ?, export_flag = ?, deleted = 0, update_time = ? " +
+                        "WHERE id = ?",
+                attendance.getSessionId(),
+                attendance.getCheckinTime(),
+                attendance.getStatus(),
+                attendance.getTagType(),
+                attendance.getReason(),
+                attendance.getConfirmedBy(),
+                attendance.getConfirmTime(),
+                attendance.getExportFlag(),
+                now,
+                attendance.getId()
+        );
+        if (updated == 0) {
+            throw new RuntimeException("Failed to restore attendance row");
+        }
     }
 
     private List<LabAttendance> listAttendanceByDate(Long labId, String attendanceDate) {

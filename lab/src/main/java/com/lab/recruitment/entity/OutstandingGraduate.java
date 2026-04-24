@@ -31,6 +31,9 @@ public class OutstandingGraduate {
     
     @TableField("avatar_url")
     private String avatarUrl;
+
+    @TableField("cover_image_url")
+    private String coverImageUrl;
     
     @TableField("company")
     private String company;

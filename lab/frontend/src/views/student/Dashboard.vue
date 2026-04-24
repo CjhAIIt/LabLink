@@ -88,7 +88,7 @@ const notices = ref([])
 const myApplies = ref([])
 
 const joinedLabLabel = computed(() =>
-  userStore.userInfo?.labId ? `已加入实验室 #${userStore.userInfo.labId}` : '当前未加入实验室'
+  userStore.userInfo?.labName || '暂未加入实验室'
 )
 
 const metricCards = computed(() => {

@@ -44,15 +44,18 @@
 
 <script setup>
 import dayjs from 'dayjs'
-import { onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onMounted, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import { Calendar, Clock, Refresh, TrendCharts } from '@element-plus/icons-vue'
 import { getStudentLabExamPage } from '@/api/writtenExam'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
 
+const route = useRoute()
 const router = useRouter()
 const loading = ref(false)
 const exams = ref([])
 const statusFilter = ref('')
+const examBasePath = computed(() => resolveSurfacePathByRoute(route.path, '/student/exam-center'))
 
 const loadExams = async () => {
   loading.value = true
@@ -65,9 +68,9 @@ const loadExams = async () => {
 
 const goDetail = (exam) => {
   if (exam.status === 'submitted') {
-    router.push(`/student/exam-center/${exam.id}/result`)
+    router.push(`${examBasePath.value}/${exam.id}/result`)
   } else {
-    router.push(`/student/exam-center/${exam.id}`)
+    router.push(`${examBasePath.value}/${exam.id}`)
   }
 }
 
@@ -102,5 +105,66 @@ onMounted(loadExams)
 .ec-card__eligibility { font-size: 12px; font-weight: 600; }
 .ec-card__eligibility.eligible { color: #67c23a; }
 .ec-card__eligibility.ineligible { color: #f56c6c; }
-@media (max-width: 640px) { .ec-page { padding: 16px; } .ec-grid { grid-template-columns: 1fr; } }
+@media (max-width: 768px) {
+  .ec-page {
+    max-width: none;
+    padding: 0;
+    gap: 16px;
+  }
+
+  .ec-header {
+    padding: 22px;
+    border-radius: 26px;
+    color: #ffffff;
+    background: linear-gradient(135deg, #15324b, #176b9a 54%, #19a7b8);
+    box-shadow: 0 22px 48px rgba(23, 107, 154, 0.22);
+    align-items: flex-start;
+  }
+
+  .ec-header__title {
+    color: #ffffff;
+    font-size: 28px;
+    line-height: 1.12;
+  }
+
+  .ec-header__sub {
+    color: rgba(240, 249, 255, 0.88);
+    line-height: 1.68;
+  }
+
+  .ec-header__actions {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .ec-header__actions .el-select {
+    width: 100% !important;
+  }
+
+  .ec-grid {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+
+  .ec-card {
+    border-radius: 24px;
+    border: 1px solid rgba(51, 136, 187, 0.12);
+    padding: 16px;
+    box-shadow: 0 16px 38px rgba(23, 32, 51, 0.08);
+  }
+
+  .ec-card:hover {
+    transform: none;
+  }
+
+  .ec-card__foot {
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .ec-card__foot .el-button {
+    min-height: 44px;
+  }
+}
 </style>

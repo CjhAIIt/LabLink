@@ -85,6 +85,10 @@
             :style="{ transitionDelay: `${index * 0.06}s` }"
             @click="openLabDetail(lab)"
           >
+            <div class="lab-logo">
+              <img v-if="lab.logoUrl" :src="resolveMedia(lab.logoUrl)" alt="实验室 Logo" />
+              <span v-else>{{ (lab.labName || 'L').charAt(0) }}</span>
+            </div>
             <div class="lab-header">
               <div class="lab-name">{{ lab.labName }}</div>
               <div class="lab-meta">{{ lab.labCode || `LAB-${lab.id}` }}</div>
@@ -124,6 +128,7 @@ import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCollegeOptions } from '@/api/colleges'
 import { getLabPage, getLabStats } from '@/api/lab'
+import { resolveFileUrl } from '@/utils/file'
 
 const router = useRouter()
 const colleges = ref([])
@@ -152,6 +157,7 @@ const selectedCollegeName = computed(() => {
   const match = colleges.value.find((item) => item.id === filters.collegeId)
   return match ? match.collegeName : '学院'
 })
+const resolveMedia = (value) => resolveFileUrl(value)
 
 const loadColleges = async () => {
   const response = await getCollegeOptions()
@@ -517,6 +523,27 @@ onBeforeUnmount(() => {
   padding: 18px 18px 16px;
   cursor: pointer;
   transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.lab-logo {
+  width: 52px;
+  height: 52px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 14px;
+  background: linear-gradient(135deg, #0f172a, #0f766e);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 18px;
+}
+
+.lab-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
 }
 
 .lab-card:hover {

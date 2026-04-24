@@ -7,18 +7,17 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.lab.recruitment.dto.JudgeCaseDTO;
 import com.lab.recruitment.entity.*;
 import com.lab.recruitment.mapper.*;
 import com.lab.recruitment.service.WrittenExamService;
+import com.lab.recruitment.support.CurrentUserAccessor;
+import com.lab.recruitment.support.DataScope;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
-import org.springframework.http.ResponseEntity;
+import org.springframework.dao.DataAccessException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
-import org.springframework.web.client.RestTemplate;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -27,8 +26,6 @@ import java.util.stream.Collectors;
 
 @Service
 public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, WrittenExam> implements WrittenExamService {
-
-    private static final String JUDGE0_URL = "http://localhost:2358";
 
     @Autowired
     private WrittenExamMapper writtenExamMapper;
@@ -52,21 +49,19 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
     private DeliveryMapper deliveryMapper;
     @Autowired
     private LabMapper labMapper;
-    private final RestTemplate restTemplate = new RestTemplate();
-
-    private static final Map<String, Integer> LANGUAGE_ID_MAP = new HashMap<>();
-    static {
-        LANGUAGE_ID_MAP.put("java", 62);
-        LANGUAGE_ID_MAP.put("python", 71);
-        LANGUAGE_ID_MAP.put("c", 50);
-        LANGUAGE_ID_MAP.put("cpp", 54);
-    }
+    @Autowired
+    private UserMapper userMapper;
+    @Autowired
+    private CurrentUserAccessor currentUserAccessor;
+    @Autowired
+    private CodeJudgeService codeJudgeService;
 
     // ==================== Admin: Exam CRUD ====================
 
     @Override
     public IPage<WrittenExam> getExamList(Page<WrittenExam> page, Long labId, String status) {
         LambdaQueryWrapper<WrittenExam> wrapper = new LambdaQueryWrapper<>();
+        applyCurrentScopeToExamWrapper(wrapper);
         if (labId != null) {
             wrapper.eq(WrittenExam::getLabId, labId);
         }
@@ -143,6 +138,7 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
     @Override
     @Transactional
     public WrittenExamQuestion createQuestion(WrittenExamQuestion question) {
+        normalizeQuestionForPersistence(question);
         question.setCreateTime(LocalDateTime.now());
         question.setUpdateTime(LocalDateTime.now());
         writtenExamQuestionMapper.insert(question);
@@ -156,6 +152,7 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
         if (existing == null) {
             throw new RuntimeException("Question not found: " + questionId);
         }
+        normalizeQuestionForPersistence(question);
         question.setId(questionId);
         question.setUpdateTime(LocalDateTime.now());
         writtenExamQuestionMapper.updateById(question);
@@ -201,23 +198,53 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
     // ==================== Admin: Grading ====================
 
     @Override
-    public IPage<WrittenExamAttempt> getGradingList(Page<WrittenExamAttempt> page, Long examId) {
+    public IPage<Map<String, Object>> getGradingList(Page<?> page, Long examId, Integer status, String keyword) {
         LambdaQueryWrapper<WrittenExamAttempt> wrapper = new LambdaQueryWrapper<>();
+        List<Long> scopedExamIds = resolveScopedExamIds(examId);
+        if (scopedExamIds.isEmpty()) {
+            Page<Map<String, Object>> empty = new Page<>(page.getCurrent(), page.getSize());
+            empty.setRecords(Collections.emptyList());
+            empty.setTotal(0);
+            return empty;
+        }
+        wrapper.in(WrittenExamAttempt::getExamId, scopedExamIds);
         if (examId != null) {
             wrapper.eq(WrittenExamAttempt::getExamId, examId);
         }
-        wrapper.eq(WrittenExamAttempt::getStatus, 2); // submitted
+        if (status != null) {
+            wrapper.eq(WrittenExamAttempt::getStatus, status);
+        }
         wrapper.orderByDesc(WrittenExamAttempt::getSubmitTime);
-        return writtenExamAttemptMapper.selectPage(page, wrapper);
+        wrapper.orderByDesc(WrittenExamAttempt::getStartTime);
+
+        Page<WrittenExamAttempt> attemptPage = writtenExamAttemptMapper.selectPage(
+                new Page<>(page.getCurrent(), page.getSize()), wrapper);
+        List<Map<String, Object>> records = attemptPage.getRecords().stream()
+                .map(this::buildAdminAttemptRecord)
+                .filter(item -> matchesAttemptKeyword(item, keyword))
+                .collect(Collectors.toList());
+
+        Page<Map<String, Object>> result = new Page<>(page.getCurrent(), page.getSize());
+        result.setRecords(records);
+        result.setTotal(StringUtils.hasText(keyword) ? records.size() : attemptPage.getTotal());
+        return result;
     }
 
     @Override
-    public WrittenExamAttempt getStudentAttemptDetail(Long attemptId) {
+    public Map<String, Object> getStudentAttemptDetail(Long attemptId) {
         WrittenExamAttempt attempt = writtenExamAttemptMapper.selectById(attemptId);
         if (attempt == null) {
             throw new RuntimeException("Attempt not found: " + attemptId);
         }
-        return attempt;
+        assertExamInCurrentScope(attempt.getExamId());
+        Map<String, Object> detail = buildAdminAttemptRecord(attempt);
+        WrittenExam exam = writtenExamMapper.selectById(attempt.getExamId());
+        detail.put("attempt", attempt);
+        detail.put("exam", exam);
+        detail.put("student", userMapper.selectById(attempt.getStudentId()));
+        detail.put("lab", exam == null || exam.getLabId() == null ? null : labMapper.selectById(exam.getLabId()));
+        detail.put("answers", buildAdminAttemptAnswers(attempt));
+        return detail;
     }
     @Override
     @Transactional
@@ -229,7 +256,14 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
         int manualScore = 0;
         if (scores != null) {
             for (WrittenExamAnswer ans : scores) {
-                WrittenExamAnswer existing = writtenExamAnswerMapper.selectById(ans.getId());
+                WrittenExamAnswer existing = ans.getId() == null ? null : writtenExamAnswerMapper.selectById(ans.getId());
+                if (existing == null && ans.getQuestionId() != null) {
+                    LambdaQueryWrapper<WrittenExamAnswer> answerWrapper = new LambdaQueryWrapper<>();
+                    answerWrapper.eq(WrittenExamAnswer::getAttemptId, attemptId)
+                            .eq(WrittenExamAnswer::getQuestionId, ans.getQuestionId())
+                            .last("LIMIT 1");
+                    existing = writtenExamAnswerMapper.selectOne(answerWrapper);
+                }
                 if (existing != null) {
                     existing.setScore(ans.getScore());
                     existing.setGraderRemark(ans.getGraderRemark());
@@ -354,18 +388,19 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
         if (exam == null) {
             throw new RuntimeException("Exam not found: " + examId);
         }
-        Map<String, Object> detail = new HashMap<>();
-        detail.put("exam", exam);
-        // Get paper questions
+        Map<String, Object> detail = buildStudentExamSummary(exam);
         List<WrittenExamPaperQuestion> paperQuestions = getPaperQuestions(examId);
         detail.put("paperQuestions", paperQuestions);
-        // Check attempt
+        detail.put("questions", buildStudentQuestionPayload(paperQuestions));
         LambdaQueryWrapper<WrittenExamAttempt> aw = new LambdaQueryWrapper<>();
         aw.eq(WrittenExamAttempt::getExamId, examId)
           .eq(WrittenExamAttempt::getStudentId, studentId)
+          .orderByDesc(WrittenExamAttempt::getId)
           .last("LIMIT 1");
         WrittenExamAttempt attempt = writtenExamAttemptMapper.selectOne(aw);
         detail.put("attempt", attempt);
+        detail.put("alreadySubmitted", attempt != null && attempt.getStatus() != null && attempt.getStatus() >= 2);
+        detail.put("submission", buildSubmissionPayload(exam, attempt));
         return detail;
     }
 
@@ -376,28 +411,24 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
             throw new RuntimeException("Exam not found: " + examId);
         }
         Map<String, Object> result = new HashMap<>();
-        // Check if student has an approved delivery/application for this exam's lab
-        Long labId = exam.getLabId();
-        boolean eligible = false;
-        if (labId != null) {
-            LambdaQueryWrapper<Delivery> dw = new LambdaQueryWrapper<>();
-            dw.eq(Delivery::getUserId, studentId)
-              .eq(Delivery::getLabId, labId)
-              .eq(Delivery::getAuditStatus, 1); // approved
-            Long count = deliveryMapper.selectCount(dw);
-            eligible = count != null && count > 0;
-        }
-        // Also check if already attempted
+        // Students can enter the written exam directly without applying to the lab first.
+        // Only block re-entry when a submitted attempt exists and the exam does not allow retry.
         LambdaQueryWrapper<WrittenExamAttempt> aw = new LambdaQueryWrapper<>();
         aw.eq(WrittenExamAttempt::getExamId, examId)
-          .eq(WrittenExamAttempt::getStudentId, studentId);
-        Long attemptCount = writtenExamAttemptMapper.selectCount(aw);
-        boolean alreadyAttempted = attemptCount != null && attemptCount > 0;
+          .eq(WrittenExamAttempt::getStudentId, studentId)
+          .orderByDesc(WrittenExamAttempt::getId)
+          .last("LIMIT 1");
+        WrittenExamAttempt attempt = writtenExamAttemptMapper.selectOne(aw);
+        boolean alreadyAttempted = attempt != null;
+        boolean alreadySubmitted = attempt != null && attempt.getStatus() != null && attempt.getStatus() >= 2;
+        boolean allowRetry = Boolean.TRUE.equals(exam.getAllowRetry());
+        boolean canTake = !alreadySubmitted || allowRetry;
 
-        result.put("eligible", eligible);
+        result.put("eligible", canTake);
         result.put("alreadyAttempted", alreadyAttempted);
-        result.put("allowRetry", exam.getAllowRetry());
-        result.put("canTake", eligible && (!alreadyAttempted || Boolean.TRUE.equals(exam.getAllowRetry())));
+        result.put("allowRetry", allowRetry);
+        result.put("canTake", canTake);
+        result.put("reason", canTake ? "可直接参加考试" : "您已参加过本场考试，当前不允许重考");
         return result;
     }
     @Override
@@ -457,14 +488,11 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
 
         // Get questions
         List<WrittenExamPaperQuestion> paperQuestions = getPaperQuestions(examId);
-        List<Long> questionIds = paperQuestions.stream()
-                .map(WrittenExamPaperQuestion::getQuestionId).collect(Collectors.toList());
-        List<WrittenExamQuestion> questions = questionIds.isEmpty()
-                ? Collections.emptyList()
-                : writtenExamQuestionMapper.selectBatchIds(questionIds);
+        List<Map<String, Object>> questions = buildStudentQuestionPayload(paperQuestions);
 
         Map<String, Object> result = new HashMap<>();
         result.put("attemptId", attempt.getId());
+        result.put("title", exam.getTitle());
         result.put("questions", questions);
         result.put("remainingMinutes", remaining);
         result.put("remainingSeconds", remaining * 60);
@@ -573,6 +601,7 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
         Map<String, Object> result = new HashMap<>();
         if (progress != null) {
             result.put("answersJson", progress.getAnswersJson());
+            result.put("answers", StringUtils.hasText(progress.getAnswersJson()) ? JSON.parseArray(progress.getAnswersJson()) : new JSONArray());
             result.put("remainingSeconds", progress.getRemainingSeconds());
             result.put("currentIndex", progress.getCurrentIndex());
             result.put("flaggedIds", progress.getFlaggedIds());
@@ -611,23 +640,27 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
 
     @Override
     public Map<String, Object> getSubmissionResult(Long examId, Long studentId) {
+        WrittenExam exam = writtenExamMapper.selectById(examId);
+        if (exam == null) {
+            throw new RuntimeException("Exam not found: " + examId);
+        }
         LambdaQueryWrapper<WrittenExamAttempt> aw = new LambdaQueryWrapper<>();
         aw.eq(WrittenExamAttempt::getExamId, examId)
           .eq(WrittenExamAttempt::getStudentId, studentId)
+          .orderByDesc(WrittenExamAttempt::getId)
           .last("LIMIT 1");
         WrittenExamAttempt attempt = writtenExamAttemptMapper.selectOne(aw);
         if (attempt == null) {
             return null;
         }
-        Map<String, Object> result = new HashMap<>();
+        Map<String, Object> result = buildSubmissionPayload(exam, attempt);
         result.put("attempt", attempt);
-        // Get answers
         LambdaQueryWrapper<WrittenExamAnswer> ansWrapper = new LambdaQueryWrapper<>();
         ansWrapper.eq(WrittenExamAnswer::getAttemptId, attempt.getId());
         result.put("answers", writtenExamAnswerMapper.selectList(ansWrapper));
         return result;
     }
-    // ==================== Judge0 Integration ====================
+    // ==================== Local Code Judge ====================
 
     @Override
     public Map<String, Object> judgeCode(Long questionId, String code, String language) {
@@ -635,43 +668,80 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
         if (question == null) {
             throw new RuntimeException("Question not found: " + questionId);
         }
-        Integer languageId = LANGUAGE_ID_MAP.get(language == null ? "" : language.toLowerCase());
-        if (languageId == null) {
-            throw new RuntimeException("Unsupported language: " + language);
+        List<JudgeCaseDTO> judgeCases = parseTestCases(question.getTestCases());
+        if (judgeCases.isEmpty()) {
+            // fallback: use sampleCase if testCases is empty
+            judgeCases = parseSampleCaseAsJudgeCase(question.getSampleCase());
         }
-        String stdin = question.getInputFormat();
-        String expectedOutput = question.getOutputFormat();
-
-        Map<String, Object> body = new HashMap<>();
-        body.put("source_code", code);
-        body.put("language_id", languageId);
-        body.put("stdin", stdin);
-        body.put("expected_output", expectedOutput);
-
-        HttpHeaders headers = new HttpHeaders();
-        headers.setContentType(MediaType.APPLICATION_JSON);
-        HttpEntity<Map<String, Object>> request = new HttpEntity<>(body, headers);
-
-        try {
-            ResponseEntity<Map> response = restTemplate.postForEntity(
-                    JUDGE0_URL + "/submissions?base64_encoded=false&wait=true",
-                    request, Map.class);
-            Map<String, Object> result = new HashMap<>();
-            Map responseBody = response.getBody();
-            if (responseBody != null) {
-                result.put("status", responseBody.get("status"));
-                result.put("stdout", responseBody.get("stdout"));
-                result.put("stderr", responseBody.get("stderr"));
-                result.put("compile_output", responseBody.get("compile_output"));
-                result.put("time", responseBody.get("time"));
-                result.put("memory", responseBody.get("memory"));
-            }
-            return result;
-        } catch (Exception e) {
+        if (judgeCases.isEmpty()) {
             Map<String, Object> errorResult = new HashMap<>();
-            errorResult.put("error", "Judge0 service unavailable: " + e.getMessage());
+            errorResult.put("status", "error");
+            errorResult.put("message", "该题目未配置测试用例");
             return errorResult;
         }
+        CodeJudgeService.JudgeResult judgeResult = codeJudgeService.judge(language, code, judgeCases);
+        Map<String, Object> result = new HashMap<>();
+        if (!judgeResult.isAvailable()) {
+            result.put("status", "error");
+            result.put("message", judgeResult.getMessage());
+        } else if (judgeResult.isSuccess()) {
+            result.put("status", "success");
+            result.put("correct", true);
+            result.put("message", "通过 " + judgeResult.getPassedCount() + "/" + judgeResult.getTotalCount() + " 个测试用例");
+        } else {
+            result.put("status", "wrong_answer");
+            result.put("correct", false);
+            result.put("message", judgeResult.getMessage());
+        }
+        result.put("passedCount", judgeResult.getPassedCount());
+        result.put("totalCount", judgeResult.getTotalCount());
+        return result;
+    }
+
+    @Override
+    public Map<String, Object> runCode(Long questionId, String code, String language, String input) {
+        WrittenExamQuestion question = writtenExamQuestionMapper.selectById(questionId);
+        if (question == null) {
+            throw new RuntimeException("Question not found: " + questionId);
+        }
+        CodeJudgeService.RunResult runResult = codeJudgeService.run(language, code, input);
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", runResult.getStatus());
+        result.put("stdout", runResult.getStdout());
+        result.put("stderr", runResult.getStderr());
+        result.put("error", runResult.getError());
+        if (runResult.isTimedOut()) {
+            result.put("status", "time_limit");
+            result.put("message", "运行超时");
+        }
+        return result;
+    }
+
+    private List<JudgeCaseDTO> parseTestCases(String json) {
+        if (!StringUtils.hasText(json)) {
+            return Collections.emptyList();
+        }
+        try {
+            return JSON.parseArray(json, JudgeCaseDTO.class);
+        } catch (Exception e) {
+            return Collections.emptyList();
+        }
+    }
+
+    private List<JudgeCaseDTO> parseSampleCaseAsJudgeCase(String sampleCase) {
+        if (!StringUtils.hasText(sampleCase)) {
+            return Collections.emptyList();
+        }
+        try {
+            JSONObject obj = JSON.parseObject(sampleCase);
+            JudgeCaseDTO dto = new JudgeCaseDTO();
+            dto.setInput(obj.getString("input"));
+            dto.setOutput(obj.getString("output"));
+            if (StringUtils.hasText(dto.getOutput())) {
+                return List.of(dto);
+            }
+        } catch (Exception ignored) {}
+        return Collections.emptyList();
     }
 
     // ==================== Interview Invitations ====================
@@ -770,7 +840,7 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
     public Map<String, Object> getAdminConfig(User user) {
         Map<String, Object> config = new HashMap<>();
         // Return exam config for the admin's lab
-        Long labId = user.getLabId();
+        Long labId = currentUserAccessor.buildDataScope(user).getLabId();
         if (labId != null) {
             LambdaQueryWrapper<WrittenExam> wrapper = new LambdaQueryWrapper<>();
             wrapper.eq(WrittenExam::getLabId, labId).eq(WrittenExam::getDeleted, 0).orderByDesc(WrittenExam::getCreateTime).last("LIMIT 1");
@@ -801,7 +871,7 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
     public boolean reviewSubmission(User user, Long submissionId, Integer status, String adminRemark) {
         WrittenExamAttempt attempt = writtenExamAttemptMapper.selectById(submissionId);
         if (attempt == null) throw new RuntimeException("提交记录不存在");
-        attempt.setStatus(Integer.valueOf(status == 2 ? "graded" : "submitted"));
+        attempt.setStatus(status != null && status == 2 ? 3 : 2);
         attempt.setRemark(adminRemark);
         attempt.setGradedBy(user.getId());
         attempt.setGradedTime(LocalDateTime.now());
@@ -832,7 +902,9 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
 
             // Resolve lab name
             Lab lab = labMapper.selectById(exam.getLabId());
-            item.put("labName", lab != null ? lab.getLabName() : "Unknown");
+            item.put("labName", lab != null && StringUtils.hasText(lab.getLabName())
+                    ? lab.getLabName()
+                    : "实验室名称待同步");
 
             // Determine status string for frontend
             String statusStr;
@@ -882,7 +954,10 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
 
     @Override
     public Map<String, Object> getStudentExam(User user, Long labId) {
-        return getExamDetail(labId, user.getId());
+        WrittenExam exam = resolveStudentExamForLegacyLabId(labId);
+        Map<String, Object> result = getExamDetail(exam.getId(), user.getId());
+        result.put("examId", exam.getId());
+        return result;
     }
 
     @Override
@@ -892,9 +967,21 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
 
     @Override
     public Map<String, Object> submitExam(User user, com.lab.recruitment.dto.WrittenExamSubmitDTO submitDTO) {
-        submitPaper(submitDTO.getLabId(), user.getId(), com.alibaba.fastjson2.JSON.toJSONString(submitDTO.getAnswers()));
+        WrittenExam exam = resolveStudentExamForLegacyLabId(submitDTO.getLabId());
+        LambdaQueryWrapper<WrittenExamAttempt> aw = new LambdaQueryWrapper<>();
+        aw.eq(WrittenExamAttempt::getExamId, exam.getId())
+          .eq(WrittenExamAttempt::getStudentId, user.getId())
+          .orderByDesc(WrittenExamAttempt::getId)
+          .last("LIMIT 1");
+        WrittenExamAttempt attempt = writtenExamAttemptMapper.selectOne(aw);
+        if (attempt == null || attempt.getStatus() == null || attempt.getStatus() < 1) {
+            startExam(exam.getId(), user.getId());
+        }
+        submitPaper(exam.getId(), user.getId(), com.alibaba.fastjson2.JSON.toJSONString(submitDTO.getAnswers()));
         Map<String, Object> result = new HashMap<>();
         result.put("submitted", true);
+        result.put("examId", exam.getId());
+        result.put("submission", getSubmissionResult(exam.getId(), user.getId()));
         return result;
     }
 
@@ -907,5 +994,453 @@ public class WrittenExamServiceImpl extends ServiceImpl<WrittenExamMapper, Writt
     @Override
     public boolean markNotificationRead(User user, Long notificationId) {
         return true;
+    }
+
+    private WrittenExam resolveStudentExamForLegacyLabId(Long labId) {
+        if (labId == null) {
+            throw new RuntimeException("Lab id is required");
+        }
+        WrittenExam directExam = writtenExamMapper.selectById(labId);
+        if (directExam != null && !Objects.equals(directExam.getDeleted(), 1)) {
+            return directExam;
+        }
+
+        LambdaQueryWrapper<WrittenExam> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(WrittenExam::getLabId, labId)
+          .eq(WrittenExam::getDeleted, 0)
+          .orderByDesc(WrittenExam::getStatus)
+          .orderByDesc(WrittenExam::getStartTime)
+          .orderByDesc(WrittenExam::getCreateTime)
+          .last("LIMIT 1");
+        WrittenExam exam = writtenExamMapper.selectOne(wrapper);
+        if (exam == null) {
+            throw new RuntimeException("No written exam found for lab: " + labId);
+        }
+        return exam;
+    }
+
+    private void applyCurrentScopeToExamWrapper(LambdaQueryWrapper<WrittenExam> wrapper) {
+        List<Long> scopedLabIds = resolveScopedLabIds();
+        if (scopedLabIds == null) {
+            return;
+        }
+        if (scopedLabIds.isEmpty()) {
+            wrapper.eq(WrittenExam::getId, -1L);
+            return;
+        }
+        wrapper.in(WrittenExam::getLabId, scopedLabIds);
+    }
+
+    private List<Long> resolveScopedLabIds() {
+        DataScope scope = currentUserAccessor.getCurrentDataScope();
+        if (scope == null || scope.isSchoolLevel()) {
+            return null;
+        }
+        if (scope.isLabLevel()) {
+            return scope.getLabId() == null ? Collections.emptyList() : List.of(scope.getLabId());
+        }
+        if (scope.isSelfLevel() && scope.getLabId() != null) {
+            return List.of(scope.getLabId());
+        }
+        if (scope.isCollegeLevel()) {
+            if (scope.getCollegeId() == null) {
+                return Collections.emptyList();
+            }
+            return labMapper.selectList(new LambdaQueryWrapper<Lab>()
+                            .eq(Lab::getCollegeId, scope.getCollegeId())
+                            .eq(Lab::getDeleted, 0))
+                    .stream()
+                    .map(Lab::getId)
+                    .toList();
+        }
+        return Collections.emptyList();
+    }
+
+    private List<Long> resolveScopedExamIds(Long requestedExamId) {
+        if (requestedExamId != null) {
+            WrittenExam exam = writtenExamMapper.selectById(requestedExamId);
+            if (exam == null || Objects.equals(exam.getDeleted(), 1)) {
+                return Collections.emptyList();
+            }
+            assertLabInCurrentScope(exam.getLabId());
+            return List.of(requestedExamId);
+        }
+        LambdaQueryWrapper<WrittenExam> wrapper = new LambdaQueryWrapper<>();
+        wrapper.eq(WrittenExam::getDeleted, 0);
+        applyCurrentScopeToExamWrapper(wrapper);
+        return writtenExamMapper.selectList(wrapper).stream()
+                .map(WrittenExam::getId)
+                .toList();
+    }
+
+    private void assertExamInCurrentScope(Long examId) {
+        WrittenExam exam = writtenExamMapper.selectById(examId);
+        if (exam == null || Objects.equals(exam.getDeleted(), 1)) {
+            throw new RuntimeException("Exam not found: " + examId);
+        }
+        assertLabInCurrentScope(exam.getLabId());
+    }
+
+    private void assertLabInCurrentScope(Long labId) {
+        DataScope scope = currentUserAccessor.getCurrentDataScope();
+        if (scope == null || scope.isSchoolLevel()) {
+            return;
+        }
+        if (scope.isLabLevel()) {
+            if (!Objects.equals(scope.getLabId(), labId)) {
+                throw new RuntimeException("无权查看其他实验室的笔试记录");
+            }
+            return;
+        }
+        if (scope.isCollegeLevel()) {
+            Lab lab = labId == null ? null : labMapper.selectById(labId);
+            if (lab == null || !Objects.equals(scope.getCollegeId(), lab.getCollegeId())) {
+                throw new RuntimeException("无权查看其他学院的笔试记录");
+            }
+            return;
+        }
+        if (scope.isSelfLevel() && scope.getLabId() != null) {
+            if (!Objects.equals(scope.getLabId(), labId)) {
+                throw new RuntimeException("无权查看其他实验室的笔试记录");
+            }
+            return;
+        }
+        throw new RuntimeException("当前账号没有笔试管理权限");
+    }
+
+    private Map<String, Object> buildAdminAttemptRecord(WrittenExamAttempt attempt) {
+        Map<String, Object> item = new HashMap<>();
+        WrittenExam exam = attempt.getExamId() == null ? null : writtenExamMapper.selectById(attempt.getExamId());
+        User student = attempt.getStudentId() == null ? null : userMapper.selectById(attempt.getStudentId());
+        Lab lab = exam == null || exam.getLabId() == null ? null : labMapper.selectById(exam.getLabId());
+        item.put("id", attempt.getId());
+        item.put("attemptId", attempt.getId());
+        item.put("examId", attempt.getExamId());
+        item.put("examTitle", exam == null ? "" : exam.getTitle());
+        item.put("studentId", attempt.getStudentId());
+        item.put("studentUserId", attempt.getStudentId());
+        item.put("studentName", student == null ? "" : student.getRealName());
+        item.put("studentNo", student == null ? "" : student.getStudentId());
+        item.put("college", student == null ? "" : student.getCollege());
+        item.put("major", student == null ? "" : student.getMajor());
+        item.put("grade", student == null ? "" : student.getGrade());
+        item.put("labId", lab == null ? null : lab.getId());
+        item.put("labName", lab == null ? "" : lab.getLabName());
+        item.put("status", attempt.getStatus());
+        item.put("statusKey", normalizeAttemptStatusKey(attempt.getStatus()));
+        item.put("statusLabel", normalizeAttemptStatusLabel(attempt.getStatus()));
+        item.put("startTime", attempt.getStartTime());
+        item.put("submitTime", attempt.getSubmitTime());
+        item.put("gradedTime", attempt.getGradedTime());
+        item.put("autoScore", attempt.getAutoScore());
+        item.put("manualScore", attempt.getManualScore());
+        item.put("totalScore", attempt.getTotalScore());
+        item.put("passed", attempt.getPassed());
+        item.put("switchCount", attempt.getSwitchCount());
+        item.put("refreshCount", attempt.getRefreshCount());
+        item.put("remark", attempt.getRemark());
+        return item;
+    }
+
+    private List<Map<String, Object>> buildAdminAttemptAnswers(WrittenExamAttempt attempt) {
+        LambdaQueryWrapper<WrittenExamAnswer> answerWrapper = new LambdaQueryWrapper<>();
+        answerWrapper.eq(WrittenExamAnswer::getAttemptId, attempt.getId())
+                .orderByAsc(WrittenExamAnswer::getId);
+        List<WrittenExamAnswer> answers = writtenExamAnswerMapper.selectList(answerWrapper);
+        if (answers.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<Long> questionIds = answers.stream()
+                .map(WrittenExamAnswer::getQuestionId)
+                .filter(Objects::nonNull)
+                .toList();
+        Map<Long, WrittenExamQuestion> questionMap = questionIds.isEmpty()
+                ? Collections.emptyMap()
+                : writtenExamQuestionMapper.selectBatchIds(questionIds).stream()
+                        .collect(Collectors.toMap(WrittenExamQuestion::getId, item -> item));
+
+        Map<Long, Integer> paperScoreMap = getPaperQuestions(attempt.getExamId()).stream()
+                .filter(item -> item.getQuestionId() != null)
+                .collect(Collectors.toMap(WrittenExamPaperQuestion::getQuestionId, WrittenExamPaperQuestion::getScore, (a, b) -> a));
+
+        List<Map<String, Object>> result = new ArrayList<>();
+        for (WrittenExamAnswer answer : answers) {
+            WrittenExamQuestion question = questionMap.get(answer.getQuestionId());
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", answer.getId());
+            item.put("attemptId", answer.getAttemptId());
+            item.put("questionId", answer.getQuestionId());
+            item.put("title", question == null ? "" : question.getTitle());
+            item.put("content", question == null ? "" : question.getContent());
+            item.put("questionType", question == null ? "" : question.getQuestionType());
+            item.put("correctAnswer", question == null ? "" : question.getCorrectAnswer());
+            item.put("analysis", question == null ? "" : question.getAnalysis());
+            item.put("maxScore", paperScoreMap.getOrDefault(answer.getQuestionId(), question == null ? 100 : question.getScore()));
+            item.put("answer", answer.getAnswer());
+            item.put("code", answer.getCode());
+            item.put("language", answer.getLanguage());
+            item.put("score", answer.getScore());
+            item.put("isCorrect", answer.getIsCorrect());
+            item.put("judgeResult", answer.getJudgeResult());
+            item.put("graderRemark", answer.getGraderRemark());
+            result.add(item);
+        }
+        return result;
+    }
+
+    private boolean matchesAttemptKeyword(Map<String, Object> item, String keyword) {
+        if (!StringUtils.hasText(keyword)) {
+            return true;
+        }
+        String normalized = keyword.trim().toLowerCase(Locale.ROOT);
+        return List.of("studentName", "studentNo", "college", "labName", "examTitle").stream()
+                .map(item::get)
+                .filter(Objects::nonNull)
+                .map(value -> String.valueOf(value).toLowerCase(Locale.ROOT))
+                .anyMatch(value -> value.contains(normalized));
+    }
+
+    private String normalizeAttemptStatusKey(Integer status) {
+        if (status == null) {
+            return "not_started";
+        }
+        return switch (status) {
+            case 1 -> "in_progress";
+            case 2 -> "submitted";
+            case 3 -> "graded";
+            case 4 -> "published";
+            default -> "not_started";
+        };
+    }
+
+    private String normalizeAttemptStatusLabel(Integer status) {
+        if (status == null) {
+            return "未开始";
+        }
+        return switch (status) {
+            case 1 -> "进行中";
+            case 2 -> "已提交";
+            case 3 -> "已批改";
+            case 4 -> "成绩已发布";
+            default -> "未开始";
+        };
+    }
+
+    private Map<String, Object> buildStudentExamSummary(WrittenExam exam) {
+        Map<String, Object> detail = new HashMap<>();
+        Lab lab = exam.getLabId() == null ? null : labMapper.selectById(exam.getLabId());
+        detail.put("id", exam.getId());
+        detail.put("examId", exam.getId());
+        detail.put("title", exam.getTitle());
+        detail.put("description", exam.getDescription());
+        detail.put("labId", exam.getLabId());
+        detail.put("labName", lab == null ? "" : lab.getLabName());
+        detail.put("duration", exam.getDuration());
+        detail.put("totalScore", exam.getTotalScore());
+        detail.put("passScore", exam.getPassScore());
+        detail.put("startTime", exam.getStartTime());
+        detail.put("endTime", exam.getEndTime());
+        detail.put("antiCheatEnabled", Boolean.TRUE.equals(exam.getEnableAntiCheat()));
+        detail.put("signatureRequired", Boolean.TRUE.equals(exam.getEnableSignature()));
+        detail.put("allowRetry", Boolean.TRUE.equals(exam.getAllowRetry()));
+        detail.put("exam", exam);
+        detail.put("lab", lab);
+        return detail;
+    }
+
+    private List<Map<String, Object>> buildStudentQuestionPayload(List<WrittenExamPaperQuestion> paperQuestions) {
+        if (paperQuestions == null || paperQuestions.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<Long> questionIds = paperQuestions.stream()
+                .map(WrittenExamPaperQuestion::getQuestionId)
+                .filter(Objects::nonNull)
+                .toList();
+        if (questionIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        Map<Long, WrittenExamQuestion> questionMap = writtenExamQuestionMapper.selectBatchIds(questionIds)
+                .stream()
+                .collect(Collectors.toMap(WrittenExamQuestion::getId, item -> item));
+
+        List<Map<String, Object>> questions = new ArrayList<>();
+        for (WrittenExamPaperQuestion paperQuestion : paperQuestions) {
+            WrittenExamQuestion question = questionMap.get(paperQuestion.getQuestionId());
+            if (question == null) {
+                continue;
+            }
+            Map<String, Object> item = new HashMap<>();
+            item.put("id", question.getId());
+            item.put("title", question.getTitle());
+            item.put("content", question.getContent());
+            item.put("type", question.getQuestionType());
+            item.put("questionType", question.getQuestionType());
+            item.put("difficulty", question.getDifficulty());
+            item.put("score", paperQuestion.getScore() != null ? paperQuestion.getScore() : question.getScore());
+            item.put("options", parseQuestionOptions(question.getOptions()));
+            item.put("inputFormat", question.getInputFormat());
+            item.put("outputFormat", question.getOutputFormat());
+            item.put("sampleCase", question.getSampleCase());
+            item.put("allowedLanguages", parseStringList(question.getAllowedLanguages()));
+            item.put("tags", parseStringList(question.getTags()));
+            questions.add(item);
+        }
+        return questions;
+    }
+
+    private List<Map<String, Object>> parseQuestionOptions(String optionsJson) {
+        if (!StringUtils.hasText(optionsJson)) {
+            return Collections.emptyList();
+        }
+        try {
+            JSONArray array = JSON.parseArray(optionsJson);
+            List<Map<String, Object>> options = new ArrayList<>();
+            for (int i = 0; i < array.size(); i++) {
+                Object raw = array.get(i);
+                Map<String, Object> item = new HashMap<>();
+                if (raw instanceof JSONObject jsonObject) {
+                    String key = jsonObject.getString("key");
+                    if (!StringUtils.hasText(key)) {
+                        key = jsonObject.getString("label");
+                    }
+                    item.put("key", key);
+                    item.put("label", key);
+                    item.put("value", jsonObject.getString("value") != null ? jsonObject.getString("value") : jsonObject.getString("text"));
+                    item.put("text", item.get("value"));
+                } else {
+                    String value = String.valueOf(raw);
+                    String key = String.valueOf((char) ('A' + i));
+                    item.put("key", key);
+                    item.put("label", key);
+                    item.put("value", value);
+                    item.put("text", value);
+                }
+                options.add(item);
+            }
+            return options;
+        } catch (Exception ignored) {
+            return Collections.emptyList();
+        }
+    }
+
+    private List<String> parseStringList(String json) {
+        if (!StringUtils.hasText(json)) {
+            return Collections.emptyList();
+        }
+        try {
+            return JSON.parseArray(json, String.class);
+        } catch (Exception ignored) {
+            return Arrays.stream(json.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .toList();
+        }
+    }
+
+    private void normalizeQuestionForPersistence(WrittenExamQuestion question) {
+        if (question == null) {
+            return;
+        }
+        question.setOptions(normalizeJsonArray(question.getOptions()));
+        question.setTags(normalizeStringArray(question.getTags()));
+        question.setAllowedLanguages(normalizeStringArray(question.getAllowedLanguages()));
+        question.setTestCases(normalizeJsonArray(question.getTestCases()));
+        question.setSampleCase(normalizeSampleCase(question.getSampleCase()));
+
+        if (!StringUtils.hasText(question.getInputFormat())) {
+            question.setInputFormat(null);
+        }
+        if (!StringUtils.hasText(question.getOutputFormat())) {
+            question.setOutputFormat(null);
+        }
+        if (!StringUtils.hasText(question.getCorrectAnswer())) {
+            question.setCorrectAnswer(null);
+        }
+        if (!StringUtils.hasText(question.getAnalysis())) {
+            question.setAnalysis(null);
+        }
+    }
+
+    private String normalizeJsonArray(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "[]";
+        }
+        try {
+            return JSON.toJSONString(JSON.parseArray(value));
+        } catch (Exception ignored) {
+            return "[]";
+        }
+    }
+
+    private String normalizeStringArray(String value) {
+        if (!StringUtils.hasText(value)) {
+            return "[]";
+        }
+        try {
+            List<String> values = JSON.parseArray(value, String.class);
+            return JSON.toJSONString(values.stream().filter(StringUtils::hasText).map(String::trim).toList());
+        } catch (Exception ignored) {
+            List<String> values = Arrays.stream(value.split(","))
+                    .map(String::trim)
+                    .filter(StringUtils::hasText)
+                    .toList();
+            return JSON.toJSONString(values);
+        }
+    }
+
+    private String normalizeSampleCase(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        try {
+            JSONObject jsonObject = JSON.parseObject(value);
+            String input = jsonObject.getString("input");
+            String output = jsonObject.getString("output");
+            if (!StringUtils.hasText(input) && !StringUtils.hasText(output)) {
+                return null;
+            }
+            JSONObject normalized = new JSONObject();
+            normalized.put("input", StringUtils.hasText(input) ? input : "");
+            normalized.put("output", StringUtils.hasText(output) ? output : "");
+            return JSON.toJSONString(normalized);
+        } catch (Exception ignored) {
+            return null;
+        }
+    }
+
+    private Map<String, Object> buildSubmissionPayload(WrittenExam exam, WrittenExamAttempt attempt) {
+        if (attempt == null) {
+            return null;
+        }
+        Map<String, Object> result = new HashMap<>();
+        result.put("id", attempt.getId());
+        result.put("examId", exam.getId());
+        result.put("score", attempt.getTotalScore());
+        result.put("totalScore", exam.getTotalScore());
+        result.put("passScore", exam.getPassScore());
+        result.put("submitTime", attempt.getSubmitTime());
+        result.put("status", attempt.getStatus() != null && attempt.getStatus() >= 3 ? "GRADED" : "SUBMITTED");
+        result.put("passed", attempt.getPassed());
+        result.put("remark", attempt.getRemark());
+        InterviewInvitation invitation = findLatestInterviewInvitation(exam.getId(), attempt.getStudentId());
+        if (invitation != null) {
+            result.put("interviewInvitation", invitation.getDescription());
+        }
+        return result;
+    }
+
+    private InterviewInvitation findLatestInterviewInvitation(Long examId, Long studentId) {
+        try {
+            LambdaQueryWrapper<InterviewInvitation> wrapper = new LambdaQueryWrapper<>();
+            wrapper.eq(InterviewInvitation::getExamId, examId)
+              .eq(InterviewInvitation::getStudentId, studentId)
+              .eq(InterviewInvitation::getDeleted, 0)
+              .orderByDesc(InterviewInvitation::getCreateTime)
+              .last("LIMIT 1");
+            return interviewInvitationMapper.selectOne(wrapper);
+        } catch (DataAccessException e) {
+            return null;
+        }
     }
 }

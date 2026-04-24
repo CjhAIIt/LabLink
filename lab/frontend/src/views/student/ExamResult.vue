@@ -60,10 +60,12 @@ import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getStudentExamSubmission } from '@/api/writtenExam'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
 
 const route = useRoute()
 const router = useRouter()
 const examId = route.params.examId
+const examCenterPath = computed(() => resolveSurfacePathByRoute(route.path, '/student/exam-center'))
 
 const loading = ref(false)
 const submission = ref(null)
@@ -101,7 +103,7 @@ const fetchResult = async () => {
 }
 
 const goBack = () => {
-  router.push('/student/exam-center')
+  router.push(examCenterPath.value)
 }
 
 onMounted(fetchResult)
@@ -215,5 +217,36 @@ onMounted(fetchResult)
   border-radius: 10px;
   font-size: 16px;
   height: 48px;
+}
+
+@media (max-width: 768px) {
+  .exam-result-wrapper {
+    padding: 0;
+    min-height: auto;
+    background: transparent;
+  }
+
+  .exam-result-card {
+    padding: 28px 18px;
+    border-radius: 26px;
+    border: 1px solid rgba(51, 136, 187, 0.12);
+    box-shadow: 0 16px 38px rgba(23, 32, 51, 0.08);
+  }
+
+  .score-number {
+    font-size: 56px;
+  }
+
+  .detail-item {
+    flex-direction: column;
+    gap: 6px;
+    align-items: flex-start;
+  }
+
+  .action-section .el-button {
+    width: 100%;
+    min-width: 0;
+    border-radius: 16px;
+  }
 }
 </style>

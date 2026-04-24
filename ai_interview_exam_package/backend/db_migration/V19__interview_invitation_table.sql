@@ -1,0 +1,20 @@
+CREATE TABLE IF NOT EXISTS `t_interview_invitation` (
+    `id` BIGINT NOT NULL AUTO_INCREMENT,
+    `exam_id` BIGINT NOT NULL,
+    `lab_id` BIGINT NOT NULL,
+    `student_id` BIGINT NOT NULL,
+    `title` VARCHAR(120) DEFAULT NULL,
+    `description` TEXT DEFAULT NULL,
+    `interview_time` DATETIME DEFAULT NULL,
+    `location` VARCHAR(255) DEFAULT NULL,
+    `status` INT NOT NULL DEFAULT 0,
+    `student_confirmed` TINYINT(1) NOT NULL DEFAULT 0,
+    `confirm_time` DATETIME DEFAULT NULL,
+    `sent_by` BIGINT DEFAULT NULL,
+    `create_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    `update_time` DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    `deleted` TINYINT NOT NULL DEFAULT 0,
+    PRIMARY KEY (`id`),
+    KEY `idx_interview_invitation_exam_student` (`exam_id`, `student_id`, `deleted`),
+    KEY `idx_interview_invitation_lab` (`lab_id`, `deleted`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

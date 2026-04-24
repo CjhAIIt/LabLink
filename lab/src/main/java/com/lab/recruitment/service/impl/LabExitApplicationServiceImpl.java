@@ -5,11 +5,16 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.lab.recruitment.entity.Lab;
 import com.lab.recruitment.entity.LabExitApplication;
+import com.lab.recruitment.entity.LabMember;
 import com.lab.recruitment.entity.User;
+import com.lab.recruitment.mapper.LabMemberMapper;
 import com.lab.recruitment.mapper.LabExitApplicationMapper;
 import com.lab.recruitment.service.LabExitApplicationService;
 import com.lab.recruitment.service.LabService;
+import com.lab.recruitment.service.SystemNotificationService;
+import com.lab.recruitment.service.UserAccessService;
 import com.lab.recruitment.service.UserService;
+import com.lab.recruitment.support.CurrentUserAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,6 +39,18 @@ public class LabExitApplicationServiceImpl extends ServiceImpl<LabExitApplicatio
     @Autowired
     private LabService labService;
 
+    @Autowired
+    private LabMemberMapper labMemberMapper;
+
+    @Autowired
+    private UserAccessService userAccessService;
+
+    @Autowired
+    private CurrentUserAccessor currentUserAccessor;
+
+    @Autowired
+    private SystemNotificationService systemNotificationService;
+
     @Override
     @Transactional
     public boolean submit(Long userId, String reason) {
@@ -42,10 +59,11 @@ public class LabExitApplicationServiceImpl extends ServiceImpl<LabExitApplicatio
         }
 
         User user = userService.getById(userId);
-        if (user == null || !"student".equals(user.getRole())) {
+        if (user == null || !userAccessService.isStudentIdentity(user)) {
             throw new RuntimeException("User not found");
         }
-        if (user.getLabId() == null) {
+        Long activeLabId = userAccessService.resolveManagedLabId(user);
+        if (activeLabId == null) {
             throw new RuntimeException("You have not joined any lab");
         }
 
@@ -58,7 +76,7 @@ public class LabExitApplicationServiceImpl extends ServiceImpl<LabExitApplicatio
 
         LabExitApplication application = new LabExitApplication();
         application.setUserId(userId);
-        application.setLabId(user.getLabId());
+        application.setLabId(activeLabId);
         application.setReason(reason.trim());
         application.setStatus(STATUS_PENDING);
         return this.save(application);
@@ -88,9 +106,21 @@ public class LabExitApplicationServiceImpl extends ServiceImpl<LabExitApplicatio
             queryWrapper.eq("status", status);
         }
         if (StringUtils.hasText(realName)) {
+            QueryWrapper<LabMember> memberQuery = new QueryWrapper<>();
+            memberQuery.select("user_id")
+                    .eq("lab_id", labId)
+                    .eq("deleted", 0)
+                    .eq("status", "active");
+            List<Long> activeUserIds = labMemberMapper.selectList(memberQuery).stream()
+                    .map(LabMember::getUserId)
+                    .collect(Collectors.toList());
+            if (activeUserIds.isEmpty()) {
+                page.setRecords(java.util.Collections.emptyList());
+                page.setTotal(0);
+                return page;
+            }
             QueryWrapper<User> userQuery = new QueryWrapper<>();
-            userQuery.eq("lab_id", labId)
-                    .eq("role", "student")
+            userQuery.in("id", activeUserIds)
                     .like("real_name", realName.trim());
             List<Long> userIds = userService.list(userQuery).stream()
                     .map(User::getId)
@@ -113,17 +143,11 @@ public class LabExitApplicationServiceImpl extends ServiceImpl<LabExitApplicatio
         if (status == null || (status != STATUS_APPROVED && status != STATUS_REJECTED)) {
             throw new RuntimeException("Audit status is invalid");
         }
-        if (admin.getLabId() == null) {
-            throw new RuntimeException("Current admin is not bound to any lab");
-        }
-
         LabExitApplication application = this.getById(applicationId);
         if (application == null) {
             throw new RuntimeException("Exit application not found");
         }
-        if (!admin.getLabId().equals(application.getLabId())) {
-            throw new RuntimeException("You cannot review another lab's exit request");
-        }
+        currentUserAccessor.assertLabScope(admin, application.getLabId());
         if (!Integer.valueOf(STATUS_PENDING).equals(application.getStatus())) {
             throw new RuntimeException("This exit request has already been processed");
         }
@@ -139,18 +163,41 @@ public class LabExitApplicationServiceImpl extends ServiceImpl<LabExitApplicatio
             if (member == null) {
                 throw new RuntimeException("Lab member not found");
             }
-            if (member.getLabId() != null && !member.getLabId().equals(application.getLabId())) {
-                throw new RuntimeException("The student has already joined another lab");
-            }
+            deactivateActiveMemberships(application.getLabId(), application.getUserId());
             userService.update(
                     new com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper<User>()
                             .eq(User::getId, member.getId())
                             .set(User::getLabId, null)
             );
+            userAccessService.refreshCompatibilityAccess(member.getId());
             labService.syncCurrentMemberCount(application.getLabId());
         }
+        systemNotificationService.createNotification(
+                application.getUserId(),
+                status == STATUS_APPROVED ? "退组申请已通过" : "退组申请已驳回",
+                StringUtils.hasText(auditRemark) ? auditRemark.trim() : "请查看退组申请处理结果。",
+                "lab_exit_review",
+                application.getId(),
+                "/student/lab"
+        );
 
         return true;
+    }
+
+    private void deactivateActiveMemberships(Long labId, Long userId) {
+        QueryWrapper<LabMember> memberQuery = new QueryWrapper<>();
+        memberQuery.eq("lab_id", labId)
+                .eq("user_id", userId)
+                .eq("deleted", 0)
+                .eq("status", "active");
+        List<LabMember> memberships = labMemberMapper.selectList(memberQuery);
+        LocalDateTime now = LocalDateTime.now();
+        for (LabMember membership : memberships) {
+            membership.setStatus("inactive");
+            membership.setQuitDate(now.toLocalDate());
+            membership.setRemark("exit application approved");
+            labMemberMapper.updateById(membership);
+        }
     }
 
     private void enrichRecords(List<LabExitApplication> records) {

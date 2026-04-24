@@ -128,6 +128,33 @@
               />
             </el-form-item>
 
+            <el-form-item label="邮箱" prop="email">
+              <el-input
+                v-model="registerForm.email"
+                :prefix-icon="Message"
+                placeholder="请输入常用邮箱"
+              />
+            </el-form-item>
+
+            <el-form-item label="邮箱验证码" prop="emailCode">
+              <el-input
+                v-model="registerForm.emailCode"
+                maxlength="6"
+                placeholder="请输入 6 位邮箱验证码"
+                @input="sanitizeEmailCode"
+              >
+                <template #append>
+                  <el-button
+                    :loading="sendCodeLoading"
+                    :disabled="sendCodeLoading || codeCountdown > 0 || !registerForm.teacherNo || !emailPattern.test(normalizedEmail())"
+                    @click="sendCode"
+                  >
+                    {{ codeCountdown > 0 ? `${codeCountdown}s` : '获取验证码' }}
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+
             <el-form-item class="form-actions">
               <el-button type="primary" :loading="loading" style="width: 100%" @click="submitForm">
                 提交注册申请
@@ -149,12 +176,12 @@
 </template>
 
 <script setup>
-import { onMounted, reactive, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Lock, Postcard, UserFilled } from '@element-plus/icons-vue'
+import { Lock, Message, Postcard, UserFilled } from '@element-plus/icons-vue'
 import { getCollegeOptions } from '@/api/colleges'
-import { registerTeacher } from '@/api/auth'
+import { registerTeacher, sendTeacherRegisterCode } from '@/api/auth'
 import BrandLogo from '@/components/BrandLogo.vue'
 
 const router = useRouter()
@@ -162,6 +189,9 @@ const loading = ref(false)
 const collegeLoading = ref(false)
 const registerFormRef = ref()
 const collegeOptions = ref([])
+const codeCountdown = ref(0)
+const sendCodeLoading = ref(false)
+let registerCodeTimer = null
 
 const registerForm = reactive({
   teacherNo: '',
@@ -171,17 +201,26 @@ const registerForm = reactive({
   collegeId: undefined,
   title: '',
   phone: '',
+  email: '',
+  emailCode: '',
   applyReason: ''
 })
 
 const chineseRealNamePattern = /^[\u4e00-\u9fff·]{2,50}$/
 const teacherNoPattern = /^[A-Za-z0-9_-]{3,32}$/
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 const sanitizeTeacherNo = (value) => {
   registerForm.teacherNo = String(value ?? '')
     .replace(/[^A-Za-z0-9_-]/g, '')
     .slice(0, 32)
     .toUpperCase()
+}
+
+const sanitizeEmailCode = (value) => {
+  registerForm.emailCode = String(value ?? '')
+    .replace(/\D/g, '')
+    .slice(0, 6)
 }
 
 const validatePass = (rule, value, callback) => {
@@ -233,6 +272,34 @@ const validateRealName = (rule, value, callback) => {
   callback()
 }
 
+const normalizedEmail = () => registerForm.email.trim().toLowerCase()
+
+const validateEmail = (rule, value, callback) => {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  if (!normalized) {
+    callback(new Error('请输入邮箱'))
+    return
+  }
+  if (!emailPattern.test(normalized)) {
+    callback(new Error('请输入正确的邮箱格式'))
+    return
+  }
+  callback()
+}
+
+const validateEmailCode = (rule, value, callback) => {
+  const normalized = String(value ?? '').trim()
+  if (!normalized) {
+    callback(new Error('请输入邮箱验证码'))
+    return
+  }
+  if (!/^\d{6}$/.test(normalized)) {
+    callback(new Error('请输入 6 位数字验证码'))
+    return
+  }
+  callback()
+}
+
 const validatePhone = (rule, value, callback) => {
   const normalized = String(value ?? '').trim()
   if (!normalized) {
@@ -254,6 +321,8 @@ const registerRules = reactive({
   ],
   confirmPassword: [{ required: true, validator: validatePass2, trigger: 'blur' }],
   realName: [{ required: true, validator: validateRealName, trigger: 'blur' }],
+  email: [{ required: true, validator: validateEmail, trigger: 'blur' }],
+  emailCode: [{ required: true, validator: validateEmailCode, trigger: 'blur' }],
   collegeId: [{ required: true, message: '请选择所属学院', trigger: 'change' }],
   phone: [{ validator: validatePhone, trigger: 'blur' }],
   applyReason: [
@@ -266,6 +335,46 @@ const resolveErrorMessage = (error, fallback) =>
   error?.response?.data?.message || error?.response?.data || error?.message || fallback
 
 const normalizedTeacherNo = () => registerForm.teacherNo.trim().toUpperCase()
+
+const startCodeCountdown = () => {
+  clearInterval(registerCodeTimer)
+  codeCountdown.value = 60
+  registerCodeTimer = window.setInterval(() => {
+    if (codeCountdown.value <= 1) {
+      clearInterval(registerCodeTimer)
+      registerCodeTimer = null
+      codeCountdown.value = 0
+      return
+    }
+    codeCountdown.value -= 1
+  }, 1000)
+}
+
+const sendCode = async () => {
+  if (!registerFormRef.value) {
+    return
+  }
+
+  try {
+    await registerFormRef.value.validateField(['teacherNo', 'email'])
+  } catch {
+    return
+  }
+
+  sendCodeLoading.value = true
+  try {
+    await sendTeacherRegisterCode({
+      teacherNo: normalizedTeacherNo(),
+      email: normalizedEmail()
+    })
+    ElMessage.success('验证码已发送，请查收邮箱')
+    startCodeCountdown()
+  } catch (error) {
+    ElMessage.error(resolveErrorMessage(error, '验证码发送失败，请稍后重试'))
+  } finally {
+    sendCodeLoading.value = false
+  }
+}
 
 const loadColleges = async () => {
   collegeLoading.value = true
@@ -296,6 +405,7 @@ const submitForm = async () => {
       realName: registerForm.realName.trim(),
       title: registerForm.title.trim(),
       phone: registerForm.phone.trim(),
+      email: normalizedEmail(),
       applyReason: registerForm.applyReason.trim()
     })
     ElMessage.success('教师注册申请已提交，请等待学院和学校审批')
@@ -309,6 +419,10 @@ const submitForm = async () => {
 
 onMounted(() => {
   loadColleges()
+})
+
+onBeforeUnmount(() => {
+  clearInterval(registerCodeTimer)
 })
 </script>
 

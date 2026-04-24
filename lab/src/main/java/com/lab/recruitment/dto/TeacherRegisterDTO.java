@@ -37,6 +37,8 @@ public class TeacherRegisterDTO {
     @Email(message = "邮箱格式不正确")
     private String email;
 
+    @NotBlank(message = "验证码不能为空")
+    @Pattern(regexp = "^\\d{6}$", message = "验证码必须为 6 位数字")
     private String emailCode;
 
     @NotBlank(message = "申请说明不能为空")

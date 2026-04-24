@@ -40,6 +40,9 @@ public class LabInfoChangeReview {
     @TableField("review_snapshot")
     private String reviewSnapshot;
 
+    @TableField("old_snapshot")
+    private String oldSnapshot;
+
     @TableField("review_time")
     private LocalDateTime reviewTime;
 

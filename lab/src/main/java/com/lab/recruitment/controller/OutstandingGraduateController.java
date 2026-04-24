@@ -3,7 +3,9 @@ package com.lab.recruitment.controller;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.lab.recruitment.entity.OutstandingGraduate;
+import com.lab.recruitment.entity.User;
 import com.lab.recruitment.service.OutstandingGraduateService;
+import com.lab.recruitment.support.CurrentUserAccessor;
 import com.lab.recruitment.utils.Result;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -18,6 +20,9 @@ public class OutstandingGraduateController {
     
     @Autowired
     private OutstandingGraduateService graduateService;
+
+    @Autowired
+    private CurrentUserAccessor currentUserAccessor;
 
     @GetMapping("/list")
     public Result<Page<OutstandingGraduate>> list(@RequestParam(defaultValue = "1") Integer pageNum,
@@ -34,8 +39,8 @@ public class OutstandingGraduateController {
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Boolean> add(@RequestBody OutstandingGraduate graduate) {
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        com.lab.recruitment.entity.User user = userService.findByUsername(username);
-        graduate.setLabId(user.getLabId());
+        User user = userService.findByUsername(username);
+        graduate.setLabId(currentUserAccessor.resolveLabScope(user, graduate.getLabId()));
         return Result.success(graduateService.save(graduate));
     }
 
@@ -43,9 +48,14 @@ public class OutstandingGraduateController {
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Boolean> update(@RequestBody OutstandingGraduate graduate) {
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        com.lab.recruitment.entity.User user = userService.findByUsername(username);
+        User user = userService.findByUsername(username);
         
         OutstandingGraduate exist = graduateService.getById(graduate.getId());
+        if (exist != null && currentUserAccessor != null) {
+            currentUserAccessor.assertLabScope(user, exist.getLabId());
+            graduate.setLabId(exist.getLabId());
+            return Result.success(graduateService.updateById(graduate));
+        }
         if (exist == null) return Result.error("记录不存在");
         if (!exist.getLabId().equals(user.getLabId())) return Result.error("无权操作其他实验室数据");
         
@@ -56,9 +66,13 @@ public class OutstandingGraduateController {
     @PreAuthorize("hasRole('ADMIN')")
     public Result<Boolean> delete(@PathVariable Long id) {
         String username = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication().getName();
-        com.lab.recruitment.entity.User user = userService.findByUsername(username);
+        User user = userService.findByUsername(username);
         
         OutstandingGraduate exist = graduateService.getById(id);
+        if (exist != null && currentUserAccessor != null) {
+            currentUserAccessor.assertLabScope(user, exist.getLabId());
+            return Result.success(graduateService.removeById(id));
+        }
         if (exist == null) return Result.error("记录不存在");
         if (!exist.getLabId().equals(user.getLabId())) return Result.error("无权操作其他实验室数据");
         

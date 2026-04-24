@@ -8,6 +8,7 @@ import com.lab.recruitment.entity.User;
 import com.lab.recruitment.mapper.EquipmentBorrowMapper;
 import com.lab.recruitment.service.EquipmentBorrowService;
 import com.lab.recruitment.service.EquipmentService;
+import com.lab.recruitment.service.UserAccessService;
 import com.lab.recruitment.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -24,6 +25,9 @@ public class EquipmentBorrowServiceImpl extends ServiceImpl<EquipmentBorrowMappe
     @Autowired
     private UserService userService;
 
+    @Autowired
+    private UserAccessService userAccessService;
+
     @Override
     @Transactional
     public boolean apply(Long equipmentId, String reason, LocalDateTime expectedReturnTime, String username) {
@@ -38,7 +42,8 @@ public class EquipmentBorrowServiceImpl extends ServiceImpl<EquipmentBorrowMappe
         if (equipment == null) {
             throw new RuntimeException("Equipment not found");
         }
-        if (user.getLabId() == null || !user.getLabId().equals(equipment.getLabId())) {
+        Long activeLabId = userAccessService.resolveManagedLabId(user);
+        if (activeLabId == null || !activeLabId.equals(equipment.getLabId())) {
             throw new RuntimeException("You can only borrow equipment from your own lab");
         }
         if (equipment.getStatus() != 0) {

@@ -373,9 +373,10 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
         fillSummary(summary,
                 "SELECT sign_status, COUNT(*) AS value FROM t_attendance_record WHERE deleted = 0 AND user_id = ? GROUP BY sign_status",
                 currentUser.getId());
+        Long studentLabId = resolveManagedLabId(currentUser);
         summary.put("todaySessionCount", count(
                 "SELECT COUNT(*) FROM t_attendance_session WHERE deleted = 0 AND lab_id = ? AND session_date = CURDATE()",
-                currentUser.getLabId()));
+                studentLabId));
         return summary;
     }
 
@@ -1161,7 +1162,7 @@ public class AttendanceWorkflowServiceImpl implements AttendanceWorkflowService 
         if (managedLabId != null) {
             return managedLabId;
         }
-        return currentUser == null ? null : currentUser.getLabId();
+        return null;
     }
 
     private AttendanceSession ensureSessionForToday(Long labId, User currentUser, boolean createIfMissing) {

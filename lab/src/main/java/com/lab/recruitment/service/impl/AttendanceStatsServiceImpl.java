@@ -6,6 +6,7 @@ import com.lab.recruitment.entity.AttendanceSession;
 import com.lab.recruitment.entity.User;
 import com.lab.recruitment.mapper.AttendanceRecordMapper;
 import com.lab.recruitment.mapper.AttendanceSessionMapper;
+import com.lab.recruitment.mapper.LabMemberMapper;
 import com.lab.recruitment.mapper.UserMapper;
 import com.lab.recruitment.service.AttendanceStatsService;
 import com.lab.recruitment.vo.AttendanceStatsVO;
@@ -38,6 +39,9 @@ public class AttendanceStatsServiceImpl implements AttendanceStatsService {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private LabMemberMapper labMemberMapper;
+
     @Override
     public AttendanceStatsVO getStats(Long labId, Long userId, LocalDate startDate, LocalDate endDate, User currentUser) {
         User targetUser = userMapper.selectById(userId);
@@ -49,11 +53,7 @@ public class AttendanceStatsServiceImpl implements AttendanceStatsService {
 
     @Override
     public List<AttendanceStatsVO> getBatchStats(Long labId, LocalDate startDate, LocalDate endDate, User currentUser) {
-        List<User> members = userMapper.selectList(
-                new LambdaQueryWrapper<User>()
-                        .eq(User::getLabId, labId)
-                        .eq(User::getRole, "student")
-                        .eq(User::getStatus, 1));
+        List<User> members = listActiveMemberUsers(labId);
         List<AttendanceStatsVO> result = new ArrayList<>();
         for (User member : members) {
             result.add(buildStatsVO(labId, member, startDate, endDate));
@@ -185,5 +185,36 @@ public class AttendanceStatsServiceImpl implements AttendanceStatsService {
             case "SIGNED": return 0;
             default: return -1;
         }
+    }
+
+    private List<User> listActiveMemberUsers(Long labId) {
+        return labMemberMapper.selectActiveMembersByLabId(labId).stream()
+                .map(row -> {
+                    User user = new User();
+                    user.setId(toLong(row.get("userId")));
+                    user.setRealName(toStringValue(row.get("realName")));
+                    user.setStudentId(toStringValue(row.get("studentId")));
+                    return user;
+                })
+                .filter(user -> user.getId() != null)
+                .collect(Collectors.toList());
+    }
+
+    private Long toLong(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private String toStringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 }

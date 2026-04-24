@@ -406,7 +406,9 @@ const canSelectCollege = computed(() => Boolean(userStore.userInfo?.schoolDirect
 const canSelectLab = computed(() => !userStore.userInfo?.labManager)
 const fixedLabLabel = computed(() => {
   if (scopeFilters.labId) {
-    return labOptions.value.find((item) => Number(item.id) === Number(scopeFilters.labId))?.labName || userStore.userInfo?.labName || `实验室#${scopeFilters.labId}`
+    return labOptions.value.find((item) => Number(item.id) === Number(scopeFilters.labId))?.labName
+      || userStore.userInfo?.labName
+      || '实验室名称待同步'
   }
   return userStore.userInfo?.labName || '当前未固定实验室'
 })

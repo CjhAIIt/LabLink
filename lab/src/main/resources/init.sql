@@ -33,6 +33,8 @@ CREATE TABLE IF NOT EXISTS t_lab (
     basic_info TEXT NULL,
     advisors VARCHAR(255) NULL,
     current_admins VARCHAR(255) NULL,
+    logo_url VARCHAR(255) NULL,
+    cover_image_url VARCHAR(255) NULL,
     create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     deleted TINYINT NOT NULL DEFAULT 0,
@@ -182,6 +184,24 @@ CREATE TABLE IF NOT EXISTS t_lab_member (
     CONSTRAINT fk_lab_member_lab FOREIGN KEY (lab_id) REFERENCES t_lab(id),
     CONSTRAINT fk_lab_member_user FOREIGN KEY (user_id) REFERENCES t_user(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='实验室成员表';
+
+CREATE TABLE IF NOT EXISTS t_outstanding_graduate (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    lab_id BIGINT NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    major VARCHAR(100) NULL,
+    graduation_year VARCHAR(20) NULL,
+    description TEXT NULL,
+    avatar_url VARCHAR(255) NULL,
+    cover_image_url VARCHAR(255) NULL,
+    company VARCHAR(100) NULL,
+    position VARCHAR(100) NULL,
+    create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    deleted TINYINT NOT NULL DEFAULT 0,
+    INDEX idx_outstanding_graduate_lab (lab_id),
+    CONSTRAINT fk_outstanding_graduate_lab FOREIGN KEY (lab_id) REFERENCES t_lab(id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='优秀毕业生表';
 
 CREATE TABLE IF NOT EXISTS t_lab_space_folder (
     id BIGINT PRIMARY KEY AUTO_INCREMENT,

@@ -6,6 +6,7 @@ import com.lab.recruitment.entity.AttendanceSession;
 import com.lab.recruitment.entity.User;
 import com.lab.recruitment.mapper.AttendanceRecordMapper;
 import com.lab.recruitment.mapper.AttendanceSessionMapper;
+import com.lab.recruitment.mapper.LabMemberMapper;
 import com.lab.recruitment.mapper.UserMapper;
 import com.lab.recruitment.service.AttendanceDashboardService;
 import com.lab.recruitment.vo.AttendanceDashboardVO;
@@ -31,18 +32,17 @@ public class AttendanceDashboardServiceImpl implements AttendanceDashboardServic
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private LabMemberMapper labMemberMapper;
+
     @Override
     public AttendanceDashboardVO getTodayDashboard(Long labId, User currentUser) {
         LocalDate today = LocalDate.now();
         AttendanceDashboardVO vo = new AttendanceDashboardVO();
         vo.setDate(today.format(DateTimeFormatter.ISO_LOCAL_DATE));
 
-        // 查询该实验室所有成员
-        List<User> members = userMapper.selectList(
-                new LambdaQueryWrapper<User>()
-                        .eq(User::getLabId, labId)
-                        .eq(User::getRole, "student")
-                        .eq(User::getStatus, 1));
+        // 成员以 t_lab_member 的 active 关系为准，避免踢出后 user.lab_id 残留影响考勤看板。
+        List<User> members = listActiveMemberUsers(labId);
 
         // 查询今日所有签到会话
         List<AttendanceSession> todaySessions = attendanceSessionMapper.selectList(
@@ -108,5 +108,36 @@ public class AttendanceDashboardServiceImpl implements AttendanceDashboardServic
         vo.setLeave(leave);
         vo.setMembers(memberList);
         return vo;
+    }
+
+    private List<User> listActiveMemberUsers(Long labId) {
+        return labMemberMapper.selectActiveMembersByLabId(labId).stream()
+                .map(row -> {
+                    User user = new User();
+                    user.setId(toLong(row.get("userId")));
+                    user.setRealName(toStringValue(row.get("realName")));
+                    user.setStudentId(toStringValue(row.get("studentId")));
+                    return user;
+                })
+                .filter(user -> user.getId() != null)
+                .collect(Collectors.toList());
+    }
+
+    private Long toLong(Object value) {
+        if (value instanceof Number) {
+            return ((Number) value).longValue();
+        }
+        if (value == null) {
+            return null;
+        }
+        try {
+            return Long.parseLong(String.valueOf(value));
+        } catch (NumberFormatException ignored) {
+            return null;
+        }
+    }
+
+    private String toStringValue(Object value) {
+        return value == null ? null : String.valueOf(value);
     }
 }

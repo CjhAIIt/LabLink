@@ -7,10 +7,13 @@
         </div>
 
         <el-menu :default-active="$route.path" router class="sidebar-menu" :collapse="false">
-          <el-menu-item v-for="item in menuItems" :key="item.path" :index="item.path">
-            <el-icon><component :is="item.icon" /></el-icon>
-            <span>{{ item.label }}</span>
-          </el-menu-item>
+          <template v-for="group in menuGroups" :key="group.title">
+            <div class="sidebar-group-title">{{ group.title }}</div>
+            <el-menu-item v-for="item in group.items" :key="item.path" :index="item.path">
+              <el-icon><component :is="item.icon" /></el-icon>
+              <span>{{ item.label }}</span>
+            </el-menu-item>
+          </template>
         </el-menu>
       </div>
     </aside>
@@ -29,21 +32,24 @@
             <h2>{{ $route.meta.title || '工作台' }}</h2>
           </div>
         </div>
-        <el-dropdown @command="handleCommand">
-          <div class="user-chip">
-            <el-avatar :size="34">{{ userInitial }}</el-avatar>
-            <div>
-              <strong>{{ userStore.realName || '教师' }}</strong>
-              <span>{{ workspaceLabel }}</span>
+        <div class="topbar-actions">
+          <TopbarNotification path="/teacher/notifications" />
+          <el-dropdown @command="handleCommand">
+            <div class="user-chip">
+              <el-avatar :size="34">{{ userInitial }}</el-avatar>
+              <div>
+                <strong>{{ userStore.realName || '教师' }}</strong>
+                <span>{{ workspaceLabel }}</span>
+              </div>
             </div>
-          </div>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人资料</el-dropdown-item>
-              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人资料</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </header>
 
       <main class="content">
@@ -61,7 +67,8 @@ import { useRoute, useRouter } from 'vue-router'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { useUserStore } from '@/stores/user'
 import { ensureAuthContext } from '@/utils/auth-context'
-import { resolveDesktopMenuItems } from '@/utils/portal-menu'
+import TopbarNotification from '@/components/common/TopbarNotification.vue'
+import { resolveDesktopMenuGroups, resolveDesktopMenuItems } from '@/utils/portal-menu'
 
 const route = useRoute()
 const router = useRouter()
@@ -106,22 +113,24 @@ const canViewWorkspace = computed(
       userStore.hasPermission('workspace:school:view')
     )
 )
-const workspaceLabel = computed(() => (hasWorkspace.value ? `实验室 #${workspaceLabId.value}` : '教师工作台'))
+const workspaceLabel = computed(() => userStore.userInfo?.labName || '教师工作台')
 
 const fallbackMenuItems = computed(() =>
   [
     { path: '/teacher/dashboard', label: '工作台', icon: 'DataBoard' },
     canCreateApply.value ? { path: '/teacher/create-applies', label: '创建申请', icon: 'Tickets' } : null,
     canViewAttendance.value ? { path: '/teacher/attendance', label: '考勤查看', icon: 'Calendar' } : null,
+    hasWorkspace.value ? { path: '/teacher/exam-hub', label: '笔试中心', icon: 'EditPen' } : null,
+    hasWorkspace.value ? { path: '/teacher/ai-interview-records', label: 'AI 面试记录', icon: 'ChatDotRound' } : null,
     canViewProfiles.value ? { path: '/teacher/profiles', label: '成员资料', icon: 'Files' } : null,
     canViewWorkspace.value ? { path: '/teacher/workspace', label: '资料空间', icon: 'Files' } : null,
-    { path: '/teacher/notifications', label: '消息中心', icon: 'Bell' },
     { path: '/teacher/notices', label: '公告通知', icon: 'Bell' },
     { path: '/teacher/profile', label: '个人资料', icon: 'User' }
   ].filter(Boolean)
 )
 
 const menuItems = computed(() => resolveDesktopMenuItems(userStore.menus, fallbackMenuItems.value))
+const menuGroups = computed(() => resolveDesktopMenuGroups(menuItems.value, 'teacher'))
 
 const ensureContext = async () => {
   await ensureAuthContext(userStore, { force: true })
@@ -162,8 +171,10 @@ onBeforeUnmount(() => {
   min-height: 100vh;
   display: flex;
   background-color: #ffffff;
-  overflow: hidden;
+  overflow-x: hidden;
+  overflow-y: visible;
   position: relative;
+  align-items: flex-start;
 }
 
 .sidebar {
@@ -174,6 +185,7 @@ onBeforeUnmount(() => {
   overflow: hidden;
   flex-shrink: 0;
   border-right: 1px solid #e5e5e5;
+  align-self: flex-start;
 }
 
 .sidebar.is-collapsed {
@@ -228,12 +240,25 @@ onBeforeUnmount(() => {
   font-weight: 600;
 }
 
+.sidebar-group-title {
+  margin: 16px 12px 6px;
+  color: #94a3b8;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.sidebar-group-title:first-child {
+  margin-top: 0;
+}
+
 .main-shell {
   flex: 1;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  height: 100vh;
+  min-height: 100vh;
+  height: auto;
 }
 
 .sidebar-mask {
@@ -293,6 +318,13 @@ onBeforeUnmount(() => {
   text-overflow: ellipsis;
 }
 
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
 .user-chip {
   display: flex;
   align-items: center;
@@ -323,9 +355,18 @@ onBeforeUnmount(() => {
 
 .content {
   flex: 1;
-  overflow-y: auto;
+  min-height: 0;
+  overflow: visible;
   padding: 0 24px 24px;
   background-color: #ffffff;
+}
+
+@media (min-width: 961px) {
+  .sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
 }
 
 @media (max-width: 960px) {
@@ -367,6 +408,10 @@ onBeforeUnmount(() => {
 
   .topbar-left {
     gap: 12px;
+  }
+
+  .topbar-actions {
+    gap: 8px;
   }
 
   .topbar-label {

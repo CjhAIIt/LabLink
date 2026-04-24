@@ -15,6 +15,13 @@ export function getUnreadNotificationCount() {
   })
 }
 
+export function getNotificationTodoSummary() {
+  return request({
+    url: '/api/notifications/todo-summary',
+    method: 'get'
+  })
+}
+
 export function markNotificationRead(notificationId) {
   return request({
     url: `/api/notifications/read/${notificationId}`,

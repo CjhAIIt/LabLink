@@ -19,6 +19,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
@@ -46,9 +47,10 @@ public class UnifiedFileServiceImpl implements UnifiedFileService {
     private static final Logger log = LoggerFactory.getLogger(UnifiedFileServiceImpl.class);
     private static final long MAX_FILE_SIZE = 10L * 1024 * 1024;
     private static final Set<String> RESUME_EXTENSIONS = Set.of(".pdf", ".doc", ".docx");
-    private static final Set<String> IMAGE_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp");
+    private static final Set<String> IMAGE_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg");
+    private static final Set<String> LOGO_EXTENSIONS = Set.of(".jpg", ".jpeg", ".png", ".svg", ".webp");
     private static final Set<String> ATTACHMENT_EXTENSIONS = Set.of(".pdf", ".doc", ".docx", ".zip", ".rar", ".jpg", ".jpeg", ".png");
-    private static final Set<String> DEFAULT_EXTENSIONS = Set.of(".pdf", ".doc", ".docx", ".zip", ".rar", ".jpg", ".jpeg", ".png", ".gif", ".webp");
+    private static final Set<String> DEFAULT_EXTENSIONS = Set.of(".pdf", ".doc", ".docx", ".zip", ".rar", ".jpg", ".jpeg", ".png", ".gif", ".webp", ".svg");
 
     @Autowired
     private FileStorageService fileStorageService;
@@ -61,6 +63,9 @@ public class UnifiedFileServiceImpl implements UnifiedFileService {
 
     @Autowired
     private JwtUtils jwtUtils;
+
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
     @Override
     public Map<String, Object> uploadFile(MultipartFile file, String scene, User currentUser) {
@@ -184,11 +189,12 @@ public class UnifiedFileServiceImpl implements UnifiedFileService {
     }
 
     private ResponseEntity<Resource> buildFileResponse(Long fileId, String token, boolean attachment) {
-        if (!hasFileAccess(token)) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
         try {
             FileObject fileObject = getActiveFile(fileId);
+            if (!isPublicDisplayFile(fileObject.getId()) && !hasFileAccess(token)) {
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+            }
+
             Path resolvedPath = fileStorageService.resolveProtectedPath(fileObject.getStoragePath());
             if (resolvedPath == null || !Files.exists(resolvedPath) || Files.isDirectory(resolvedPath)) {
                 return ResponseEntity.notFound().build();
@@ -275,6 +281,30 @@ public class UnifiedFileServiceImpl implements UnifiedFileService {
         return "file-id:" + fileId;
     }
 
+    private boolean isPublicDisplayFile(Long fileId) {
+        if (fileId == null) {
+            return false;
+        }
+        String reference = buildFileReference(fileId);
+        Integer labReferences = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM t_lab WHERE deleted = 0 AND (logo_url = ? OR cover_image_url = ?)",
+                Integer.class,
+                reference,
+                reference
+        );
+        if (labReferences != null && labReferences > 0) {
+            return true;
+        }
+
+        Integer graduateReferences = jdbcTemplate.queryForObject(
+                "SELECT COUNT(*) FROM t_outstanding_graduate WHERE deleted = 0 AND (avatar_url = ? OR cover_image_url = ?)",
+                Integer.class,
+                reference,
+                reference
+        );
+        return graduateReferences != null && graduateReferences > 0;
+    }
+
     private boolean hasFileAccess(String token) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         if (authentication != null
@@ -304,6 +334,8 @@ public class UnifiedFileServiceImpl implements UnifiedFileService {
             case "avatar":
             case "image":
                 return IMAGE_EXTENSIONS;
+            case "logo":
+                return LOGO_EXTENSIONS;
             case "attachment":
             case "attendance":
                 return ATTACHMENT_EXTENSIONS;

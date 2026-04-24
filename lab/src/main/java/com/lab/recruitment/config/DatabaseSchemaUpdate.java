@@ -51,6 +51,7 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
         createLabExitApplicationTable();
         createAuditLogTable();
         createLabInfoChangeReviewTable();
+        updateStudentProfileTable();
         if (growthCenterEnabled) {
             createGrowthPracticeQuestionTable();
         }
@@ -58,6 +59,7 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
             createWrittenExamTable();
             createWrittenExamQuestionTable();
             createWrittenExamSubmissionTable();
+            createWrittenExamProgressTable();
         }
         createSystemNotificationTable();
         seedCompetitionCoreData();
@@ -104,6 +106,10 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
                 "ALTER TABLE t_lab ADD COLUMN advisors VARCHAR(255)");
         addColumnIfMissing("t_lab", "current_admins",
                 "ALTER TABLE t_lab ADD COLUMN current_admins VARCHAR(255)");
+        addColumnIfMissing("t_lab", "logo_url",
+                "ALTER TABLE t_lab ADD COLUMN logo_url VARCHAR(255) NULL AFTER current_admins");
+        addColumnIfMissing("t_lab", "cover_image_url",
+                "ALTER TABLE t_lab ADD COLUMN cover_image_url VARCHAR(255) NULL AFTER logo_url");
     }
 
     private void updateUserTable() {
@@ -436,20 +442,23 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
 
     private void createOutstandingGraduateTable() {
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_outstanding_graduate (" +
-                "id BIGINT AUTO_INCREMENT PRIMARY KEY" +
-                "lab_id BIGINT NOT NULL" +
-                "name VARCHAR(50) NOT NULL" +
-                "major VARCHAR(100)" +
-                "graduation_year VARCHAR(20)" +
-                "description TEXT" +
-                "avatar_url VARCHAR(255)" +
-                "company VARCHAR(100)" +
-                "position VARCHAR(100)" +
+                "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                "lab_id BIGINT NOT NULL," +
+                "name VARCHAR(50) NOT NULL," +
+                "major VARCHAR(100)," +
+                "graduation_year VARCHAR(20)," +
+                "description TEXT," +
+                "avatar_url VARCHAR(255)," +
+                "cover_image_url VARCHAR(255)," +
+                "company VARCHAR(100)," +
+                "position VARCHAR(100)," +
                 "create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
                 "update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
                 "deleted TINYINT NOT NULL DEFAULT 0," +
                 "FOREIGN KEY (lab_id) REFERENCES t_lab(id)" +
                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        addColumnIfMissing("t_outstanding_graduate", "cover_image_url",
+                "ALTER TABLE t_outstanding_graduate ADD COLUMN cover_image_url VARCHAR(255) NULL AFTER avatar_url");
     }
 
     private void createLabAttendanceTable() {
@@ -505,18 +514,19 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
     }
     private void createLabInfoChangeReviewTable() {
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_lab_info_change_review (" +
-                "id BIGINT AUTO_INCREMENT PRIMARY KEY" +
-                "lab_id BIGINT NOT NULL" +
-                "version_no INT NOT NULL" +
-                "applicant_user_id BIGINT NOT NULL" +
-                "reviewer_id BIGINT NULL" +
-                "review_status VARCHAR(32) NOT NULL" +
-                "review_comment VARCHAR(500) NULL" +
-                "review_snapshot LONGTEXT NOT NULL" +
-                "review_time DATETIME NULL" +
-                "created_by BIGINT NULL" +
+                "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                "lab_id BIGINT NOT NULL," +
+                "version_no INT NOT NULL," +
+                "applicant_user_id BIGINT NOT NULL," +
+                "reviewer_id BIGINT NULL," +
+                "review_status VARCHAR(32) NOT NULL," +
+                "review_comment VARCHAR(500) NULL," +
+                "review_snapshot LONGTEXT NOT NULL," +
+                "old_snapshot LONGTEXT NULL," +
+                "review_time DATETIME NULL," +
+                "created_by BIGINT NULL," +
                 "create_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP," +
-                "updated_by BIGINT NULL" +
+                "updated_by BIGINT NULL," +
                 "update_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
                 "deleted TINYINT NOT NULL DEFAULT 0," +
                 "version INT NOT NULL DEFAULT 0," +
@@ -525,6 +535,12 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
                 "KEY idx_lab_info_change_review_lab (lab_id, create_time)," +
                 "KEY idx_lab_info_change_review_applicant (applicant_user_id, create_time)" +
                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+        addColumnIfMissing("t_lab_info_change_review", "old_snapshot",
+                "ALTER TABLE t_lab_info_change_review ADD COLUMN old_snapshot LONGTEXT NULL AFTER review_snapshot");
+    }
+    private void updateStudentProfileTable() {
+        addColumnIfMissing("t_student_profile", "attachment_url",
+                "ALTER TABLE t_student_profile ADD COLUMN attachment_url VARCHAR(1024) NULL AFTER introduction");
     }
     private void createGrowthPracticeQuestionTable() {
         jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_growth_practice_question (" +
@@ -641,6 +657,20 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
                 "FOREIGN KEY (exam_id) REFERENCES t_written_exam(id)," +
                 "FOREIGN KEY (lab_id) REFERENCES t_lab(id)," +
                 "FOREIGN KEY (user_id) REFERENCES t_user(id)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
+    }
+
+    private void createWrittenExamProgressTable() {
+        jdbcTemplate.execute("CREATE TABLE IF NOT EXISTS t_written_exam_progress (" +
+                "id BIGINT AUTO_INCREMENT PRIMARY KEY," +
+                "exam_id BIGINT NOT NULL," +
+                "student_id BIGINT NOT NULL," +
+                "answers_json JSON NULL," +
+                "remaining_seconds INT NULL," +
+                "current_index INT NOT NULL DEFAULT 0," +
+                "flagged_ids JSON NULL," +
+                "save_time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP," +
+                "UNIQUE KEY uk_exam_student (exam_id, student_id)" +
                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4");
     }
 
@@ -930,4 +960,3 @@ public class DatabaseSchemaUpdate implements CommandLineRunner {
         }
     }
 }
-

@@ -32,7 +32,7 @@
             </div>
             <div class="info-row">
               <span>实验室</span>
-              <strong>{{ studentProfile.labName || displayLabId }}</strong>
+              <strong>{{ resolvedLabName }}</strong>
             </div>
           </div>
         </TablePageCard>
@@ -208,7 +208,35 @@
           </el-col>
           <el-col :xs="24" :md="12">
             <el-form-item label="实验室">
-              <el-input :model-value="studentProfile.labName || displayLabId" disabled />
+              <el-input :model-value="resolvedLabName" disabled />
+            </el-form-item>
+          </el-col>
+          <el-col :xs="24">
+            <el-form-item label="资料附件" prop="attachmentUrl">
+              <div class="profile-attachment-box">
+                <FileUpload
+                  v-model="profileAttachmentFiles"
+                  action="/api/files/upload"
+                  accept=".pdf,.doc,.docx"
+                  :data="{ scene: 'resume' }"
+                  :limit="1"
+                  :disabled="studentProfileLocked"
+                  :tip="'请上传成员资料表、承诺书或补充证明，支持 PDF、DOC、DOCX。提交审核前必须上传。'"
+                  @change="handleProfileAttachmentChange"
+                  @remove="handleProfileAttachmentRemove"
+                />
+                <el-link
+                  v-if="studentProfileForm.attachmentUrl"
+                  :href="resolvedProfileAttachmentUrl"
+                  target="_blank"
+                  type="primary"
+                >
+                  查看当前资料附件：{{ currentProfileAttachmentName }}
+                </el-link>
+                <div class="profile-upload-tip">
+                  上传后请点击“保存草稿”或“提交审核”，管理员会在资料审核中心看到该附件。
+                </div>
+              </div>
             </el-form-item>
           </el-col>
           <el-col :xs="24">
@@ -376,6 +404,7 @@ const showAvatarDialog = ref(false)
 const showResumeDialog = ref(false)
 const avatarFiles = ref([])
 const resumeFiles = ref([])
+const profileAttachmentFiles = ref([])
 const tempAvatarUrl = ref('')
 const tempResumeUrl = ref('')
 
@@ -404,7 +433,8 @@ const studentProfileForm = reactive({
   phone: '',
   email: '',
   direction: '',
-  introduction: ''
+  introduction: '',
+  attachmentUrl: ''
 })
 
 const portalRole = computed(() => resolvePortalRole(userInfo.value))
@@ -414,6 +444,10 @@ const resolvedAvatar = computed(() => resolveFileUrl(userInfo.value.avatar))
 const hasResume = computed(() => Boolean(userInfo.value?.resume))
 const resolvedResumeUrl = computed(() => resolveFileUrl(userInfo.value?.resume))
 const currentResumeName = computed(() => getFileNameFromUrl(userInfo.value?.resume, '已上传简历'))
+const resolvedProfileAttachmentUrl = computed(() => resolveFileUrl(studentProfileForm.attachmentUrl))
+const currentProfileAttachmentName = computed(() =>
+  getFileNameFromUrl(studentProfileForm.attachmentUrl, '成员资料附件')
+)
 const userInitial = computed(() => userInfo.value?.realName?.charAt(0) || '用')
 const studentProfileLocked = computed(() => requiresProfileReview.value && studentProfile.value?.status === 'PENDING')
 const profileWorkspaceTitle = computed(() => (requiresProfileReview.value ? '成员资料流程' : '个人资料'))
@@ -421,12 +455,7 @@ const profileWorkspaceSubtitle = computed(() =>
   (requiresProfileReview.value ? '请先完善资料，再提交管理员审核。' : '未加入实验室前，资料保存后立即生效。')
 )
 const resumeTemplateUrl = '/templates/member-application-template.docx'
-const displayLabId = computed(() => {
-  if (userInfo.value.labId) {
-    return `#${userInfo.value.labId}`
-  }
-  return '未加入'
-})
+const resolvedLabName = computed(() => studentProfile.value.labName || userInfo.value.labName || '暂无实验室')
 const resolvedCollegeName = computed(() => {
   if (studentProfile.value?.collegeName) {
     return studentProfile.value.collegeName
@@ -489,6 +518,18 @@ const studentProfileRules = {
   email: [
     { required: true, message: '请输入邮箱', trigger: 'blur' },
     { type: 'email', message: '邮箱格式不正确', trigger: 'blur' }
+  ],
+  attachmentUrl: [
+    {
+      validator: (rule, value, callback) => {
+        if (!requiresProfileReview.value || value) {
+          callback()
+          return
+        }
+        callback(new Error('请先上传成员资料附件'))
+      },
+      trigger: 'change'
+    }
   ]
 }
 
@@ -562,6 +603,8 @@ const applyStudentProfile = (payload = {}) => {
   studentProfileForm.email = payload.email || userInfo.value.email || ''
   studentProfileForm.direction = payload.direction || ''
   studentProfileForm.introduction = payload.introduction || ''
+  studentProfileForm.attachmentUrl = payload.attachmentUrl || payload.resumeUrl || userInfo.value.resume || ''
+  profileAttachmentFiles.value = studentProfileForm.attachmentUrl ? [studentProfileForm.attachmentUrl] : []
 }
 
 const fetchStudentProfile = async () => {
@@ -629,6 +672,9 @@ const submitStudentProfile = async () => {
       { type: 'warning' }
     )
     studentProfileSubmitting.value = true
+    const saveResponse = await saveMyStudentProfile({ ...studentProfileForm })
+    applyStudentProfile(saveResponse.data || {})
+    syncStoreFromProfile(saveResponse.data || {})
     const response = await submitMyStudentProfile()
     applyStudentProfile(response.data || {})
     await fetchStudentProfile()
@@ -644,6 +690,7 @@ const submitStudentProfile = async () => {
 
 const syncStoreFromProfile = (payload = {}) => {
   const collegeName = payload.collegeName || findCollegeNameById(studentProfileForm.collegeId) || userInfo.value.college || ''
+  const resumeUrl = payload.resumeUrl || payload.attachmentUrl || userInfo.value.resume || ''
   const merged = {
     ...(userInfo.value || {}),
     realName: studentProfileForm.realName,
@@ -652,7 +699,8 @@ const syncStoreFromProfile = (payload = {}) => {
     collegeName,
     major: studentProfileForm.major,
     phone: studentProfileForm.phone,
-    email: studentProfileForm.email
+    email: studentProfileForm.email,
+    resume: resumeUrl
   }
   userInfo.value = merged
   store.setUserInfo(merged)
@@ -785,6 +833,16 @@ const handleResumeRemove = () => {
   tempResumeUrl.value = ''
 }
 
+const handleProfileAttachmentChange = (files) => {
+  studentProfileForm.attachmentUrl = files.length ? toStoredUrl(files[files.length - 1]) : ''
+  studentProfileFormRef.value?.validateField?.('attachmentUrl', () => {})
+}
+
+const handleProfileAttachmentRemove = () => {
+  studentProfileForm.attachmentUrl = ''
+  studentProfileFormRef.value?.validateField?.('attachmentUrl', () => {})
+}
+
 const saveResume = async () => {
   if (!tempResumeUrl.value) {
     ElMessage.warning('请先上传简历')
@@ -798,6 +856,10 @@ const saveResume = async () => {
       resume: tempResumeUrl.value
     }
     store.setUserInfo(userInfo.value)
+    if (isStudent.value && !studentProfileForm.attachmentUrl) {
+      studentProfileForm.attachmentUrl = tempResumeUrl.value
+      profileAttachmentFiles.value = [tempResumeUrl.value]
+    }
     closeResumeDialog()
     ElMessage.success('简历已保存')
   } catch (error) {
@@ -957,6 +1019,18 @@ onMounted(async () => {
   display: flex;
   flex-direction: column;
   gap: 14px;
+}
+
+.profile-attachment-box {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+.profile-upload-tip {
+  color: #64748b;
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 .resume-row {

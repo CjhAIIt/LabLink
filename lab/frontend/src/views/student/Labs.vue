@@ -3,8 +3,8 @@
     <section class="toolbar-card">
       <div class="toolbar-main">
         <div>
-          <p class="eyebrow">实验室浏览</p>
-          <h2>查看实验室信息与开放招新计划</h2>
+          <p class="eyebrow">实验室广场</p>
+          <h2>查看实验室信息与开放招新入口</h2>
         </div>
         <div class="toolbar-actions">
           <el-button @click="loadData">刷新</el-button>
@@ -13,28 +13,26 @@
 
       <div class="status-notice-group">
         <el-alert
-          v-if="!hasResume"
-          type="warning"
-          :closable="false"
-          show-icon
-        >
-          <template #title>
-            <div class="alert-title-row">
-              <span>你还没有提交简历，请先上传简历后再申请加入实验室。</span>
-              <div class="alert-actions">
-                <el-button link type="warning" @click="router.push('/student/profile')">简历提交</el-button>
-                <el-link :href="resumeTemplateUrl" download type="warning">下载模板</el-link>
-              </div>
-            </div>
-          </template>
-        </el-alert>
-
-        <el-alert
           v-if="userStore.userInfo?.labId"
           type="success"
           :closable="false"
           title="你已经加入实验室，当前仍可查看实验室信息，但不能再次提交加入申请。"
         />
+        <el-alert
+          v-else
+          class="resume-tip"
+          :type="hasResume ? 'success' : 'warning'"
+          :closable="false"
+          show-icon
+          title="温馨提示：申请实验室前请先提交个人简历，未提交简历将无法申请"
+          :description="hasResume ? '已检测到你的简历，可以正常提交实验室申请。' : '请先到个人资料页完善并提交个人简历，系统会在后端再次校验。'"
+        >
+          <template #default>
+            <el-button v-if="!hasResume" size="small" type="warning" @click="router.push('/student/profile')">
+              去完善简历
+            </el-button>
+          </template>
+        </el-alert>
       </div>
     </section>
 
@@ -83,7 +81,7 @@
 
           <div class="lab-meta">
             <span>指导教师：{{ lab.teacherName || '待分配' }}</span>
-            <span>地点：{{ lab.location || '待补充' }}</span>
+            <span>地点：{{ lab.location || '待补全' }}</span>
             <span>计划名额：{{ lab.recruitNum || 0 }}</span>
           </div>
 
@@ -109,11 +107,18 @@
     </TablePageCard>
 
     <el-dialog v-model="dialogVisible" title="申请加入实验室" width="620px">
+      <el-alert
+        class="dialog-resume-tip"
+        type="info"
+        :closable="false"
+        show-icon
+        title="提交前请确认个人简历已完善，未提交简历的申请会被系统拦截。"
+      />
       <el-form ref="formRef" :model="form" :rules="rules" label-width="90px">
         <el-form-item label="实验室">
           <el-input :model-value="selectedLab?.labName || ''" disabled />
         </el-form-item>
-        <el-form-item label="计划" prop="recruitPlanId">
+        <el-form-item v-if="selectedPlans.length" label="计划" prop="recruitPlanId">
           <el-select v-model="form.recruitPlanId" placeholder="请选择开放中的计划">
             <el-option
               v-for="plan in selectedPlans"
@@ -122,6 +127,14 @@
               :value="plan.id"
             />
           </el-select>
+        </el-form-item>
+        <el-form-item v-else label="计划">
+          <el-alert
+            type="info"
+            :closable="false"
+            title="当前未单独配置招新计划"
+            description="这次会按实验室通用入组申请提交。"
+          />
         </el-form-item>
         <el-form-item label="申请原因" prop="applyReason">
           <el-input v-model="form.applyReason" type="textarea" :rows="4" />
@@ -142,9 +155,9 @@
 </template>
 
 <script setup>
-import { ElMessage } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { getCollegeOptions } from '@/api/colleges'
 import { createLabApply } from '@/api/labApplies'
 import { getLabPage } from '@/api/lab'
@@ -154,6 +167,7 @@ import TablePageCard from '@/components/common/TablePageCard.vue'
 import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const route = useRoute()
 const userStore = useUserStore()
 const formRef = ref()
 const dialogVisible = ref(false)
@@ -163,12 +177,13 @@ const activePlans = ref([])
 const colleges = ref([])
 const selectedLab = ref(null)
 const activeCollegeId = ref(null)
-const hasResume = computed(() => Boolean(userStore.userInfo?.resume))
-const resumeTemplateUrl = '/templates/member-application-template.docx'
+const hasResume = computed(() => Boolean(String(userStore.userInfo?.resume || '').trim()))
+
 const labStatusLabels = {
   0: '已关闭',
   1: '开放中'
 }
+
 const labStatusTypes = {
   0: 'info',
   1: 'success'
@@ -182,8 +197,23 @@ const form = reactive({
   skillSummary: ''
 })
 
+const selectedPlans = computed(() => {
+  if (!selectedLab.value) {
+    return []
+  }
+  return plansByLab.value[selectedLab.value.id] || []
+})
+
+const validateRecruitPlan = (_rule, value, callback) => {
+  if (selectedPlans.value.length > 0 && !value) {
+    callback(new Error('请先选择招新计划'))
+    return
+  }
+  callback()
+}
+
 const rules = {
-  recruitPlanId: [{ required: true, message: '请先选择招新计划', trigger: 'change' }],
+  recruitPlanId: [{ validator: validateRecruitPlan, trigger: 'change' }],
   applyReason: [{ required: true, message: '请输入申请原因', trigger: 'blur' }]
 }
 
@@ -196,13 +226,6 @@ const plansByLab = computed(() =>
     return acc
   }, {})
 )
-
-const selectedPlans = computed(() => {
-  if (!selectedLab.value) {
-    return []
-  }
-  return plansByLab.value[selectedLab.value.id] || []
-})
 
 const collegeSections = computed(() => {
   const groupedLabs = labs.value.reduce((acc, lab) => {
@@ -241,6 +264,90 @@ const activeCollege = computed(() =>
 
 const visibleLabs = computed(() => activeCollege.value?.labs || [])
 
+const getLabPlans = (labId) => plansByLab.value[labId] || []
+
+const applyState = (lab) => {
+  if (userStore.userInfo?.labId) {
+    return {
+      disabled: true,
+      label: '已加入其他实验室'
+    }
+  }
+
+  if (!hasResume.value) {
+    return {
+      disabled: false,
+      label: '先提交简历'
+    }
+  }
+
+  if (Number(lab.status) !== 1) {
+    return {
+      disabled: true,
+      label: '当前未开放招新'
+    }
+  }
+
+  return {
+    disabled: false,
+    label: getLabPlans(lab.id).length > 0 ? '立即申请' : '直接申请'
+  }
+}
+
+const openApplyDialog = (lab) => {
+  if (!hasResume.value) {
+    ElMessageBox.confirm('请先完善并提交个人简历，再申请实验室。现在去个人资料页吗？', '需要先提交简历', {
+      type: 'warning',
+      confirmButtonText: '去完善简历',
+      cancelButtonText: '稍后再说'
+    }).then(() => {
+      router.push('/student/profile')
+    }).catch(() => {})
+    return
+  }
+  selectedLab.value = lab
+  Object.assign(form, {
+    labId: lab.id,
+    recruitPlanId: getLabPlans(lab.id)[0]?.id || null,
+    applyReason: '',
+    researchInterest: '',
+    skillSummary: ''
+  })
+  formRef.value?.clearValidate()
+  dialogVisible.value = true
+}
+
+const consumeApplyLabQuery = async () => {
+  const rawLabId = route.query.applyLabId
+  if (!rawLabId) {
+    return
+  }
+
+  const targetLabId = Number(rawLabId)
+  const nextQuery = { ...route.query }
+  delete nextQuery.applyLabId
+  await router.replace({ path: route.path, query: nextQuery })
+
+  if (!Number.isFinite(targetLabId)) {
+    return
+  }
+
+  const targetLab = labs.value.find((item) => Number(item.id) === targetLabId)
+  if (!targetLab) {
+    ElMessage.warning('未找到目标实验室')
+    return
+  }
+
+  const state = applyState(targetLab)
+  if (state.disabled) {
+    ElMessage.warning(state.label)
+    return
+  }
+
+  activeCollegeId.value = targetLab.collegeId ?? 'unassigned'
+  openApplyDialog(targetLab)
+}
+
 const loadData = async () => {
   const [labRes, planRes, collegeRes] = await Promise.all([
     getLabPage({ pageNum: 1, pageSize: 100, status: 1 }),
@@ -254,64 +361,35 @@ const loadData = async () => {
   if (!collegeSections.value.some((item) => String(item.id) === String(activeCollegeId.value))) {
     activeCollegeId.value = collegeSections.value[0]?.id || null
   }
-}
 
-const applyState = (lab) => {
-  if (userStore.userInfo?.labId) {
-    return {
-      disabled: true,
-      label: '已加入其他实验室'
-    }
-  }
-
-  if (!hasResume.value) {
-    return {
-      disabled: true,
-      label: '请先提交简历'
-    }
-  }
-
-  if (lab.status !== 1) {
-    return {
-      disabled: true,
-      label: '当前未开放招新'
-    }
-  }
-
-  if ((plansByLab.value[lab.id] || []).length === 0) {
-    return {
-      disabled: true,
-      label: '暂无开放计划'
-    }
-  }
-
-  return {
-    disabled: false,
-    label: '立即申请'
-  }
-}
-
-const openApplyDialog = (lab) => {
-  if (!hasResume.value) {
-    ElMessage.warning('请先到资料页提交简历后再申请实验室')
-    return
-  }
-  selectedLab.value = lab
-  Object.assign(form, {
-    labId: lab.id,
-    recruitPlanId: plansByLab.value[lab.id]?.[0]?.id || null,
-    applyReason: '',
-    researchInterest: '',
-    skillSummary: ''
-  })
-  dialogVisible.value = true
+  await consumeApplyLabQuery()
 }
 
 const submitApply = async () => {
-  await formRef.value.validate()
+  if (!hasResume.value) {
+    ElMessage.warning('请先完善并提交个人简历，再申请实验室')
+    await router.push('/student/profile')
+    return
+  }
+  if (!formRef.value) {
+    return
+  }
+
+  try {
+    await formRef.value.validate()
+  } catch {
+    return
+  }
+
   submitting.value = true
   try {
-    await createLabApply({ ...form })
+    await createLabApply({
+      ...form,
+      recruitPlanId: form.recruitPlanId || undefined,
+      applyReason: form.applyReason.trim(),
+      researchInterest: form.researchInterest || undefined,
+      skillSummary: form.skillSummary || undefined
+    })
     ElMessage.success('申请已提交')
     dialogVisible.value = false
     await loadData()
@@ -330,19 +408,9 @@ onMounted(() => {
   margin-top: 20px;
 }
 
-.alert-title-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  width: 100%;
-}
-
-.alert-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-shrink: 0;
+.resume-tip,
+.dialog-resume-tip {
+  margin-top: 12px;
 }
 
 .college-section,

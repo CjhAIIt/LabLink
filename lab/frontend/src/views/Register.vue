@@ -12,8 +12,7 @@
         <div class="hero-card">
           <h2>学生注册后可直接进入实验室信息管理场景</h2>
           <p>
-            注册完成后，学生可以浏览实验室、查看招新计划、提交入组申请、跟踪审核结果，
-            并使用个人中心维护个人信息和简历材料。
+            完成注册后，学生可以浏览实验室信息、查看招新计划、提交申请，并持续跟踪审核结果。
           </p>
           <div class="hero-grid">
             <div class="hero-item">
@@ -21,8 +20,8 @@
               <strong>在校学生</strong>
             </div>
             <div class="hero-item">
-              <span class="hero-label">所属学院</span>
-              <strong>注册时必须选择，便于学院维度统计与管理</strong>
+              <span class="hero-label">必填信息</span>
+              <strong>学号、真实姓名、邮箱、学院、专业、年级</strong>
             </div>
             <div class="hero-item">
               <span class="hero-label">教师入口</span>
@@ -58,8 +57,8 @@
               <el-input
                 v-model="registerForm.studentId"
                 :prefix-icon="Postcard"
-                maxlength="20"
-                placeholder="请输入纯数字学号"
+                maxlength="14"
+                placeholder="请输入3开头的8到14位纯数字学号"
                 @input="sanitizeStudentId"
               />
             </el-form-item>
@@ -92,6 +91,14 @@
               />
             </el-form-item>
 
+            <el-form-item label="邮箱" prop="email">
+              <el-input
+                v-model="registerForm.email"
+                :prefix-icon="Message"
+                placeholder="请输入常用邮箱"
+              />
+            </el-form-item>
+
             <el-form-item label="所属学院" prop="college">
               <el-select
                 v-model="registerForm.college"
@@ -121,6 +128,25 @@
               </el-select>
             </el-form-item>
 
+            <el-form-item label="邮箱验证码" prop="emailCode">
+              <el-input
+                v-model="registerForm.emailCode"
+                maxlength="6"
+                placeholder="请输入 6 位邮箱验证码"
+                @input="sanitizeEmailCode"
+              >
+                <template #append>
+                  <el-button
+                    :loading="sendCodeLoading"
+                    :disabled="sendCodeLoading || codeCountdown > 0 || !registerForm.studentId || !emailPattern.test(normalizedEmail())"
+                    @click="sendCode"
+                  >
+                    {{ codeCountdown > 0 ? `${codeCountdown}s` : '获取验证码' }}
+                  </el-button>
+                </template>
+              </el-input>
+            </el-form-item>
+
             <el-form-item class="form-actions">
               <el-button type="primary" :loading="loading" style="width: 100%" @click="submitForm">
                 立即注册
@@ -142,11 +168,11 @@
 </template>
 
 <script setup>
-import { computed, onMounted, reactive, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Lock, Postcard, UserFilled } from '@element-plus/icons-vue'
-import { register } from '@/api/auth'
+import { Lock, Message, Postcard, UserFilled } from '@element-plus/icons-vue'
+import { register, sendRegisterCode } from '@/api/auth'
 import { getCollegeOptions } from '@/api/colleges'
 import BrandLogo from '@/components/BrandLogo.vue'
 
@@ -155,8 +181,9 @@ const loading = ref(false)
 const collegeLoading = ref(false)
 const registerFormRef = ref()
 const collegeOptions = ref([])
-
-let codeTimer = null
+const codeCountdown = ref(0)
+const sendCodeLoading = ref(false)
+let registerCodeTimer = null
 
 const majorOptions = [
   '计算机科学与技术',
@@ -191,26 +218,52 @@ const registerForm = reactive({
   confirmPassword: '',
   realName: '',
   studentId: '',
+  email: '',
+  emailCode: '',
   college: '',
   major: '',
   grade: '',
   role: 'student'
 })
 
-const chineseRealNamePattern = /^[\u4e00-\u9fff·]{2,50}$/
+const chineseRealNamePattern = /^[\u4e00-\u9fff·]{2,5}$/
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+const deriveGradeFromStudentId = (studentId) => {
+  const value = String(studentId || '').trim()
+  if (!/^3\d{7,13}$/.test(value)) {
+    return ''
+  }
+  const gradeCode = Number(value.slice(1, 3))
+  if (gradeCode < 20 || gradeCode > 40) {
+    return ''
+  }
+  return `20${value.slice(1, 3)}级`
+}
 
 const sanitizeStudentId = (value) => {
   registerForm.studentId = String(value ?? '')
     .replace(/\D/g, '')
-    .slice(0, 20)
+    .slice(0, 14)
+  const grade = deriveGradeFromStudentId(registerForm.studentId)
+  if (grade) {
+    registerForm.grade = grade
+  }
 }
+
+const sanitizeEmailCode = (value) => {
+  registerForm.emailCode = String(value ?? '')
+    .replace(/\D/g, '')
+    .slice(0, 6)
+}
+
+const normalizedEmail = () => registerForm.email.trim().toLowerCase()
 
 const validatePass = (rule, value, callback) => {
   if (!value) {
     callback(new Error('请输入密码'))
     return
   }
-
   if (registerForm.confirmPassword) {
     registerFormRef.value?.validateField('confirmPassword')
   }
@@ -234,8 +287,12 @@ const validateStudentId = (rule, value, callback) => {
     callback(new Error('请输入学号'))
     return
   }
-  if (!/^\d{3,20}$/.test(value)) {
-    callback(new Error('学号必须为 3 到 20 位纯数字'))
+  if (!/^3\d{7,13}$/.test(value)) {
+    callback(new Error('学号必须为3开头的8到14位纯数字'))
+    return
+  }
+  if (!deriveGradeFromStudentId(value)) {
+    callback(new Error('学号第2~3位需为有效年级，如23表示2023级'))
     return
   }
   callback()
@@ -248,7 +305,33 @@ const validateRealName = (rule, value, callback) => {
     return
   }
   if (!chineseRealNamePattern.test(normalized)) {
-    callback(new Error('真实姓名必须为中文'))
+    callback(new Error('真实姓名需为2到5个中文字符，不能全是空格'))
+    return
+  }
+  callback()
+}
+
+const validateEmail = (rule, value, callback) => {
+  const normalized = String(value ?? '').trim().toLowerCase()
+  if (!normalized) {
+    callback(new Error('请输入邮箱'))
+    return
+  }
+  if (!emailPattern.test(normalized)) {
+    callback(new Error('请输入正确的邮箱格式'))
+    return
+  }
+  callback()
+}
+
+const validateEmailCode = (rule, value, callback) => {
+  const normalized = String(value ?? '').trim()
+  if (!normalized) {
+    callback(new Error('请输入邮箱验证码'))
+    return
+  }
+  if (!/^\d{6}$/.test(normalized)) {
+    callback(new Error('请输入 6 位数字验证码'))
     return
   }
   callback()
@@ -262,6 +345,8 @@ const registerRules = reactive({
   ],
   confirmPassword: [{ required: true, validator: validatePass2, trigger: 'blur' }],
   realName: [{ required: true, validator: validateRealName, trigger: 'blur' }],
+  email: [{ required: true, validator: validateEmail, trigger: 'blur' }],
+  emailCode: [{ required: true, validator: validateEmailCode, trigger: 'blur' }],
   college: [{ required: true, message: '请选择所属学院', trigger: 'change' }],
   major: [{ required: true, message: '请选择专业', trigger: 'change' }],
   grade: [{ required: true, message: '请选择年级', trigger: 'change' }]
@@ -269,6 +354,46 @@ const registerRules = reactive({
 
 const resolveErrorMessage = (error, fallback) =>
   error?.response?.data?.message || error?.response?.data || error?.message || fallback
+
+const startCodeCountdown = () => {
+  clearInterval(registerCodeTimer)
+  codeCountdown.value = 60
+  registerCodeTimer = window.setInterval(() => {
+    if (codeCountdown.value <= 1) {
+      clearInterval(registerCodeTimer)
+      registerCodeTimer = null
+      codeCountdown.value = 0
+      return
+    }
+    codeCountdown.value -= 1
+  }, 1000)
+}
+
+const sendCode = async () => {
+  if (!registerFormRef.value) {
+    return
+  }
+
+  try {
+    await registerFormRef.value.validateField(['studentId', 'email'])
+  } catch {
+    return
+  }
+
+  sendCodeLoading.value = true
+  try {
+    await sendRegisterCode({
+      studentId: registerForm.studentId.trim(),
+      email: normalizedEmail()
+    })
+    ElMessage.success('验证码已发送，请查收邮箱')
+    startCodeCountdown()
+  } catch (error) {
+    ElMessage.error(resolveErrorMessage(error, '验证码发送失败，请稍后重试'))
+  } finally {
+    sendCodeLoading.value = false
+  }
+}
 
 const loadColleges = async () => {
   collegeLoading.value = true
@@ -298,6 +423,8 @@ const submitForm = async () => {
       ...registerForm,
       realName: registerForm.realName.trim(),
       studentId,
+      grade: deriveGradeFromStudentId(studentId) || registerForm.grade,
+      email: normalizedEmail(),
       username: studentId
     })
     ElMessage.success('注册成功，请登录')
@@ -311,6 +438,10 @@ const submitForm = async () => {
 
 onMounted(() => {
   loadColleges()
+})
+
+onBeforeUnmount(() => {
+  clearInterval(registerCodeTimer)
 })
 </script>
 

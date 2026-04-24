@@ -4,82 +4,139 @@
     <div class="ambient-glow"></div>
 
     <div v-if="lab" class="lab-content">
-      <header class="hero play-anim">
-        <div class="hero-content">
-          <span class="hero-tag anim-title">实验室详情</span>
-          <h1 class="anim-middle">{{ lab.labName }}</h1>
-          <div class="hero-actions anim-bottom">
+      <header class="brand-hero" :style="heroStyle">
+        <div class="brand-hero__overlay">
+          <div class="hero-main">
+            <div class="hero-brand">
+              <div class="hero-logo">
+                <img v-if="resolvedLogo" :src="resolvedLogo" alt="实验室 Logo" />
+                <el-icon v-else><OfficeBuilding /></el-icon>
+              </div>
+              <div class="hero-copy">
+                <span class="hero-tag">Lab Showcase</span>
+                <h1>{{ lab.labName }}</h1>
+                <p>{{ lab.labDesc || '暂无实验室简介' }}</p>
+                <div class="hero-meta">
+                  <span><el-icon><User /></el-icon>{{ lab.teacherName || lab.advisors || '指导教师待完善' }}</span>
+                  <span><el-icon><Location /></el-icon>{{ lab.location || '地点待完善' }}</span>
+                </div>
+              </div>
+            </div>
+
             <router-link class="ghost-btn" to="/intro">
-              <el-icon><Back /></el-icon> 返回列表
+              <el-icon><Back /></el-icon>
+              返回列表
             </router-link>
           </div>
         </div>
       </header>
 
       <main class="main-content">
-        <div class="info-grid">
-          <!-- 基本信息卡片 -->
-          <div class="info-card reveal-item" style="transition-delay: 0.1s">
-            <div class="card-header">
-              <el-icon><InfoFilled /></el-icon>
-              <h3>基本信息</h3>
+        <section class="overview-grid">
+          <article class="overview-card">
+            <span>实验室编码</span>
+            <strong>{{ lab.labCode || `LAB-${lab.id}` }}</strong>
+            <small>统一识别当前实验室品牌档案</small>
+          </article>
+          <article class="overview-card">
+            <span>成员规模</span>
+            <strong>{{ lab.currentNum ?? 0 }} / {{ lab.recruitNum ?? '-' }}</strong>
+            <small>当前成员数与计划容量</small>
+          </article>
+          <article class="overview-card">
+            <span>成立时间</span>
+            <strong>{{ lab.foundingDate || '待完善' }}</strong>
+            <small>实验室发展时间线</small>
+          </article>
+        </section>
+
+        <div class="content-grid">
+          <div class="info-grid">
+            <div class="info-card">
+              <div class="card-header">
+                <el-icon><InfoFilled /></el-icon>
+                <h3>基础信息</h3>
+              </div>
+              <div class="info-list">
+                <div class="info-item">
+                  <span class="label">指导老师</span>
+                  <span class="value">{{ lab.teacherName || lab.advisors || '暂无' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">当前管理员</span>
+                  <span class="value">{{ lab.currentAdmins || '暂无' }}</span>
+                </div>
+                <div class="info-item">
+                  <span class="label">联系邮箱</span>
+                  <span class="value">{{ lab.contactEmail || '暂无' }}</span>
+                </div>
+              </div>
             </div>
-            <div class="info-list">
-              <div class="info-item">
-                <span class="label">成立时间</span>
-                <span class="value">{{ lab.foundingDate || '暂无' }}</span>
+
+            <div class="info-card">
+              <div class="card-header">
+                <el-icon><Trophy /></el-icon>
+                <h3>成果与荣誉</h3>
               </div>
-              <div class="info-item">
-                <span class="label">指导老师</span>
-                <span class="value">{{ lab.advisors || '暂无' }}</span>
+              <div class="text-content">{{ lab.awards || '暂无成果与荣誉信息' }}</div>
+            </div>
+
+            <div class="info-card full-width">
+              <div class="card-header">
+                <el-icon><DataBoard /></el-icon>
+                <h3>实验室介绍</h3>
               </div>
-              <div class="info-item">
-                <span class="label">现任管理员</span>
-                <span class="value">{{ lab.currentAdmins || '暂无' }}</span>
-              </div>
+              <div class="text-content">{{ lab.basicInfo || lab.labDesc || '暂无详细介绍' }}</div>
             </div>
           </div>
 
-          <!-- 获得奖项卡片 -->
-          <div class="info-card reveal-item" style="transition-delay: 0.2s">
-            <div class="card-header">
-              <el-icon><Trophy /></el-icon>
-              <h3>获得奖项</h3>
+          <aside class="side-panel">
+            <div class="side-card">
+              <div class="card-header">
+                <el-icon><PictureFilled /></el-icon>
+                <h3>品牌信息</h3>
+              </div>
+              <div class="brand-stack">
+                <div class="brand-stack__item">
+                  <span>Logo</span>
+                  <div class="brand-thumb logo">
+                    <img v-if="resolvedLogo" :src="resolvedLogo" alt="实验室 Logo" />
+                    <el-icon v-else><OfficeBuilding /></el-icon>
+                  </div>
+                </div>
+                <div class="brand-stack__item">
+                  <span>封面图</span>
+                  <div class="brand-thumb cover">
+                    <img v-if="resolvedCover" :src="resolvedCover" alt="实验室封面图" />
+                    <div v-else class="brand-thumb__empty">暂无封面图</div>
+                  </div>
+                </div>
+              </div>
             </div>
-            <div class="text-content">{{ lab.awards || '暂无' }}</div>
-          </div>
-
-          <!-- 基础信息卡片 -->
-          <div class="info-card reveal-item" style="transition-delay: 0.3s">
-            <div class="card-header">
-              <el-icon><DataBoard /></el-icon>
-              <h3>基础信息</h3>
-            </div>
-            <div class="text-content">{{ lab.basicInfo || '暂无' }}</div>
-          </div>
-
-          <!-- 实验室介绍卡片 -->
-          <div class="info-card full-width reveal-item" style="transition-delay: 0.4s">
-            <div class="card-header">
-              <el-icon><Document /></el-icon>
-              <h3>实验室介绍</h3>
-            </div>
-            <div class="text-content">{{ lab.labDesc || '暂无' }}</div>
-          </div>
+          </aside>
         </div>
 
         <TablePageCard
-          class="panel-card reveal-item"
-          style="transition-delay: 0.05s"
+          class="panel-card"
           title="优秀学长"
-          subtitle="毕业去向"
+          subtitle="成长样本与去向展示"
           :count-label="`${graduates.length} 位`"
           count-tag-type="warning"
         >
           <div v-if="graduates.length" class="graduate-grid">
             <div v-for="item in graduates" :key="item.id" class="graduate-card">
+              <div class="graduate-cover">
+                <img v-if="item.coverImageUrl" :src="resolveMedia(item.coverImageUrl)" alt="展示图" />
+                <div v-else class="graduate-cover__fallback">
+                  <el-avatar :size="56" :src="resolveMedia(item.avatarUrl)">
+                    {{ (item.name || 'G').charAt(0) }}
+                  </el-avatar>
+                </div>
+              </div>
               <div class="graduate-head">
-                <el-avatar :size="46" :src="item.avatarUrl">{{ (item.name || 'A').charAt(0) }}</el-avatar>
+                <el-avatar :size="46" :src="resolveMedia(item.avatarUrl)">
+                  {{ (item.name || 'G').charAt(0) }}
+                </el-avatar>
                 <div>
                   <div class="graduate-name">{{ item.name }}</div>
                   <div class="graduate-meta">
@@ -94,7 +151,7 @@
               </div>
             </div>
           </div>
-          <el-empty v-else description="暂无优秀毕业生数据" />
+          <el-empty v-else description="暂无优秀学长数据" />
         </TablePageCard>
       </main>
     </div>
@@ -102,38 +159,47 @@
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, ref } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute } from 'vue-router'
-import { Back, InfoFilled, Trophy, DataBoard, Document } from '@element-plus/icons-vue'
+import { Back, DataBoard, InfoFilled, Location, OfficeBuilding, PictureFilled, Trophy, User } from '@element-plus/icons-vue'
 import TablePageCard from '@/components/common/TablePageCard.vue'
 import { getLabById } from '@/api/lab'
 import { getGraduateList } from '@/api/graduate'
+import { resolveFileUrl } from '@/utils/file'
 
 const route = useRoute()
 const lab = ref(null)
 const graduates = ref([])
 
-const revealItems = () => {
-  setTimeout(() => {
-    const items = document.querySelectorAll('.reveal-item')
-    items.forEach((el) => el.classList.add('visible'))
-  }, 100)
-}
+const resolvedLogo = computed(() => resolveMedia(lab.value?.logoUrl))
+const resolvedCover = computed(() => resolveMedia(lab.value?.coverImageUrl))
+const heroStyle = computed(() => ({
+  backgroundImage: resolvedCover.value
+    ? `linear-gradient(135deg, rgba(15, 23, 42, 0.84), rgba(14, 116, 144, 0.56)), url(${resolvedCover.value})`
+    : 'linear-gradient(135deg, rgba(15, 23, 42, 0.96), rgba(14, 116, 144, 0.86), rgba(20, 184, 166, 0.76))'
+}))
+
+const resolveMedia = (value) => resolveFileUrl(value)
 
 const loadLabDetail = async () => {
   const labId = route.params.id
-  if (labId) {
-    const [labRes, graduateRes] = await Promise.all([
-      getLabById(labId),
-      getGraduateList({ pageNum: 1, pageSize: 12, labId })
-    ])
-    if (labRes.code === 200) {
-      lab.value = labRes.data
-    }
-    if (graduateRes.code === 200) {
-      graduates.value = graduateRes.data.records || []
-    }
-    revealItems()
+  if (!labId) {
+    return
+  }
+
+  const [labRes, graduateRes] = await Promise.allSettled([
+    getLabById(labId),
+    getGraduateList({ pageNum: 1, pageSize: 12, labId })
+  ])
+
+  if (labRes.status === 'fulfilled' && labRes.value.code === 200) {
+    lab.value = labRes.value.data
+  }
+
+  if (graduateRes.status === 'fulfilled' && graduateRes.value.code === 200) {
+    graduates.value = graduateRes.value.data.records || []
+  } else {
+    graduates.value = []
   }
 }
 
@@ -160,131 +226,362 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-/* ================== 1. 变量定义 (适配 Light Theme) ================== */
 .lab-info-detail-page {
   --bg: #f8fafc;
-  --panel: #ffffff;
-  --line: #e2e8f0;
-  --text: #1e293b;
+  --panel: rgba(255, 255, 255, 0.96);
+  --line: rgba(226, 232, 240, 0.92);
+  --text: #0f172a;
   --muted: #64748b;
-  --brand: #0ea5e9;
-  --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
-  --radius: 20px;
-  --max: 1280px;
-
-  font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
-  background-color: var(--bg);
-  color: var(--text);
+  --shadow: 0 18px 40px rgba(15, 23, 42, 0.1);
   min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
 }
 
-/* ================== 2. 背景与组件 ================== */
 .bg-grid {
-  position: fixed; inset: 0; pointer-events: none; opacity: 0.6; z-index: 0;
-  background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.6;
+  z-index: 0;
+  background-image:
+    linear-gradient(#e2e8f0 1px, transparent 1px),
+    linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
   background-size: 40px 40px;
-  mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
-}
-.ambient-glow {
-  position: fixed; inset: 0; pointer-events: none; z-index: 0;
-  background: radial-gradient(circle at 20% 40%, rgba(14, 165, 233, 0.1) 0%, transparent 45%),
-              radial-gradient(circle at 80% 60%, rgba(59, 130, 246, 0.1) 0%, transparent 45%);
+  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
 }
 
-.hero {
-  padding: 80px 24px;
-  text-align: center;
+.ambient-glow {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
+    radial-gradient(circle at 80% 60%, rgba(20, 184, 166, 0.12) 0%, transparent 45%);
+}
+
+.lab-content {
   position: relative;
   z-index: 1;
 }
 
-.hero-content {
-  max-width: 800px;
+.brand-hero {
   margin: 0 auto;
+  min-height: 360px;
+  background-size: cover;
+  background-position: center;
+}
+
+.brand-hero__overlay {
+  min-height: 360px;
+  padding: 72px 24px 54px;
+  background: linear-gradient(180deg, rgba(15, 23, 42, 0.18), rgba(15, 23, 42, 0.46));
+}
+
+.hero-main {
+  max-width: 1240px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 24px;
+}
+
+.hero-brand {
+  display: flex;
+  gap: 22px;
+  align-items: center;
+}
+
+.hero-logo {
+  width: 96px;
+  height: 96px;
+  border-radius: 28px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  color: #fff;
+  font-size: 38px;
+  box-shadow: 0 18px 36px rgba(15, 23, 42, 0.18);
+  flex-shrink: 0;
+  backdrop-filter: blur(12px);
+}
+
+.hero-logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.hero-copy {
+  color: #f8fafc;
 }
 
 .hero-tag {
-  display: inline-block;
-  padding: 6px 16px;
+  display: inline-flex;
+  padding: 6px 12px;
   border-radius: 999px;
-  background: rgba(14, 165, 233, 0.1);
-  color: var(--brand);
-  font-weight: 600;
-  margin-bottom: 24px;
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
 }
 
-.hero h1 {
-  font-size: 48px;
-  font-weight: 800;
-  margin: 0 0 16px;
-  color: #1e293b;
-  letter-spacing: -1px;
+.hero-copy h1 {
+  margin: 18px 0 12px;
+  font-size: clamp(34px, 4vw, 52px);
+  line-height: 1.04;
+}
+
+.hero-copy p {
+  margin: 0;
+  max-width: 760px;
+  color: rgba(248, 250, 252, 0.88);
+  line-height: 1.75;
+}
+
+.hero-meta {
+  margin-top: 18px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.hero-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .ghost-btn {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 24px;
+  height: 44px;
+  padding: 0 18px;
   border-radius: 999px;
   text-decoration: none;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  border: 1px solid var(--line);
-  color: var(--text);
-  background: white;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-.ghost-btn:hover {
-  border-color: var(--brand);
-  color: var(--brand);
-  transform: translateY(-2px);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.08);
+  font-weight: 700;
 }
 
 .main-content {
-  padding: 40px 24px 80px;
-  max-width: 1200px;
+  max-width: 1240px;
   margin: 0 auto;
-  position: relative;
-  z-index: 1;
+  padding: 32px 24px 80px;
 }
 
-.panel-card {
-  margin-bottom: 32px;
-  border-radius: var(--radius);
+.overview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.overview-card,
+.info-card,
+.side-card {
+  border-radius: 24px;
   border: 1px solid var(--line);
+  background: var(--panel);
   box-shadow: var(--shadow);
 }
 
-.panel-header {
+.overview-card {
+  padding: 20px;
+  display: grid;
+  gap: 8px;
+}
+
+.overview-card span,
+.overview-card small,
+.label {
+  color: var(--muted);
+}
+
+.overview-card strong {
+  color: var(--text);
+  font-size: 26px;
+  font-weight: 800;
+}
+
+.content-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
+  gap: 24px;
+}
+
+.info-grid {
+  display: grid;
+  gap: 24px;
+}
+
+.info-card {
+  padding: 24px;
+}
+
+.info-card.full-width {
+  min-height: 240px;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 18px;
+  color: #0f766e;
+}
+
+.card-header h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 20px;
+}
+
+.info-list {
+  display: grid;
+  gap: 14px;
+}
+
+.info-item {
   display: flex;
   justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid rgba(226, 232, 240, 0.76);
+}
+
+.info-item:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+.value,
+.text-content {
+  color: #334155;
+}
+
+.text-content {
+  line-height: 1.8;
+  white-space: pre-wrap;
+}
+
+.side-card {
+  padding: 24px;
+  position: sticky;
+  top: 24px;
+}
+
+.brand-stack {
+  display: grid;
+  gap: 18px;
+}
+
+.brand-stack__item {
+  display: grid;
+  gap: 10px;
+}
+
+.brand-stack__item span {
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.brand-thumb {
+  border-radius: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(226, 232, 240, 0.9);
+  background: linear-gradient(180deg, rgba(248, 250, 252, 0.94), rgba(255, 255, 255, 0.98));
+}
+
+.brand-thumb.logo {
+  width: 108px;
+  height: 108px;
+  display: flex;
   align-items: center;
-  gap: 12px;
+  justify-content: center;
+  color: #0f766e;
+  font-size: 40px;
+}
+
+.brand-thumb.cover {
+  min-height: 160px;
+}
+
+.brand-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.brand-thumb__empty {
+  min-height: 160px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #94a3b8;
+}
+
+.panel-card {
+  margin-top: 28px;
 }
 
 .graduate-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 16px;
+  gap: 18px;
 }
 
 .graduate-card {
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.92);
+  border-radius: 22px;
+  border: 1px solid rgba(226, 232, 240, 0.88);
+  background: rgba(255, 255, 255, 0.96);
+  overflow: hidden;
+  box-shadow: 0 14px 28px rgba(15, 23, 42, 0.08);
+}
+
+.graduate-cover {
+  height: 160px;
+  background: linear-gradient(135deg, #e2e8f0, #f8fafc);
+}
+
+.graduate-cover img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.graduate-cover__fallback {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.graduate-head,
+.graduate-body {
   padding: 18px;
-  display: grid;
-  gap: 12px;
 }
 
 .graduate-head {
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 12px;
 }
 
 .graduate-name {
+  font-size: 18px;
   font-weight: 800;
   color: var(--text);
 }
@@ -309,105 +606,26 @@ onBeforeUnmount(() => {
   font-size: 13px;
 }
 
-.graduate-line .label {
-  color: var(--muted);
-  font-weight: 700;
-}
-
 .graduate-desc {
-  color: #334155;
   line-height: 1.7;
-  font-size: 13px;
   white-space: pre-wrap;
-}
-
-.info-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 32px;
-}
-
-.info-card {
-  background: var(--panel);
-  border-radius: var(--radius);
-  padding: 32px;
-  box-shadow: var(--shadow);
-  border: 1px solid var(--line);
-  transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.3s;
-}
-
-.info-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 20px 40px -10px rgba(14, 165, 233, 0.15);
-  border-color: var(--brand);
-}
-
-.info-card.full-width {
-  grid-column: 1 / -1;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 24px;
-  color: var(--brand);
-  font-size: 20px;
-}
-
-.card-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text);
-}
-
-.info-list {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.info-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding-bottom: 12px;
-  border-bottom: 1px solid #f1f5f9;
-}
-
-.info-item:last-child {
-  border-bottom: none;
-}
-
-.label {
-  color: var(--muted);
   font-size: 14px;
 }
 
-.value {
-  font-weight: 600;
-  color: var(--text);
+@media (max-width: 960px) {
+  .hero-main,
+  .hero-brand,
+  .content-grid {
+    flex-direction: column;
+    grid-template-columns: 1fr;
+  }
+
+  .side-card {
+    position: static;
+  }
+
+  .overview-grid {
+    grid-template-columns: 1fr;
+  }
 }
-
-.text-content {
-  color: #334155;
-  line-height: 1.8;
-  white-space: pre-wrap;
-  font-size: 16px;
-}
-
-/* Animations */
-.anim-bottom, .anim-middle, .anim-title { opacity: 0; will-change: transform, opacity; }
-@keyframes fadeUp { from { opacity: 0; transform: translateY(40px); } to { opacity: 1; transform: translateY(0); } }
-
-.play-anim .anim-bottom { animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.1s forwards; }
-.play-anim .anim-middle { animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.3s forwards; }
-.play-anim .anim-title  { animation: fadeUp 0.8s cubic-bezier(0.2, 0.8, 0.2, 1) 0.5s forwards; }
-
-.reveal-item {
-  opacity: 0; transform: translateY(50px);
-  transition: opacity 0.8s cubic-bezier(0.2, 0.8, 0.2, 1), transform 0.8s cubic-bezier(0.2, 0.8, 0.2, 1);
-}
-.reveal-item.visible { opacity: 1; transform: translateY(0); }
 </style>

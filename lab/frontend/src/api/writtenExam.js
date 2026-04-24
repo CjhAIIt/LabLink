@@ -17,7 +17,7 @@ export function getStudentExam(labId) {
 
 export function getStudentExamSubmission(labId) {
   return request({
-    url: `/api/written-exam/student/submission/${labId}`,
+    url: `/api/written-exam/student/result/${labId}`,
     method: 'get'
   })
 }
@@ -132,6 +132,22 @@ export function getExamProgress(examId) {
 export function reportCheatEvent(data) {
   return request({
     url: '/api/written-exam/student/cheat-report',
+    method: 'post',
+    data
+  })
+}
+
+export function runExamCode(data) {
+  return request({
+    url: '/api/written-exam/student/run-code',
+    method: 'post',
+    data
+  })
+}
+
+export function judgeExamCode(data) {
+  return request({
+    url: '/api/written-exam/student/judge-code',
     method: 'post',
     data
   })

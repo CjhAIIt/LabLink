@@ -50,6 +50,7 @@ public class LabServiceImpl extends ServiceImpl<LabMapper, Lab> implements LabSe
         Page<Lab> page = new Page<>(pageNum, pageSize);
         Page<Lab> result = baseMapper.selectLabPage(page, collegeId, labName, status);
         populateCurrentMemberCounts(result.getRecords());
+        populateLiveDisplayFields(result.getRecords());
         return result;
     }
 
@@ -59,6 +60,7 @@ public class LabServiceImpl extends ServiceImpl<LabMapper, Lab> implements LabSe
         Lab lab = this.getById(id);
         if (lab != null) {
             populateCurrentMemberCounts(Collections.singletonList(lab));
+            populateLiveDisplayFields(Collections.singletonList(lab));
         }
         return lab;
     }
@@ -66,6 +68,7 @@ public class LabServiceImpl extends ServiceImpl<LabMapper, Lab> implements LabSe
     @Override
     public boolean createLab(Lab lab) {
         lab.setCurrentNum(0);
+        syncTeacherDisplayField(lab);
         if (!StringUtils.hasText(lab.getLabCode())) {
             lab.setLabCode("LAB-" + System.currentTimeMillis());
         }
@@ -90,6 +93,7 @@ public class LabServiceImpl extends ServiceImpl<LabMapper, Lab> implements LabSe
         }
 
         lab.setCurrentNum(currentMembers);
+        syncLiveWritableFields(lab);
         boolean success = this.updateById(lab);
         if (success) {
             platformCacheService.evictLabDetailCache(lab.getId());
@@ -119,6 +123,7 @@ public class LabServiceImpl extends ServiceImpl<LabMapper, Lab> implements LabSe
     public List<LabWithAdminDTO> getLabsWithAdmin() {
         List<Lab> labs = this.list();
         populateCurrentMemberCounts(labs);
+        populateLiveDisplayFields(labs);
         List<LabWithAdminDTO> result = new ArrayList<>();
 
         for (Lab lab : labs) {
@@ -139,11 +144,16 @@ public class LabServiceImpl extends ServiceImpl<LabMapper, Lab> implements LabSe
             return 0;
         }
 
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        queryWrapper.eq("lab_id", labId)
-                .eq("role", "student")
+        QueryWrapper<LabMember> queryWrapper = new QueryWrapper<>();
+        queryWrapper.select("user_id")
+                .eq("lab_id", labId)
+                .eq("status", "active")
                 .eq("deleted", 0);
-        return Math.toIntExact(userMapper.selectCount(queryWrapper));
+        return (int) labMemberMapper.selectList(queryWrapper).stream()
+                .map(LabMember::getUserId)
+                .filter(id -> id != null)
+                .distinct()
+                .count();
     }
 
     @Override
@@ -173,18 +183,24 @@ public class LabServiceImpl extends ServiceImpl<LabMapper, Lab> implements LabSe
             return;
         }
 
-        QueryWrapper<User> memberQuery = new QueryWrapper<>();
-        memberQuery.select("id", "lab_id")
+        QueryWrapper<LabMember> memberQuery = new QueryWrapper<>();
+        memberQuery.select("id", "lab_id", "user_id")
                 .in("lab_id", labIds)
-                .eq("role", "student")
+                .eq("status", "active")
                 .eq("deleted", 0);
 
         Map<Long, Integer> memberCountMap = new HashMap<>();
-        for (User user : userMapper.selectList(memberQuery)) {
-            if (user.getLabId() == null) {
+        Map<Long, List<Long>> countedUsers = new HashMap<>();
+        for (LabMember member : labMemberMapper.selectList(memberQuery)) {
+            if (member.getLabId() == null || member.getUserId() == null) {
                 continue;
             }
-            memberCountMap.merge(user.getLabId(), 1, Integer::sum);
+            List<Long> userIds = countedUsers.computeIfAbsent(member.getLabId(), ignored -> new ArrayList<>());
+            if (userIds.contains(member.getUserId())) {
+                continue;
+            }
+            userIds.add(member.getUserId());
+            memberCountMap.merge(member.getLabId(), 1, Integer::sum);
         }
 
         for (Lab lab : labs) {
@@ -193,6 +209,56 @@ public class LabServiceImpl extends ServiceImpl<LabMapper, Lab> implements LabSe
             }
             lab.setCurrentNum(memberCountMap.getOrDefault(lab.getId(), 0));
         }
+    }
+
+    private void populateLiveDisplayFields(List<Lab> labs) {
+        if (labs == null || labs.isEmpty()) {
+            return;
+        }
+
+        for (Lab lab : labs) {
+            if (lab == null) {
+                continue;
+            }
+            syncTeacherDisplayField(lab);
+            if (lab.getId() != null) {
+                lab.setCurrentAdmins(resolveCurrentLabAdminName(lab.getId()));
+            }
+        }
+    }
+
+    private void syncLiveWritableFields(Lab lab) {
+        if (lab == null) {
+            return;
+        }
+        syncTeacherDisplayField(lab);
+        if (lab.getId() != null) {
+            lab.setCurrentAdmins(resolveCurrentLabAdminName(lab.getId()));
+        }
+    }
+
+    private void syncTeacherDisplayField(Lab lab) {
+        if (lab == null || lab.getTeacherName() == null) {
+            return;
+        }
+        lab.setAdvisors(lab.getTeacherName().trim());
+    }
+
+    private String resolveCurrentLabAdminName(Long labId) {
+        return displayUserName(resolveCurrentLabAdmin(labId));
+    }
+
+    private String displayUserName(User user) {
+        if (user == null) {
+            return "";
+        }
+        if (StringUtils.hasText(user.getRealName())) {
+            return user.getRealName().trim();
+        }
+        if (StringUtils.hasText(user.getUsername())) {
+            return user.getUsername().trim();
+        }
+        return "";
     }
 
     private User resolveCurrentLabAdmin(Long labId) {

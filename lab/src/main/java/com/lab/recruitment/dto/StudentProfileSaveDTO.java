@@ -15,4 +15,5 @@ public class StudentProfileSaveDTO {
     private String email;
     private String direction;
     private String introduction;
+    private String attachmentUrl;
 }

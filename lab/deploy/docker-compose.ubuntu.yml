@@ -1,0 +1,109 @@
+services:
+  mysql:
+    image: mysql:8.0.39
+    container_name: lablink-mysql
+    restart: unless-stopped
+    command:
+      - --default-authentication-plugin=mysql_native_password
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lab_recruitment}
+      MYSQL_USER: ${MYSQL_APP_USER}
+      MYSQL_PASSWORD: ${MYSQL_APP_PASSWORD}
+    ports:
+      - "3306:3306"
+    volumes:
+      - /opt/lablink/mysql:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -uroot -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: lablink-redis
+    restart: unless-stopped
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6379:6379"
+    volumes:
+      - /opt/lablink/redis:/data
+    profiles: ["optional"]
+
+  rabbitmq:
+    image: rabbitmq:3.13-management
+    container_name: lablink-rabbitmq
+    restart: unless-stopped
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    volumes:
+      - /opt/lablink/rabbitmq:/var/lib/rabbitmq
+    profiles: ["optional"]
+
+  backend:
+    build:
+      context: ..
+      dockerfile: Dockerfile.backend
+    container_name: lablink-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      SERVER_PORT: 8081
+      DB_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-lab_recruitment}?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      DB_USERNAME: ${MYSQL_APP_USER}
+      DB_PASSWORD: ${MYSQL_APP_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      MAIL_HOST: ${MAIL_HOST}
+      MAIL_PORT: ${MAIL_PORT}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      FILE_UPLOAD_PATH: /opt/lablink/uploads/public/
+      FILE_PROTECTED_UPLOAD_PATH: /opt/lablink/uploads/protected/
+      APP_LOG_FILE: /opt/lablink/logs/application.log
+      APP_ALLOWED_ORIGIN_PRIMARY: ${APP_ALLOWED_ORIGIN_PRIMARY}
+      APP_ALLOWED_ORIGIN_SECONDARY: ${APP_ALLOWED_ORIGIN_SECONDARY}
+      LABLINK_CACHE_REDIS_ENABLED: ${LABLINK_CACHE_REDIS_ENABLED:-false}
+      REDIS_HOST: ${REDIS_HOST:-redis}
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+      REDIS_DATABASE: ${REDIS_DATABASE:-0}
+      LABLINK_MQ_RABBIT_ENABLED: ${LABLINK_MQ_RABBIT_ENABLED:-false}
+      RABBITMQ_HOST: ${RABBITMQ_HOST:-rabbitmq}
+      RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
+      RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-guest}
+      RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-guest}
+      RABBITMQ_VHOST: ${RABBITMQ_VHOST:-/}
+      AI_API_KEY: ${AI_API_KEY}
+      AI_BASE_URL: ${AI_BASE_URL:-https://api.deepseek.com}
+      AI_MODEL: ${AI_MODEL:-deepseek-chat}
+      GRADPATH_BASE_URL: ${GRADPATH_BASE_URL:-https://lablink.example.com}
+      GRADPATH_WS_URL: ${GRADPATH_WS_URL:-wss://lablink.example.com/ws/interview}
+    volumes:
+      - /opt/lablink/uploads/public:/opt/lablink/uploads/public
+      - /opt/lablink/uploads/protected:/opt/lablink/uploads/protected
+      - /opt/lablink/logs:/opt/lablink/logs
+      - /opt/lablink/judge-work:/app/judge-work
+    ports:
+      - "8081:8081"
+
+  frontend:
+    build:
+      context: ../frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-https://lablink.example.com}
+        VITE_PUBLIC_APP_ORIGIN: ${VITE_PUBLIC_APP_ORIGIN:-https://lablink.example.com}
+    container_name: lablink-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"

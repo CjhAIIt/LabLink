@@ -116,6 +116,15 @@ export function resolvePortalHome(userInfoOrRole, options = {}) {
   return isMobileSurface ? '/m/student/dashboard' : '/student/dashboard'
 }
 
+export function resolveSurfacePathByRoute(routePath = '', desktopPath = '') {
+  if (!desktopPath || typeof desktopPath !== 'string') {
+    return desktopPath
+  }
+
+  const surface = routePath.startsWith('/m/') ? PORTAL_SURFACES.MOBILE : PORTAL_SURFACES.DESKTOP
+  return mapPathToSurface(desktopPath, surface)
+}
+
 export function mapPathToSurface(path, surface = getPortalSurface()) {
   if (!path || typeof path !== 'string') {
     return path
@@ -159,6 +168,12 @@ export function mapPathToSurface(path, surface = getPortalSurface()) {
     }
     if (path.startsWith('/admin/notices')) {
       return '/m/admin/notices-manage'
+    }
+    if (path.startsWith('/admin/statistics')) {
+      return '/m/admin/statistics'
+    }
+    if (path.startsWith('/admin/ai-interview-records')) {
+      return path.replace(/^\/admin/, '/m/admin')
     }
     if (path.startsWith('/admin/profile')) {
       return '/m/admin/profile'
@@ -204,6 +219,12 @@ export function mapPathToSurface(path, surface = getPortalSurface()) {
   }
   if (path.startsWith('/m/admin/notices-manage')) {
     return '/admin/notices'
+  }
+  if (path.startsWith('/m/admin/statistics')) {
+    return '/admin/statistics'
+  }
+  if (path.startsWith('/m/admin/ai-interview-records')) {
+    return path.replace(/^\/m\/admin/, '/admin')
   }
   if (path.startsWith('/m/admin/notices')) {
     return '/admin/notices'

@@ -64,10 +64,18 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { useRoute } from 'vue-router'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
+
+const route = useRoute()
 const router = useRouter()
-const goMock = () => router.push('/student/ai-interview/mock')
-const goFormal = () => router.push('/student/ai-interview/formal')
+const mockPath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview/mock'))
+const formalPath = computed(() => resolveSurfacePathByRoute(route.path, '/student/ai-interview/formal'))
+
+const goMock = () => router.push(mockPath.value)
+const goFormal = () => router.push(formalPath.value)
 </script>
 
 <style scoped>
@@ -133,8 +141,52 @@ const goFormal = () => router.push('/student/ai-interview/formal')
 .disclaimer span { font-size: 13px; color: #92400e; line-height: 1.6; }
 
 @media (max-width: 720px) {
+  .ai-interview-home {
+    max-width: none;
+    padding: 0;
+    display: grid;
+    gap: 16px;
+  }
+
+  .hero-section {
+    margin-bottom: 0;
+    border-radius: 26px;
+    background: linear-gradient(135deg, #15324b, #176b9a 54%, #19a7b8);
+    box-shadow: 0 22px 48px rgba(23, 107, 154, 0.22);
+  }
+
   .mode-cards { grid-template-columns: 1fr; }
-  .hero-content { padding: 32px 24px 28px; }
-  .hero-title { font-size: 22px; }
+  .hero-content { padding: 34px 22px 30px; }
+  .hero-title { font-size: 28px; }
+
+  .mode-cards {
+    gap: 13px;
+    margin-bottom: 0;
+  }
+
+  .mode-card {
+    border-radius: 24px;
+    padding: 20px;
+    box-shadow: 0 16px 38px rgba(23, 32, 51, 0.08);
+  }
+
+  .mode-card:hover {
+    transform: none;
+  }
+
+  .card-action {
+    min-height: 44px;
+    justify-content: center;
+    border-radius: 16px;
+    background: rgba(16, 185, 129, 0.1);
+  }
+
+  .formal-action {
+    background: rgba(245, 158, 11, 0.12);
+  }
+
+  .disclaimer {
+    border-radius: 20px;
+  }
 }
 </style>

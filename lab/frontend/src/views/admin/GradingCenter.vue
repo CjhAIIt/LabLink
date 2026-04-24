@@ -12,7 +12,30 @@
     </div>
 
     <div class="table-card">
-      <el-table v-loading="loading" :data="gradingList" border stripe>
+      <div v-loading="loading" class="exam-mobile-list mobile-only">
+        <article v-for="row in gradingList" :key="row.id || row.attemptId" class="exam-mobile-card">
+          <div class="exam-mobile-card__head">
+            <div>
+              <strong>{{ row.studentName || '未命名学生' }}</strong>
+              <span>{{ row.studentId || '-' }} · {{ row.submitTime }}</span>
+            </div>
+            <el-tag :type="row.status === 'graded' ? 'success' : 'warning'" size="small">
+              {{ row.status === 'graded' ? '已阅卷' : '待阅卷' }}
+            </el-tag>
+          </div>
+          <div class="exam-mobile-card__score">
+            <div><span>自动评分</span><strong>{{ row.autoScore ?? '-' }}</strong></div>
+            <div><span>人工评分</span><strong>{{ row.manualScore ?? '-' }}</strong></div>
+            <div><span>总分</span><strong>{{ row.totalScore ?? '-' }}</strong></div>
+            <div><span>作弊次数</span><strong>{{ row.cheatCount ?? 0 }}</strong></div>
+          </div>
+          <div class="exam-mobile-card__actions">
+            <el-button type="primary" @click="openGrading(row)">阅卷</el-button>
+          </div>
+        </article>
+        <el-empty v-if="!loading && !gradingList.length" description="暂无阅卷记录" />
+      </div>
+      <el-table v-loading="loading" :data="gradingList" border stripe class="desktop-only">
         <el-table-column prop="studentName" label="姓名" width="120" />
         <el-table-column prop="studentId" label="学号" width="140" />
         <el-table-column prop="submitTime" label="提交时间" width="180" />
@@ -137,6 +160,67 @@ onMounted(loadExams)
 </script>
 
 <style scoped>
+.exam-mobile-list {
+  display: grid;
+  gap: 12px;
+}
+
+.exam-mobile-card {
+  padding: 15px;
+  display: grid;
+  gap: 12px;
+  border-radius: 22px;
+  border: 1px solid rgba(51, 136, 187, 0.12);
+  background: rgba(255, 255, 255, 0.96);
+  box-shadow: 0 14px 34px rgba(23, 32, 51, 0.075);
+}
+
+.exam-mobile-card__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.exam-mobile-card__head strong {
+  display: block;
+  color: #172033;
+  font-size: 16px;
+}
+
+.exam-mobile-card__head span,
+.exam-mobile-card p,
+.exam-mobile-card__score span {
+  color: #64748b;
+}
+
+.exam-mobile-card__score {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.exam-mobile-card__score div {
+  padding: 10px;
+  border-radius: 14px;
+  background: #f8fafc;
+  display: grid;
+  gap: 4px;
+}
+
+.exam-mobile-card__score strong {
+  color: #172033;
+  font-size: 18px;
+}
+
+.exam-mobile-card__actions {
+  display: flex;
+}
+
+.exam-mobile-card__actions .el-button {
+  width: 100%;
+}
+
 .grading-center-page { padding: 24px; }
 .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 12px; }
 .page-header h2 { margin: 0; font-size: 22px; font-weight: 600; color: #1a1a2e; }

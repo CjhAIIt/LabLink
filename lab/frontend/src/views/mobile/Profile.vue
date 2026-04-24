@@ -93,6 +93,103 @@
       </div>
     </section>
 
+    <section v-if="isStudent" class="panel-card member-profile-card">
+      <div class="section-head">
+        <div>
+          <strong>成员资料审核</strong>
+          <p>上传成员资料附件并提交后，管理员会在“资料审核”中处理。</p>
+        </div>
+        <span class="resume-state">{{ profileStatusLabel }}</span>
+      </div>
+
+      <div class="resume-banner profile-audit-banner">
+        <div>
+          <strong>{{ requiresProfileReview ? '加入实验室后需要提交成员资料审核' : '暂未加入实验室' }}</strong>
+          <p>{{ requiresProfileReview ? '请补全基础信息，上传成员资料附件后提交审核。' : '请先通过实验室申请，加入后再提交成员资料审核。' }}</p>
+        </div>
+      </div>
+
+      <div class="mobile-profile-form">
+        <label>
+          <span>学号</span>
+          <el-input v-model="studentProfileForm.studentNo" :disabled="memberProfileLocked" placeholder="请输入学号" />
+        </label>
+        <label>
+          <span>真实姓名</span>
+          <el-input v-model="studentProfileForm.realName" :disabled="memberProfileLocked" placeholder="请输入真实姓名" />
+        </label>
+        <label>
+          <span>专业</span>
+          <el-input v-model="studentProfileForm.major" :disabled="memberProfileLocked" placeholder="请输入专业" />
+        </label>
+        <label>
+          <span>班级</span>
+          <el-input v-model="studentProfileForm.className" :disabled="memberProfileLocked" placeholder="请输入班级" />
+        </label>
+        <label>
+          <span>电话</span>
+          <el-input v-model="studentProfileForm.phone" :disabled="memberProfileLocked" placeholder="请输入联系电话" />
+        </label>
+        <label>
+          <span>邮箱</span>
+          <el-input v-model="studentProfileForm.email" :disabled="memberProfileLocked" placeholder="请输入邮箱" />
+        </label>
+        <label>
+          <span>研究方向</span>
+          <el-input v-model="studentProfileForm.direction" :disabled="memberProfileLocked" placeholder="可填写兴趣方向" />
+        </label>
+        <label class="form-wide">
+          <span>个人介绍</span>
+          <el-input
+            v-model="studentProfileForm.introduction"
+            :disabled="memberProfileLocked"
+            :rows="4"
+            type="textarea"
+            placeholder="简要介绍背景、技能和阶段目标"
+          />
+        </label>
+      </div>
+
+      <div class="upload-panel member-upload-panel">
+        <el-upload
+          class="resume-upload"
+          :show-file-list="false"
+          :http-request="uploadProfileAttachment"
+          :disabled="memberProfileLocked"
+          accept=".pdf,.doc,.docx"
+        >
+          <el-button type="primary" plain :disabled="memberProfileLocked" :loading="memberProfileUploading">
+            上传成员资料附件
+          </el-button>
+        </el-upload>
+        <div class="upload-result">
+          <span>当前附件</span>
+          <a
+            v-if="studentProfileForm.attachmentUrl"
+            class="file-link"
+            :href="profileAttachmentUrl"
+            target="_blank"
+            rel="noreferrer"
+          >
+            {{ profileAttachmentName }}
+          </a>
+          <strong v-else>未上传</strong>
+        </div>
+      </div>
+
+      <div class="dialog-actions profile-actions">
+        <el-button :loading="memberProfileSaving" :disabled="memberProfileLocked" @click="saveMemberProfile">保存草稿</el-button>
+        <el-button
+          type="primary"
+          :loading="memberProfileSubmitting"
+          :disabled="memberProfileLocked || !requiresProfileReview"
+          @click="submitMemberProfile"
+        >
+          提交审核
+        </el-button>
+      </div>
+    </section>
+
     <section class="action-card">
       <button class="action-row" type="button" @click="router.push(resolvePortalHome(userStore.userInfo, { surface: 'mobile' }))">
         <div>
@@ -143,9 +240,10 @@
 
 <script setup>
 import { ArrowRight } from '@element-plus/icons-vue'
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { getMyStudentProfile, saveMyStudentProfile, submitMyStudentProfile } from '@/api/profile'
 import request from '@/utils/request'
 import { useUserStore } from '@/stores/user'
 import { getFileNameFromUrl, resolveFileUrl } from '@/utils/file'
@@ -157,25 +255,77 @@ const loading = ref(false)
 const dialogVisible = ref(false)
 const uploading = ref(false)
 const saving = ref(false)
+const memberProfileUploading = ref(false)
+const memberProfileSaving = ref(false)
+const memberProfileSubmitting = ref(false)
 const tempResumeUrl = ref('')
 const tempResumeName = ref('')
 const resumeTemplateUrl = '/templates/member-application-template.docx'
+const studentProfile = ref({})
+
+const studentProfileForm = reactive({
+  studentNo: '',
+  realName: '',
+  gender: '',
+  collegeId: null,
+  major: '',
+  className: '',
+  phone: '',
+  email: '',
+  direction: '',
+  introduction: '',
+  attachmentUrl: ''
+})
 
 const userInitial = computed(() => userStore.realName?.charAt(0) || userStore.userName?.charAt(0) || 'U')
+const portalRole = computed(() => resolvePortalRole(userStore.userInfo))
+const isStudent = computed(() => portalRole.value === 'student')
 const hasResume = computed(() => Boolean(userStore.userInfo?.resume))
 const currentResumeUrl = computed(() => resolveFileUrl(userStore.userInfo?.resume))
 const currentResumeName = computed(() => getFileNameFromUrl(userStore.userInfo?.resume, '已上传简历'))
-const roleLabel = computed(() => ({ admin: '管理员', teacher: '教师', student: '学生' }[resolvePortalRole(userStore.userInfo)] || '用户'))
+const roleLabel = computed(() => ({ admin: '管理员', teacher: '教师', student: '学生' }[portalRole.value] || '用户'))
 const collegeLabel = computed(() => userStore.userInfo?.collegeName || userStore.userInfo?.college || '未设置学院')
 const labLabel = computed(() => {
   if (userStore.userInfo?.labName) {
     return userStore.userInfo.labName
   }
-  if (userStore.userInfo?.labId) {
-    return `实验室 #${userStore.userInfo.labId}`
-  }
-  return '未加入实验室'
+  return '暂无实验室'
 })
+const requiresProfileReview = computed(() => Boolean(studentProfile.value?.reviewRequired ?? userStore.userInfo?.labId))
+const memberProfileLocked = computed(() => requiresProfileReview.value && studentProfile.value?.status === 'PENDING')
+const profileAttachmentUrl = computed(() => resolveFileUrl(studentProfileForm.attachmentUrl))
+const profileAttachmentName = computed(() => getFileNameFromUrl(studentProfileForm.attachmentUrl, '成员资料附件'))
+const profileStatusLabel = computed(() => ({
+  DRAFT: '草稿',
+  PENDING: '待审核',
+  APPROVED: '已通过',
+  REJECTED: '已驳回',
+  ARCHIVED: '已归档'
+}[studentProfile.value?.status] || '草稿')
+)
+
+const applyStudentProfile = (payload = {}) => {
+  studentProfile.value = payload || {}
+  studentProfileForm.studentNo = payload.studentNo || userStore.userInfo?.studentId || ''
+  studentProfileForm.realName = payload.realName || userStore.userInfo?.realName || ''
+  studentProfileForm.gender = payload.gender || ''
+  studentProfileForm.collegeId = payload.collegeId || null
+  studentProfileForm.major = payload.major || userStore.userInfo?.major || ''
+  studentProfileForm.className = payload.className || ''
+  studentProfileForm.phone = payload.phone || userStore.userInfo?.phone || ''
+  studentProfileForm.email = payload.email || userStore.userInfo?.email || ''
+  studentProfileForm.direction = payload.direction || ''
+  studentProfileForm.introduction = payload.introduction || ''
+  studentProfileForm.attachmentUrl = payload.attachmentUrl || payload.resumeUrl || userStore.userInfo?.resume || ''
+}
+
+const fetchStudentProfile = async () => {
+  if (!isStudent.value) {
+    return
+  }
+  const response = await getMyStudentProfile()
+  applyStudentProfile(response.data || {})
+}
 
 const refresh = async (options = {}) => {
   const { silent = false } = options
@@ -183,6 +333,9 @@ const refresh = async (options = {}) => {
   try {
     const response = await request.get('/api/access/profile')
     userStore.setUserInfo(response.data || {})
+    if (resolvePortalRole(userStore.userInfo) === 'student') {
+      await fetchStudentProfile()
+    }
     if (!silent) {
       ElMessage.success('资料已刷新')
     }
@@ -226,6 +379,91 @@ const uploadResumeFile = async ({ file }) => {
   }
 }
 
+const uploadProfileAttachment = async ({ file }) => {
+  memberProfileUploading.value = true
+  try {
+    const formData = new FormData()
+    formData.append('file', file)
+    formData.append('scene', 'resume')
+    const response = await request.post('/api/files/upload', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+    studentProfileForm.attachmentUrl = response.data?.url || response.data?.path || response.data || ''
+    ElMessage.success('成员资料附件上传成功，保存或提交后生效')
+  } catch (error) {
+    ElMessage.error(error.message || '成员资料附件上传失败')
+  } finally {
+    memberProfileUploading.value = false
+  }
+}
+
+const validateMemberProfile = ({ requireAttachment = false } = {}) => {
+  const requiredFields = [
+    ['studentNo', '请填写学号'],
+    ['realName', '请填写真实姓名'],
+    ['major', '请填写专业'],
+    ['className', '请填写班级'],
+    ['phone', '请填写联系电话'],
+    ['email', '请填写邮箱']
+  ]
+  const missing = requiredFields.find(([key]) => !String(studentProfileForm[key] || '').trim())
+  if (missing) {
+    ElMessage.warning(missing[1])
+    return false
+  }
+  if (requireAttachment && !studentProfileForm.attachmentUrl) {
+    ElMessage.warning('请先上传成员资料附件')
+    return false
+  }
+  return true
+}
+
+const saveMemberProfile = async () => {
+  if (!validateMemberProfile()) {
+    return
+  }
+  memberProfileSaving.value = true
+  try {
+    const response = await saveMyStudentProfile({ ...studentProfileForm })
+    applyStudentProfile(response.data || {})
+    ElMessage.success('成员资料草稿已保存')
+  } catch (error) {
+    ElMessage.error(error.message || '保存成员资料失败')
+  } finally {
+    memberProfileSaving.value = false
+  }
+}
+
+const submitMemberProfile = async () => {
+  if (!requiresProfileReview.value) {
+    ElMessage.warning('请先加入实验室，再提交成员资料审核')
+    return
+  }
+  if (!validateMemberProfile({ requireAttachment: true })) {
+    return
+  }
+  const result = await ElMessageBox.confirm('确认提交成员资料进入审核吗？审核中暂时不能修改。', '提交资料审核', {
+    type: 'warning'
+  }).catch(() => null)
+  if (!result) {
+    return
+  }
+  memberProfileSubmitting.value = true
+  try {
+    const saveResponse = await saveMyStudentProfile({ ...studentProfileForm })
+    applyStudentProfile(saveResponse.data || {})
+    const response = await submitMyStudentProfile()
+    applyStudentProfile(response.data || {})
+    ElMessage.success('成员资料已提交审核')
+  } catch (error) {
+    ElMessage.error(error.message || '提交成员资料审核失败')
+  } finally {
+    memberProfileSubmitting.value = false
+  }
+}
+
 const saveResume = async () => {
   if (!tempResumeUrl.value) {
     ElMessage.warning('请先上传简历文件')
@@ -235,6 +473,9 @@ const saveResume = async () => {
   try {
     await request.put('/api/user/info', { resume: tempResumeUrl.value })
     userStore.setUserInfo({ ...(userStore.userInfo || {}), resume: tempResumeUrl.value })
+    if (!studentProfileForm.attachmentUrl) {
+      studentProfileForm.attachmentUrl = tempResumeUrl.value
+    }
     ElMessage.success('简历已保存')
     closeResumeDialog()
   } finally {
@@ -400,7 +641,8 @@ onMounted(() => {
 .info-row span,
 .action-row p,
 .dialog-copy p,
-.upload-result span {
+.upload-result span,
+.mobile-profile-form label > span {
   color: #64748b;
 }
 
@@ -474,6 +716,39 @@ onMounted(() => {
   color: #2563eb;
   font-size: 12px;
   font-weight: 700;
+}
+
+.profile-audit-banner {
+  background:
+    radial-gradient(circle at top right, rgba(45, 212, 191, 0.18), transparent 30%),
+    linear-gradient(180deg, rgba(240, 253, 250, 0.96), rgba(248, 250, 252, 0.98));
+  border-color: rgba(94, 234, 212, 0.52);
+}
+
+.mobile-profile-form {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.mobile-profile-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.mobile-profile-form label > span {
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.mobile-profile-form .form-wide {
+  grid-column: 1 / -1;
+}
+
+.member-upload-panel,
+.profile-actions {
+  margin-top: 14px;
 }
 
 .info-row {
@@ -558,6 +833,10 @@ onMounted(() => {
 
 @media (max-width: 480px) {
   .summary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .mobile-profile-form {
     grid-template-columns: 1fr;
   }
 

@@ -8,12 +8,16 @@ import com.lab.recruitment.dto.LabApplyCreateDTO;
 import com.lab.recruitment.entity.Lab;
 import com.lab.recruitment.entity.LabApply;
 import com.lab.recruitment.entity.RecruitPlan;
+import com.lab.recruitment.entity.StudentProfile;
 import com.lab.recruitment.entity.User;
 import com.lab.recruitment.mapper.LabApplyMapper;
+import com.lab.recruitment.mapper.StudentProfileMapper;
 import com.lab.recruitment.service.LabApplyService;
 import com.lab.recruitment.service.LabMemberService;
 import com.lab.recruitment.service.LabService;
 import com.lab.recruitment.service.RecruitPlanService;
+import com.lab.recruitment.service.SystemNotificationService;
+import com.lab.recruitment.service.UserAccessService;
 import com.lab.recruitment.service.UserService;
 import com.lab.recruitment.support.CurrentUserAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -48,14 +52,24 @@ public class LabApplyServiceImpl extends ServiceImpl<LabApplyMapper, LabApply> i
     @Autowired
     private LabMemberService labMemberService;
 
+    @Autowired
+    private UserAccessService userAccessService;
+
+    @Autowired
+    private StudentProfileMapper studentProfileMapper;
+
+    @Autowired
+    private SystemNotificationService systemNotificationService;
+
     @Override
     @Transactional
     public boolean createApply(LabApplyCreateDTO createDTO, User currentUser) {
-        if (!StringUtils.hasText(currentUser.getResume())) {
-            throw new RuntimeException("Please upload your resume before applying to a lab");
-        }
-        if (currentUser.getLabId() != null) {
+        if (userAccessService.resolveManagedLabId(currentUser) != null) {
             throw new RuntimeException("You have already joined a lab");
+        }
+        User latestUser = userService.getById(currentUser.getId());
+        if (!hasSubmittedResume(latestUser)) {
+            throw new RuntimeException("请先完善并提交个人简历，再申请实验室");
         }
 
         Lab lab = labService.getById(createDTO.getLabId());
@@ -101,6 +115,22 @@ public class LabApplyServiceImpl extends ServiceImpl<LabApplyMapper, LabApply> i
         return this.save(apply);
     }
 
+    private boolean hasSubmittedResume(User user) {
+        if (user == null || user.getId() == null) {
+            return false;
+        }
+        if (StringUtils.hasText(user.getResume())) {
+            return true;
+        }
+        QueryWrapper<StudentProfile> profileWrapper = new QueryWrapper<>();
+        profileWrapper.eq("user_id", user.getId())
+                .eq("deleted", 0)
+                .orderByDesc("id")
+                .last("LIMIT 1");
+        StudentProfile profile = studentProfileMapper.selectOne(profileWrapper);
+        return profile != null && StringUtils.hasText(profile.getAttachmentUrl());
+    }
+
     @Override
     public Page<Map<String, Object>> getApplyPage(Integer pageNum, Integer pageSize, Long labId, String status,
                                                   String keyword, User currentUser) {
@@ -136,6 +166,7 @@ public class LabApplyServiceImpl extends ServiceImpl<LabApplyMapper, LabApply> i
         if ("leaderApprove".equals(action)) {
             ensureCurrentStatus(apply, STATUS_SUBMITTED);
             apply.setStatus(STATUS_LEADER_APPROVED);
+            notifyApplicant(apply, "实验室申请进入下一阶段", "你的实验室申请已通过初审，请等待最终审核。");
         } else if ("approve".equals(action)) {
             if (!STATUS_SUBMITTED.equalsIgnoreCase(apply.getStatus())
                     && !STATUS_LEADER_APPROVED.equalsIgnoreCase(apply.getStatus())) {
@@ -145,7 +176,8 @@ public class LabApplyServiceImpl extends ServiceImpl<LabApplyMapper, LabApply> i
             if (applicant == null) {
                 throw new RuntimeException("Applicant does not exist");
             }
-            if (applicant.getLabId() != null && !apply.getLabId().equals(applicant.getLabId())) {
+            Long activeLabId = userAccessService.resolveManagedLabId(applicant);
+            if (activeLabId != null && !apply.getLabId().equals(activeLabId)) {
                 throw new RuntimeException("The applicant has already joined another lab");
             }
 
@@ -156,11 +188,14 @@ public class LabApplyServiceImpl extends ServiceImpl<LabApplyMapper, LabApply> i
                     currentUser.getId(), "Approved application");
             labService.syncCurrentMemberCount(apply.getLabId());
             rejectOtherApplies(apply, currentUser.getId());
+            notifyApplicant(apply, "实验室申请已通过", "你已加入实验室，成员关系和顶部实验室信息已同步更新。");
         } else if ("reject".equals(action)) {
             if (STATUS_APPROVED.equalsIgnoreCase(apply.getStatus())) {
                 throw new RuntimeException("Approved applications cannot be rejected");
             }
             apply.setStatus(STATUS_REJECTED);
+            notifyApplicant(apply, "实验室申请已驳回",
+                    StringUtils.hasText(auditDTO.getAuditComment()) ? auditDTO.getAuditComment() : "请查看申请审核结果。");
         } else {
             throw new RuntimeException("Unsupported audit action");
         }
@@ -188,6 +223,7 @@ public class LabApplyServiceImpl extends ServiceImpl<LabApplyMapper, LabApply> i
             otherApply.setAuditTime(LocalDateTime.now());
             otherApply.setAuditComment(appendAuditComment(otherApply.getAuditComment(),
                     "Closed automatically because the student was admitted by another lab"));
+            notifyApplicant(otherApply, "实验室申请已自动关闭", "你已被其他实验室录取，该申请已自动关闭。");
         }
         if (!otherApplies.isEmpty()) {
             this.updateBatchById(otherApplies);
@@ -231,6 +267,20 @@ public class LabApplyServiceImpl extends ServiceImpl<LabApplyMapper, LabApply> i
             return extra;
         }
         return original + System.lineSeparator() + extra;
+    }
+
+    private void notifyApplicant(LabApply apply, String title, String content) {
+        if (apply == null || apply.getStudentUserId() == null) {
+            return;
+        }
+        systemNotificationService.createNotification(
+                apply.getStudentUserId(),
+                title,
+                content,
+                "lab_apply_review",
+                apply.getId(),
+                "/student/applications"
+        );
     }
 
     private String trimToNull(String value) {

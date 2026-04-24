@@ -44,6 +44,7 @@ import AdminDashboard from '@/views/admin/Dashboard.vue'
 import AdminDevices from '@/views/admin/Devices.vue'
 import AdminAuditLogs from '@/views/admin/AuditLogs.vue'
 import AdminLabWorkspace from '@/views/admin/LabWorkspace.vue'
+import AdminLabInfoManagement from '@/views/admin/LabInfoManagement.vue'
 import AdminLabs from '@/views/admin/Labs.vue'
 import AdminMembers from '@/views/admin/Members.vue'
 import AdminNotices from '@/views/admin/Notices.vue'
@@ -54,7 +55,6 @@ import AdminStatistics from '@/views/admin/Statistics.vue'
 import AdminTeacherRegisterApplies from '@/views/admin/TeacherRegisterApplies.vue'
 import StudentApplications from '@/views/student/Applications.vue'
 import StudentAttendance from '@/views/student/Attendance.vue'
-import StudentCheckIn from '@/views/student/CheckIn.vue'
 import StudentExamCenter from '@/views/student/ExamCenter.vue'
 import StudentExamDetail from '@/views/student/ExamDetail.vue'
 import StudentExamSign from '@/views/student/ExamSign.vue'
@@ -85,6 +85,7 @@ import MobileAdminDevices from '@/views/mobile/admin/Devices.vue'
 import MobileAdminNoticeManagement from '@/views/mobile/admin/NoticeManagement.vue'
 import MobileAdminProfileReviews from '@/views/mobile/admin/ProfileReviews.vue'
 import MobileAdminTeacherRegisterApplies from '@/views/mobile/admin/TeacherRegisterApplies.vue'
+import MobileAdminStatistics from '@/views/admin/Statistics.vue'
 import MobileStudentApplications from '@/views/mobile/student/Applications.vue'
 import MobileStudentAttendance from '@/views/mobile/student/Attendance.vue'
 import MobileStudentDashboard from '@/views/mobile/student/Dashboard.vue'
@@ -210,6 +211,7 @@ const routes = [
       { path: 'paper-compose', component: AdminPaperCompose, meta: { title: '组卷' } },
       { path: 'grading-center', component: AdminGradingCenter, meta: { title: '阅卷中心' } },
       { path: 'exam-statistics', component: AdminExamStatistics, meta: { title: '成绩统计' } },
+      { path: 'lab-info', component: AdminLabInfoManagement, meta: { title: '实验室资料' } },
       { path: 'workspace', component: AdminLabWorkspace, meta: { title: '资料空间' } },
       { path: 'devices', component: AdminDevices, meta: { title: '设备管理' } },
       { path: 'profiles', component: AdminProfileReviews, meta: { title: '资料审核' } },
@@ -238,11 +240,11 @@ const routes = [
       { path: 'applications', component: StudentApplications, meta: { title: '我的申请' } },
       { path: 'my-lab', component: StudentMyLab, meta: { title: '我的实验室' } },
       { path: 'attendance', component: StudentAttendance, meta: { title: '我的考勤' } },
-      { path: 'check-in', component: StudentCheckIn, meta: { title: '拍照打卡' } },
+      { path: 'check-in', redirect: '/student/attendance' },
       { path: 'exam-center', component: StudentExamCenter, meta: { title: '笔试中心' } },
       { path: 'exam-center/:examId', component: StudentExamDetail, meta: { title: '笔试详情' } },
       { path: 'exam-center/:examId/sign', component: StudentExamSign, meta: { title: '诚信签名' } },
-      { path: 'exam-center/:examId/take', component: StudentExamTake, meta: { title: '在线答题' } },
+      { path: 'exam-center/:examId/take', component: StudentExamTake, meta: { title: '在线答题', fullScreen: true } },
       { path: 'exam-center/:examId/result', component: StudentExamResult, meta: { title: '考试结果' } },
       { path: 'space', component: StudentSpace, meta: { title: '资料空间' } },
       { path: 'notifications', component: Notifications, meta: { title: '消息中心' } },
@@ -264,6 +266,7 @@ const routes = [
       { path: 'dashboard', component: TeacherDashboard, meta: { title: '教师工作台' } },
       { path: 'create-applies', component: TeacherLabCreateApplies, meta: { title: '实验室创建申请' } },
       { path: 'attendance', component: TeacherAttendanceOverview, meta: { title: '考勤查看' } },
+      { path: 'lab-info', component: AdminLabInfoManagement, meta: { title: '实验室资料' } },
       { path: 'exam-hub', component: AdminExamHub, meta: { title: '笔试中心' } },
       { path: 'exam-manage', component: AdminExamManage, meta: { title: '笔试管理' } },
       { path: 'question-bank', component: AdminQuestionBank, meta: { title: '题库管理' } },
@@ -295,7 +298,16 @@ const routes = [
       { path: 'members', component: MobileAdminMembers, meta: { title: '成员管理' } },
       { path: 'devices', component: MobileAdminDevices, meta: { title: '设备中心' } },
       { path: 'profiles', component: MobileAdminProfileReviews, meta: { title: '档案审核' } },
+      { path: 'statistics', component: MobileAdminStatistics, meta: { title: '统计分析' } },
+      { path: 'exam-hub', component: AdminExamHub, meta: { title: '笔试中心' } },
+      { path: 'exam-manage', component: AdminExamManage, meta: { title: '笔试管理' } },
+      { path: 'question-bank', component: AdminQuestionBank, meta: { title: '题库管理' } },
+      { path: 'paper-compose', component: AdminPaperCompose, meta: { title: '组卷' } },
+      { path: 'grading-center', component: AdminGradingCenter, meta: { title: '阅卷中心' } },
+      { path: 'exam-statistics', component: AdminExamStatistics, meta: { title: '成绩统计' } },
       { path: 'notices-manage', component: MobileAdminNoticeManagement, meta: { title: '公告管理' } },
+      { path: 'ai-interview-records', component: AdminAiInterviewRecords, meta: { title: 'AI 面试记录' } },
+      { path: 'ai-interview-records/:id', component: AdminAiInterviewDetail, meta: { title: '面试详情' } },
       { path: 'notifications', component: MobileNotifications, meta: { title: '消息中心' } },
       { path: 'notices', component: MobileNotices, meta: { title: '公告中心' } },
       { path: 'profile', component: MobileProfile, meta: { title: '个人资料' } }
@@ -313,9 +325,20 @@ const routes = [
       { path: 'applications', component: MobileStudentApplications, meta: { title: '我的申请' } },
       { path: 'my-lab', component: MobileStudentMyLab, meta: { title: '我的实验室' } },
       { path: 'attendance', component: MobileStudentAttendance, meta: { title: '我的考勤' } },
+      { path: 'check-in', redirect: '/m/student/attendance' },
+      { path: 'exam-center', component: StudentExamCenter, meta: { title: '笔试中心' } },
+      { path: 'exam-center/:examId', component: StudentExamDetail, meta: { title: '笔试详情' } },
+      { path: 'exam-center/:examId/sign', component: StudentExamSign, meta: { title: '诚信签名' } },
+      { path: 'exam-center/:examId/take', component: StudentExamTake, meta: { title: '在线答题', fullScreen: true } },
+      { path: 'exam-center/:examId/result', component: StudentExamResult, meta: { title: '考试结果' } },
       { path: 'space', component: MobileStudentSpace, meta: { title: '资料空间' } },
       { path: 'notifications', component: MobileNotifications, meta: { title: '消息中心' } },
       { path: 'notices', component: MobileNotices, meta: { title: '公告通知' } },
+      { path: 'ai-interview', component: AiInterviewHome, meta: { title: 'AI 智能面试' } },
+      { path: 'ai-interview/mock', component: AiInterviewMock, meta: { title: '模拟面试' } },
+      { path: 'ai-interview/formal', component: AiInterviewFormal, meta: { title: '正式 AI 面试' } },
+      { path: 'ai-interview/session', component: AiInterviewSession, meta: { title: '面试进行中' } },
+      { path: 'ai-interview/report', component: AiInterviewReport, meta: { title: '面试报告' } },
       { path: 'profile', component: MobileProfile, meta: { title: '个人资料' } }
     ]
   },
@@ -328,6 +351,14 @@ const routes = [
       { path: 'attendance', component: MobileTeacherAttendance, meta: { title: '考勤查看' } },
       { path: 'dashboard', component: MobileTeacherDashboard, meta: { title: '教师首页' } },
       { path: 'create-applies', component: MobileTeacherCreateApplies, meta: { title: '实验室创建申请' } },
+      { path: 'exam-hub', component: AdminExamHub, meta: { title: '笔试中心' } },
+      { path: 'exam-manage', component: AdminExamManage, meta: { title: '笔试管理' } },
+      { path: 'question-bank', component: AdminQuestionBank, meta: { title: '题库管理' } },
+      { path: 'paper-compose', component: AdminPaperCompose, meta: { title: '组卷' } },
+      { path: 'grading-center', component: AdminGradingCenter, meta: { title: '阅卷中心' } },
+      { path: 'exam-statistics', component: AdminExamStatistics, meta: { title: '成绩统计' } },
+      { path: 'ai-interview-records', component: AdminAiInterviewRecords, meta: { title: 'AI 面试记录' } },
+      { path: 'ai-interview-records/:id', component: AdminAiInterviewDetail, meta: { title: '面试详情' } },
       { path: 'notifications', component: MobileNotifications, meta: { title: '消息中心' } },
       { path: 'notices', component: MobileNotices, meta: { title: '公告通知' } },
       { path: 'profile', component: MobileProfile, meta: { title: '个人资料' } }
@@ -407,6 +438,9 @@ const hasRouteFeatureAccess = (path, userInfo, permissions) => {
   if (['/admin/labs', '/admin/plans', '/m/admin/labs'].includes(path)) {
     return hasAnyPermission(permissions, ['lab:manage'])
   }
+  if (path === '/admin/lab-info') {
+    return hasAnyPermission(permissions, ['workspace:lab:manage']) && hasLabContext(userInfo)
+  }
   if (['/admin/create-applies', '/m/admin/create-applies'].includes(path)) {
     return hasAnyPermission(permissions, ['lab:create:audit'])
   }
@@ -437,12 +471,24 @@ const hasRouteFeatureAccess = (path, userInfo, permissions) => {
   if (['/admin/notices', '/m/admin/notices-manage'].includes(path)) {
     return hasAnyPermission(permissions, ['notice:manage'])
   }
-  if (path === '/admin/statistics') {
+  if (['/admin/statistics', '/m/admin/statistics'].includes(path)) {
     return hasAnyPermission(permissions, ['statistics:school:view', 'statistics:college:view', 'statistics:lab:view'])
+  }
+  if (/^\/(?:m\/)?(?:admin|teacher)\/ai-interview-records(?:\/[^/]+)?$/.test(path)) {
+    return hasAnyPermission(permissions, ['ai-interview:record:view'])
+  }
+  if (/^\/(?:m\/)?(?:admin|teacher)\/(?:exam-hub|exam-manage|question-bank|paper-compose|grading-center|exam-statistics)(?:\/.*)?$/.test(path)) {
+    return hasAnyPermission(permissions, ['exam:manage'])
   }
 
   if (['/student/applications', '/m/student/applications'].includes(path)) {
     return hasAnyPermission(permissions, ['lab:apply:self'])
+  }
+  if (/^\/(?:m\/)?student\/exam-center(?:\/[^/]+(?:\/(?:sign|take|result))?)?$/.test(path)) {
+    return hasAnyPermission(permissions, ['exam:self:view'])
+  }
+  if (/^\/(?:m\/)?student\/ai-interview(?:\/(?:mock|formal|session|report))?$/.test(path)) {
+    return hasAnyPermission(permissions, ['ai-interview:self:view'])
   }
   if (['/student/my-lab', '/student/attendance', '/student/space', '/m/student/my-lab', '/m/student/attendance', '/m/student/space'].includes(path)) {
     return hasLabContext(userInfo)
@@ -457,7 +503,7 @@ const hasRouteFeatureAccess = (path, userInfo, permissions) => {
   if (['/teacher/create-applies', '/m/teacher/create-applies'].includes(path)) {
     return hasAnyPermission(permissions, ['lab:create:apply'])
   }
-  if (['/teacher/attendance', '/teacher/profiles', '/teacher/workspace', '/m/teacher/attendance'].includes(path)) {
+  if (['/teacher/attendance', '/teacher/profiles', '/teacher/workspace', '/teacher/lab-info', '/m/teacher/attendance'].includes(path)) {
     return hasLabContext(userInfo)
   }
   if (['/teacher/attendance', '/m/teacher/attendance'].includes(path)) {
@@ -468,6 +514,9 @@ const hasRouteFeatureAccess = (path, userInfo, permissions) => {
   }
   if (path === '/teacher/workspace') {
     return hasAnyPermission(permissions, ['workspace:lab:manage', 'workspace:college:view', 'workspace:school:view']) && hasLabContext(userInfo)
+  }
+  if (path === '/teacher/lab-info') {
+    return hasAnyPermission(permissions, ['lab:profile:submit', 'workspace:lab:manage']) && hasLabContext(userInfo)
   }
 
   return true

@@ -8,12 +8,12 @@ import com.lab.recruitment.entity.Lab;
 import com.lab.recruitment.entity.LabInfoChangeReview;
 import com.lab.recruitment.entity.User;
 import com.lab.recruitment.mapper.LabInfoChangeReviewMapper;
-import com.lab.recruitment.mapper.LabMapper;
 import com.lab.recruitment.mapper.UserMapper;
 import com.lab.recruitment.service.AuditLogService;
 import com.lab.recruitment.service.LabInfoChangeReviewService;
 import com.lab.recruitment.service.LabService;
 import com.lab.recruitment.service.SystemNotificationService;
+import com.lab.recruitment.service.UserAccessService;
 import com.lab.recruitment.support.CurrentUserAccessor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -40,9 +40,6 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
     private LabInfoChangeReviewMapper labInfoChangeReviewMapper;
 
     @Autowired
-    private LabMapper labMapper;
-
-    @Autowired
     private UserMapper userMapper;
 
     @Autowired
@@ -50,6 +47,9 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
 
     @Autowired
     private CurrentUserAccessor currentUserAccessor;
+
+    @Autowired
+    private UserAccessService userAccessService;
 
     @Autowired
     private AuditLogService auditLogService;
@@ -69,14 +69,14 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
         if (requestedLab == null || requestedLab.getId() == null) {
             throw new RuntimeException("实验室ID不能为空");
         }
-        if (!currentUserAccessor.isAdmin(currentUser)) {
+        if (!currentUserAccessor.isLabManager(currentUser) && !currentUserAccessor.isTeacherIdentity(currentUser)) {
             throw new RuntimeException("当前账号无权提交实验室资料变更");
         }
         if (currentUserAccessor.isSuperAdmin(currentUser)) {
             throw new RuntimeException("学校管理员请直接修改正式实验室信息");
         }
 
-        Long scopedLabId = resolveManageableLabId(currentUser, requestedLab.getId(), true);
+        Long scopedLabId = resolveApplicantLabId(currentUser, requestedLab.getId());
         Lab officialLab = mustGetLab(scopedLabId);
         assertNoPendingReview(scopedLabId);
 
@@ -89,6 +89,7 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
         review.setApplicantUserId(currentUser.getId());
         review.setReviewStatus(STATUS_PENDING);
         review.setReviewSnapshot(writeSnapshot(snapshotLab));
+        review.setOldSnapshot(writeSnapshot(officialLab));
         review.setCreatedBy(currentUser.getId());
         review.setUpdatedBy(currentUser.getId());
         labInfoChangeReviewMapper.insert(review);
@@ -107,7 +108,10 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
     @Override
     public Page<Map<String, Object>> getPendingReviewPage(Integer pageNum, Integer pageSize, String keyword,
                                                           Long collegeId, Long labId, User currentUser) {
-        currentUserAccessor.assertSuperAdmin(currentUser);
+        Long scopedCollegeId = resolveReviewCollegeScope(currentUser, collegeId, labId);
+        if (scopedCollegeId != null) {
+            collegeId = scopedCollegeId;
+        }
 
         long current = Math.max(pageNum == null ? 1 : pageNum, 1);
         long size = Math.max(pageSize == null ? 10 : pageSize, 1);
@@ -147,7 +151,7 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
         List<Map<String, Object>> rows = jdbcTemplate.queryForList(
                 "SELECT r.id AS reviewId, r.lab_id AS labId, r.version_no AS versionNo, " +
                         "r.applicant_user_id AS applicantUserId, r.review_status AS reviewStatus, " +
-                        "r.review_comment AS reviewComment, r.review_snapshot AS reviewSnapshot, " +
+                        "r.review_comment AS reviewComment, r.review_snapshot AS reviewSnapshot, r.old_snapshot AS oldSnapshot, " +
                         "r.review_time AS reviewTime, r.create_time AS submitTime, r.update_time AS updateTime, " +
                         "l.lab_name AS labName, l.lab_code AS labCode, l.college_id AS collegeId, " +
                         "c.college_name AS collegeName, u.real_name AS applicantName, " +
@@ -165,11 +169,15 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
         for (Map<String, Object> row : rows) {
             Map<String, Object> item = new LinkedHashMap<>(row);
             Map<String, Object> snapshot = parseSnapshot(asString(row.get("reviewSnapshot")));
+            Map<String, Object> oldSnapshot = parseSnapshot(asString(row.get("oldSnapshot")));
             item.remove("reviewSnapshot");
+            item.remove("oldSnapshot");
             item.put("snapshot", snapshot);
             Object labIdValue = row.get("labId");
-            if (labIdValue != null) {
-                Lab officialLab = labMapper.selectById(Long.parseLong(String.valueOf(labIdValue)));
+            if (!oldSnapshot.isEmpty()) {
+                item.put("official", oldSnapshot);
+            } else if (labIdValue != null) {
+                Lab officialLab = labService.getLabById(Long.parseLong(String.valueOf(labIdValue)));
                 item.put("official", officialLab == null ? null : buildOfficialSnapshot(officialLab));
             } else {
                 item.put("official", null);
@@ -186,7 +194,7 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
 
     @Override
     public List<Map<String, Object>> getReviewHistory(Long labId, User currentUser) {
-        Long scopedLabId = resolveManageableLabId(currentUser, labId, false);
+        Long scopedLabId = resolveHistoryLabId(currentUser, labId);
         if (scopedLabId == null) {
             throw new RuntimeException("请选择实验室");
         }
@@ -209,9 +217,8 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
     @Override
     @Transactional
     public Map<String, Object> approveReview(Long reviewId, String reviewComment, User currentUser) {
-        currentUserAccessor.assertSuperAdmin(currentUser);
-
         LabInfoChangeReview review = mustGetReview(reviewId);
+        assertReviewerScope(currentUser, review.getLabId());
         assertPending(review);
 
         Lab approvedLab = readSnapshotAsLab(review);
@@ -243,9 +250,8 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
     @Override
     @Transactional
     public Map<String, Object> rejectReview(Long reviewId, String reviewComment, User currentUser) {
-        currentUserAccessor.assertSuperAdmin(currentUser);
-
         LabInfoChangeReview review = mustGetReview(reviewId);
+        assertReviewerScope(currentUser, review.getLabId());
         assertPending(review);
 
         LocalDateTime now = LocalDateTime.now();
@@ -287,6 +293,64 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
             throw new RuntimeException("请选择实验室");
         }
         return currentUserAccessor.resolveManagementScope(currentUser, null, requestedLabId).getLabId();
+    }
+
+    private Long resolveApplicantLabId(User currentUser, Long requestedLabId) {
+        if (currentUserAccessor.isLabManager(currentUser)) {
+            return currentUserAccessor.resolveLabScope(currentUser, requestedLabId);
+        }
+        if (currentUserAccessor.isTeacherIdentity(currentUser)) {
+            Long managedLabId = userAccessService.resolveManagedLabId(currentUser);
+            if (managedLabId == null) {
+                throw new RuntimeException("当前教师账号未绑定可维护的实验室");
+            }
+            if (requestedLabId != null && !Objects.equals(managedLabId, requestedLabId)) {
+                throw new RuntimeException("无权提交其他实验室的资料变更");
+            }
+            return managedLabId;
+        }
+        throw new RuntimeException("仅实验室指导老师或实验室管理员可提交资料变更申请");
+    }
+
+    private Long resolveHistoryLabId(User currentUser, Long requestedLabId) {
+        if (currentUserAccessor.isLabManager(currentUser) || currentUserAccessor.isTeacherIdentity(currentUser)) {
+            return resolveApplicantLabId(currentUser, requestedLabId);
+        }
+        if (currentUserAccessor.isSuperAdmin(currentUser) || currentUserAccessor.isCollegeManager(currentUser)) {
+            return resolveManageableLabId(currentUser, requestedLabId, false);
+        }
+        throw new RuntimeException("无权查看实验室资料变更记录");
+    }
+
+    private Long resolveReviewCollegeScope(User currentUser, Long requestedCollegeId, Long requestedLabId) {
+        if (currentUserAccessor.isSuperAdmin(currentUser)) {
+            if (requestedLabId != null) {
+                currentUserAccessor.assertLabScope(currentUser, requestedLabId);
+            }
+            return requestedCollegeId;
+        }
+        if (currentUserAccessor.isCollegeManager(currentUser)) {
+            Long scopedCollegeId = currentUserAccessor.resolveManagedCollegeId(currentUser);
+            if (scopedCollegeId == null) {
+                throw new RuntimeException("当前学院管理员未绑定学院");
+            }
+            if (requestedCollegeId != null && !Objects.equals(scopedCollegeId, requestedCollegeId)) {
+                throw new RuntimeException("无权审核其他学院的资料变更");
+            }
+            if (requestedLabId != null) {
+                currentUserAccessor.assertLabScope(currentUser, requestedLabId);
+            }
+            return scopedCollegeId;
+        }
+        throw new RuntimeException("仅学校管理员或学院管理员可审核实验室资料变更");
+    }
+
+    private void assertReviewerScope(User currentUser, Long labId) {
+        if (currentUserAccessor.isSuperAdmin(currentUser) || currentUserAccessor.isCollegeManager(currentUser)) {
+            currentUserAccessor.assertLabScope(currentUser, labId);
+            return;
+        }
+        throw new RuntimeException("仅学校管理员或学院管理员可审核实验室资料变更");
     }
 
     private void validateRequestedSnapshot(Lab requestedLab) {
@@ -346,7 +410,7 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
     }
 
     private Lab mustGetLab(Long labId) {
-        Lab lab = labMapper.selectById(labId);
+        Lab lab = labService.getLabById(labId);
         if (lab == null || Objects.equals(lab.getDeleted(), 1)) {
             throw new RuntimeException("实验室不存在");
         }
@@ -372,6 +436,8 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
         snapshot.setBasicInfo(normalizeText(requestedLab.getBasicInfo(), officialLab.getBasicInfo()));
         snapshot.setAdvisors(normalizeText(requestedLab.getAdvisors(), officialLab.getAdvisors()));
         snapshot.setCurrentAdmins(normalizeText(requestedLab.getCurrentAdmins(), officialLab.getCurrentAdmins()));
+        snapshot.setLogoUrl(normalizeText(requestedLab.getLogoUrl(), officialLab.getLogoUrl()));
+        snapshot.setCoverImageUrl(normalizeText(requestedLab.getCoverImageUrl(), officialLab.getCoverImageUrl()));
         return snapshot;
     }
 
@@ -402,6 +468,8 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
         snapshot.put("basicInfo", lab.getBasicInfo());
         snapshot.put("advisors", lab.getAdvisors());
         snapshot.put("currentAdmins", lab.getCurrentAdmins());
+        snapshot.put("logoUrl", lab.getLogoUrl());
+        snapshot.put("coverImageUrl", lab.getCoverImageUrl());
         return snapshot;
     }
 
@@ -462,8 +530,9 @@ public class LabInfoChangeReviewServiceImpl implements LabInfoChangeReviewServic
         result.put("collegeId", officialLab == null ? null : officialLab.getCollegeId());
         result.put("collegeName", officialLab == null ? null : loadCollegeName(officialLab.getCollegeId()));
         Map<String, Object> snapshot = parseSnapshot(review.getReviewSnapshot());
+        Map<String, Object> oldSnapshot = parseSnapshot(review.getOldSnapshot());
         result.put("snapshot", snapshot);
-        result.put("official", officialLab == null ? null : buildOfficialSnapshot(officialLab));
+        result.put("official", !oldSnapshot.isEmpty() ? oldSnapshot : (officialLab == null ? null : buildOfficialSnapshot(officialLab)));
         result.put("proposedLabName", snapshot.get("labName"));
         return result;
     }

@@ -104,8 +104,8 @@ public class SearchServiceImpl implements SearchService {
                 "SELECT DISTINCT u.id, u.real_name AS realName, u.student_id AS studentId, u.major, " +
                         "COALESCE(l.lab_name, '-') AS labName, u.role " +
                         "FROM t_user u " +
-                        "LEFT JOIN t_lab_member lm ON lm.user_id = u.id AND lm.deleted = 0 " +
-                        "LEFT JOIN t_lab l ON l.id = COALESCE(lm.lab_id, u.lab_id) AND l.deleted = 0 " +
+                        "LEFT JOIN t_lab_member lm ON lm.user_id = u.id AND lm.deleted = 0 AND lm.status = 'active' " +
+                        "LEFT JOIN t_lab l ON l.id = lm.lab_id AND l.deleted = 0 " +
                         "WHERE u.deleted = 0 AND (u.real_name LIKE ? OR u.student_id LIKE ? OR u.username LIKE ?)"
         );
         addKeywordArgs(args, keyword, 3);
@@ -132,7 +132,7 @@ public class SearchServiceImpl implements SearchService {
                 "SELECT p.id, p.real_name AS realName, p.student_no AS studentNo, p.major, p.status, " +
                         "COALESCE(l.lab_name, '-') AS labName " +
                         "FROM t_student_profile p " +
-                        "LEFT JOIN t_lab_member lm ON lm.user_id = p.user_id AND lm.deleted = 0 " +
+                        "LEFT JOIN t_lab_member lm ON lm.user_id = p.user_id AND lm.deleted = 0 AND lm.status = 'active' " +
                         "LEFT JOIN t_lab l ON l.id = lm.lab_id AND l.deleted = 0 " +
                         "WHERE p.deleted = 0 AND (p.real_name LIKE ? OR p.student_no LIKE ? OR p.major LIKE ?)"
         );
@@ -196,7 +196,8 @@ public class SearchServiceImpl implements SearchService {
                         "COALESCE(l.lab_name, '-') AS labName " +
                         "FROM t_file_object f " +
                         "LEFT JOIN t_user u ON u.id = f.uploaded_by AND u.deleted = 0 " +
-                        "LEFT JOIN t_lab l ON l.id = u.lab_id AND l.deleted = 0 " +
+                        "LEFT JOIN t_lab_member lm ON lm.user_id = u.id AND lm.deleted = 0 AND lm.status = 'active' " +
+                        "LEFT JOIN t_lab l ON l.id = lm.lab_id AND l.deleted = 0 " +
                         "WHERE f.deleted = 0 AND (f.original_name LIKE ? OR f.file_name LIKE ? OR COALESCE(f.content_type, '') LIKE ?)"
         );
         addKeywordArgs(args, keyword, 3);

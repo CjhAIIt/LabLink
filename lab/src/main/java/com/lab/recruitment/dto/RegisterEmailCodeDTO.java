@@ -10,7 +10,7 @@ import javax.validation.constraints.Pattern;
 public class RegisterEmailCodeDTO {
 
     @NotBlank(message = "学号不能为空")
-    @Pattern(regexp = "^\\d{3,20}$", message = "学号必须为 3 到 20 位纯数字")
+    @Pattern(regexp = "^3\\d{7,13}$", message = "学号必须为3开头的8到14位纯数字")
     private String studentId;
 
     @NotBlank(message = "邮箱不能为空")

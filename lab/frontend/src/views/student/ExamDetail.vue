@@ -87,14 +87,16 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { getExamDetail, checkExamEligibility } from '@/api/writtenExam'
+import { resolveSurfacePathByRoute } from '@/utils/portal'
 
 const route = useRoute()
 const router = useRouter()
 const examId = route.params.examId
+const examBasePath = computed(() => resolveSurfacePathByRoute(route.path, '/student/exam-center'))
 
 const loading = ref(false)
 const exam = ref(null)
@@ -117,11 +119,11 @@ const fetchData = async () => {
 }
 
 const goToSign = () => {
-  router.push(`/student/exam-center/${examId}/sign`)
+  router.push(`${examBasePath.value}/${examId}/sign`)
 }
 
 const goToTake = () => {
-  router.push(`/student/exam-center/${examId}/take`)
+  router.push(`${examBasePath.value}/${examId}/take`)
 }
 
 onMounted(fetchData)
@@ -224,5 +226,36 @@ onMounted(fetchData)
   border-radius: 4px;
   font-size: 15px;
   height: 44px;
+}
+
+@media (max-width: 768px) {
+  .exam-detail-wrapper {
+    padding: 0;
+    min-height: auto;
+    background: transparent;
+  }
+
+  .exam-detail-card {
+    padding: 22px 18px;
+    border-radius: 26px;
+    border: 1px solid rgba(51, 136, 187, 0.12);
+    box-shadow: 0 16px 38px rgba(23, 32, 51, 0.08);
+  }
+
+  .exam-meta {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .exam-title {
+    font-size: 20px;
+    margin-bottom: 20px;
+  }
+
+  .action-section .el-button {
+    width: 100%;
+    min-width: 0;
+    border-radius: 16px;
+  }
 }
 </style>

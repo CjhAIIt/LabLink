@@ -7,19 +7,30 @@ import com.lab.recruitment.dto.AiInterviewDTO;
 import com.lab.recruitment.entity.AiInterviewConfig;
 import com.lab.recruitment.entity.AiInterviewModule;
 import com.lab.recruitment.entity.AiInterviewRecord;
+import com.lab.recruitment.entity.Lab;
+import com.lab.recruitment.entity.LabApply;
+import com.lab.recruitment.entity.User;
 import com.lab.recruitment.mapper.AiInterviewConfigMapper;
 import com.lab.recruitment.mapper.AiInterviewModuleMapper;
 import com.lab.recruitment.mapper.AiInterviewRecordMapper;
+import com.lab.recruitment.mapper.LabApplyMapper;
+import com.lab.recruitment.mapper.LabMapper;
+import com.lab.recruitment.mapper.UserMapper;
 import com.lab.recruitment.service.AiChatService;
 import com.lab.recruitment.service.AiInterviewService;
+import com.lab.recruitment.service.UserAccessService;
+import com.lab.recruitment.support.CurrentUserAccessor;
+import com.lab.recruitment.support.DataScope;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 @Slf4j
 @Service
@@ -35,6 +46,16 @@ public class AiInterviewServiceImpl implements AiInterviewService {
     private AiInterviewConfigMapper configMapper;
     @Autowired
     private AiChatService aiChatService;
+    @Autowired
+    private UserMapper userMapper;
+    @Autowired
+    private LabMapper labMapper;
+    @Autowired
+    private LabApplyMapper labApplyMapper;
+    @Autowired
+    private CurrentUserAccessor currentUserAccessor;
+    @Autowired
+    private UserAccessService userAccessService;
 
     // ========== 模块 ==========
 
@@ -167,16 +188,17 @@ public class AiInterviewServiceImpl implements AiInterviewService {
 
     @Override
     public Page<AiInterviewRecord> queryRecords(AiInterviewDTO.RecordQuery query) {
-        Page<AiInterviewRecord> page = new Page<>(query.getPage(), query.getPageSize());
+        AiInterviewDTO.RecordQuery criteria = normalizeQuery(query);
+        Page<AiInterviewRecord> page = new Page<>(criteria.getPage(), criteria.getPageSize());
         LambdaQueryWrapper<AiInterviewRecord> wrapper = new LambdaQueryWrapper<>();
-        if (StringUtils.hasText(query.getStudentName())) {
-            wrapper.like(AiInterviewRecord::getStudentName, query.getStudentName());
+        if (StringUtils.hasText(criteria.getStudentName())) {
+            wrapper.like(AiInterviewRecord::getStudentName, criteria.getStudentName());
         }
-        if (query.getModuleId() != null) {
-            wrapper.eq(AiInterviewRecord::getModuleId, query.getModuleId());
+        if (criteria.getModuleId() != null) {
+            wrapper.eq(AiInterviewRecord::getModuleId, criteria.getModuleId());
         }
-        if (StringUtils.hasText(query.getScoreRange())) {
-            String[] parts = query.getScoreRange().split("-");
+        if (StringUtils.hasText(criteria.getScoreRange())) {
+            String[] parts = criteria.getScoreRange().split("-");
             if (parts.length == 2) {
                 wrapper.ge(AiInterviewRecord::getScore, Integer.parseInt(parts[0]));
                 wrapper.le(AiInterviewRecord::getScore, Integer.parseInt(parts[1]));
@@ -187,20 +209,66 @@ public class AiInterviewServiceImpl implements AiInterviewService {
     }
 
     @Override
+    public Page<Map<String, Object>> queryRecordViews(AiInterviewDTO.RecordQuery query) {
+        AiInterviewDTO.RecordQuery criteria = normalizeQuery(query);
+        DataScope scope = currentUserAccessor.getCurrentDataScope();
+        Long labId = null;
+        Long collegeId = null;
+        Long studentUserId = null;
+        if (scope != null && !scope.isSchoolLevel()) {
+            if (scope.isLabLevel() || (scope.isSelfLevel() && scope.getLabId() != null)) {
+                labId = scope.getLabId();
+            } else if (scope.isCollegeLevel()) {
+                collegeId = scope.getCollegeId();
+            } else if (scope.isSelfLevel()) {
+                studentUserId = scope.getUserId();
+            } else {
+                throw new RuntimeException("当前账号没有 AI 面试记录管理权限");
+            }
+        }
+
+        Integer[] scoreRange = parseScoreRange(criteria.getScoreRange());
+        Page<Map<String, Object>> page = new Page<>(criteria.getPage(), criteria.getPageSize());
+        page.setOptimizeCountSql(false);
+        return recordMapper.selectRecordViewPage(page,
+                trimToNull(criteria.getStudentName()),
+                criteria.getModuleId(),
+                scoreRange[0],
+                scoreRange[1],
+                normalizeDateBoundary(criteria.getStartDate(), false),
+                normalizeDateBoundary(criteria.getEndDate(), true),
+                labId,
+                collegeId,
+                studentUserId);
+    }
+
+    @Override
     public AiInterviewRecord getRecordDetail(Long id) {
         return recordMapper.selectById(id);
+    }
+
+    @Override
+    public Map<String, Object> getRecordDetailView(Long id) {
+        AiInterviewRecord record = recordMapper.selectById(id);
+        if (record == null) {
+            return null;
+        }
+        assertCanAccessRecord(record);
+        return buildRecordView(record);
     }
 
     @Override
     public void invalidateRecord(Long id) {
         AiInterviewRecord record = recordMapper.selectById(id);
         if (record == null) throw new RuntimeException("记录不存在");
+        assertCanAccessRecord(record);
         record.setStatus("作废");
         recordMapper.updateById(record);
     }
 
     @Override
     public void resetStudentChance(Long studentId) {
+        assertCanAccessStudent(studentId);
         // 将该学生最近一条非作废记录标记为作废，等效于补偿 1 次
         List<AiInterviewRecord> records = recordMapper.selectList(
             new LambdaQueryWrapper<AiInterviewRecord>()
@@ -236,5 +304,157 @@ public class AiInterviewServiceImpl implements AiInterviewService {
             config.setConfigValue(String.valueOf(open));
             configMapper.updateById(config);
         }
+    }
+
+    private Map<String, Object> buildRecordView(AiInterviewRecord record) {
+        Map<String, Object> item = new HashMap<>();
+        User student = record.getStudentId() == null ? null : userMapper.selectById(record.getStudentId());
+        Lab lab = resolveRecordLab(student);
+        item.put("id", record.getId());
+        item.put("studentId", record.getStudentId());
+        item.put("studentUserId", record.getStudentId());
+        item.put("studentName", StringUtils.hasText(record.getStudentName()) ? record.getStudentName() : student == null ? "" : student.getRealName());
+        item.put("studentNo", student == null ? "" : student.getStudentId());
+        item.put("college", student == null ? "" : student.getCollege());
+        item.put("major", student == null ? "" : student.getMajor());
+        item.put("grade", student == null ? "" : student.getGrade());
+        item.put("labId", lab == null ? null : lab.getId());
+        item.put("labName", lab == null ? "" : lab.getLabName());
+        item.put("moduleId", record.getModuleId());
+        item.put("moduleName", record.getModuleName());
+        item.put("attemptNo", record.getAttemptNo());
+        item.put("score", record.getScore());
+        item.put("tagsJson", record.getTagsJson());
+        item.put("summary", record.getSummary());
+        item.put("strengths", record.getStrengths());
+        item.put("weaknesses", record.getWeaknesses());
+        item.put("suggestions", record.getSuggestions());
+        item.put("conversationJson", record.getConversationJson());
+        item.put("status", record.getStatus());
+        item.put("startTime", record.getStartTime());
+        item.put("endTime", record.getEndTime());
+        item.put("createTime", record.getCreateTime());
+        item.put("recommendNext", record.getScore() != null && record.getScore() >= 80);
+        return item;
+    }
+
+    private boolean canAccessRecord(AiInterviewRecord record) {
+        if (record == null) {
+            return false;
+        }
+        User student = record.getStudentId() == null ? null : userMapper.selectById(record.getStudentId());
+        return canAccessStudent(student);
+    }
+
+    private void assertCanAccessRecord(AiInterviewRecord record) {
+        if (!canAccessRecord(record)) {
+            throw new RuntimeException("无权查看该学生的 AI 面试记录");
+        }
+    }
+
+    private void assertCanAccessStudent(Long studentId) {
+        User student = studentId == null ? null : userMapper.selectById(studentId);
+        if (!canAccessStudent(student)) {
+            throw new RuntimeException("无权操作该学生的 AI 面试记录");
+        }
+    }
+
+    private boolean canAccessStudent(User student) {
+        DataScope scope = currentUserAccessor.getCurrentDataScope();
+        if (scope == null || scope.isSchoolLevel()) {
+            return true;
+        }
+        Lab lab = resolveRecordLab(student);
+        if (scope.isSelfLevel()) {
+            if (scope.getLabId() != null && lab != null) {
+                return Objects.equals(scope.getLabId(), lab.getId());
+            }
+            return student != null && Objects.equals(scope.getUserId(), student.getId());
+        }
+        if (lab == null) {
+            return false;
+        }
+        if (scope.isLabLevel()) {
+            return Objects.equals(scope.getLabId(), lab.getId());
+        }
+        if (scope.isCollegeLevel()) {
+            return Objects.equals(scope.getCollegeId(), lab.getCollegeId());
+        }
+        return false;
+    }
+
+    private Lab resolveRecordLab(User student) {
+        if (student == null) {
+            return null;
+        }
+        Long activeLabId = userAccessService.resolveManagedLabId(student);
+        if (activeLabId != null) {
+            Lab lab = labMapper.selectById(activeLabId);
+            if (lab != null && !Objects.equals(lab.getDeleted(), 1)) {
+                return lab;
+            }
+        }
+        LabApply latestApply = labApplyMapper.selectOne(new LambdaQueryWrapper<LabApply>()
+                .eq(LabApply::getStudentUserId, student.getId())
+                .eq(LabApply::getDeleted, 0)
+                .orderByDesc(LabApply::getCreateTime)
+                .last("LIMIT 1"));
+        if (latestApply == null || latestApply.getLabId() == null) {
+            return null;
+        }
+        Lab lab = labMapper.selectById(latestApply.getLabId());
+        return lab != null && !Objects.equals(lab.getDeleted(), 1) ? lab : null;
+    }
+
+    private AiInterviewDTO.RecordQuery normalizeQuery(AiInterviewDTO.RecordQuery query) {
+        AiInterviewDTO.RecordQuery criteria = query == null ? new AiInterviewDTO.RecordQuery() : query;
+        if (criteria.getPage() == null || criteria.getPage() < 1) {
+            criteria.setPage(1);
+        }
+        if (criteria.getPageSize() == null || criteria.getPageSize() < 1) {
+            criteria.setPageSize(20);
+        }
+        return criteria;
+    }
+
+    private Integer[] parseScoreRange(String scoreRange) {
+        Integer[] result = new Integer[] { null, null };
+        if (!StringUtils.hasText(scoreRange)) {
+            return result;
+        }
+        String[] parts = scoreRange.split("-");
+        if (parts.length != 2) {
+            return result;
+        }
+        try {
+            result[0] = Integer.parseInt(parts[0].trim());
+            result[1] = Integer.parseInt(parts[1].trim());
+        } catch (NumberFormatException ignored) {
+            result[0] = null;
+            result[1] = null;
+        }
+        return result;
+    }
+
+    private String trimToNull(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private String normalizeDateBoundary(String value, boolean inclusiveEndOfDay) {
+        String normalized = trimToNull(value);
+        if (normalized == null) {
+            return null;
+        }
+        if (normalized.length() == 10) {
+            return normalized + (inclusiveEndOfDay ? " 23:59:59" : " 00:00:00");
+        }
+        if (normalized.length() == 19 && normalized.charAt(10) == 'T') {
+            return normalized.replace('T', ' ');
+        }
+        return normalized;
     }
 }

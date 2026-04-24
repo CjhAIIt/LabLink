@@ -127,6 +127,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         profile.setEmail(defaultValue(normalizeEmail(saveDTO.getEmail()), normalizeEmail(currentUser.getEmail())));
         profile.setDirection(trimToNull(saveDTO.getDirection()));
         profile.setIntroduction(trimToNull(saveDTO.getIntroduction()));
+        profile.setAttachmentUrl(trimToNull(saveDTO.getAttachmentUrl()));
         profile.setUpdatedBy(currentUser.getId());
 
         if (isNew) {
@@ -219,7 +220,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
                 "SELECT p.id, p.user_id AS userId, p.lab_id AS labId, l.lab_name AS labName, " +
                         "p.student_no AS studentNo, p.real_name AS realName, p.gender, " +
                         "p.college_id AS collegeId, c.college_name AS collegeName, p.major, " +
-                        "p.class_name AS className, p.phone, p.email, p.direction, p.introduction, " +
+                        "p.class_name AS className, p.phone, p.email, p.direction, p.introduction, p.attachment_url AS attachmentUrl, " +
                         "p.status, p.current_version AS currentVersion, p.submitted_at AS submittedAt, " +
                         "p.last_review_time AS lastReviewTime, p.create_time AS createTime, p.update_time AS updateTime " +
                         "FROM t_student_profile p " +
@@ -318,7 +319,7 @@ public class StudentProfileServiceImpl implements StudentProfileService {
                         "r.create_time AS submitTime, p.user_id AS userId, p.student_no AS studentNo, " +
                         "p.real_name AS realName, p.gender, p.college_id AS collegeId, c.college_name AS collegeName, " +
                         "p.lab_id AS labId, l.lab_name AS labName, p.major, p.class_name AS className, " +
-                        "p.phone, p.email, p.direction, p.status " +
+                        "p.phone, p.email, p.direction, p.attachment_url AS attachmentUrl, p.status " +
                         "FROM t_student_profile_review r " +
                         "LEFT JOIN t_student_profile p ON p.id = r.profile_id " +
                         "LEFT JOIN t_college c ON c.id = p.college_id AND c.deleted = 0 " +
@@ -588,6 +589,9 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         if (!StringUtils.hasText(profile.getEmail())) {
             throw new RuntimeException("邮箱不能为空");
         }
+        if (!StringUtils.hasText(profile.getAttachmentUrl())) {
+            throw new RuntimeException("请先上传成员资料附件，再提交审核");
+        }
     }
 
     private Map<String, Object> buildTransientProfile(User currentUser) {
@@ -609,6 +613,8 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         profile.put("email", currentUser.getEmail());
         profile.put("direction", null);
         profile.put("introduction", null);
+        profile.put("attachmentUrl", currentUser.getResume());
+        profile.put("resumeUrl", currentUser.getResume());
         profile.put("status", STATUS_DRAFT);
         profile.put("currentVersion", 0);
         profile.put("submittedAt", null);
@@ -638,6 +644,9 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         result.put("email", profile.getEmail());
         result.put("direction", profile.getDirection());
         result.put("introduction", profile.getIntroduction());
+        String resumeUrl = loadUserResume(profile.getUserId());
+        result.put("attachmentUrl", defaultValue(profile.getAttachmentUrl(), resumeUrl));
+        result.put("resumeUrl", resumeUrl);
         result.put("status", profile.getStatus());
         result.put("currentVersion", profile.getCurrentVersion());
         result.put("submittedAt", profile.getSubmittedAt());
@@ -751,8 +760,17 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         snapshot.put("email", profile.getEmail());
         snapshot.put("direction", profile.getDirection());
         snapshot.put("introduction", profile.getIntroduction());
+        snapshot.put("attachmentUrl", profile.getAttachmentUrl());
         snapshot.put("currentVersion", profile.getCurrentVersion());
         return snapshot;
+    }
+
+    private String loadUserResume(Long userId) {
+        if (userId == null) {
+            return null;
+        }
+        User user = userMapper.selectById(userId);
+        return user == null ? null : user.getResume();
     }
 
     private void syncUserBasicFields(StudentProfile profile, Long userId) {
@@ -778,6 +796,9 @@ public class StudentProfileServiceImpl implements StudentProfileService {
         }
         if (profile.getCollegeId() != null) {
             update.setCollege(loadCollegeName(profile.getCollegeId()));
+        }
+        if (StringUtils.hasText(profile.getAttachmentUrl()) && !StringUtils.hasText(loadUserResume(userId))) {
+            update.setResume(profile.getAttachmentUrl());
         }
         userMapper.updateById(update);
     }

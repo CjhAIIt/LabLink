@@ -39,7 +39,20 @@
 
     <TablePageCard title="实验室列表" subtitle="基础信息与管理员安排" :count-label="`${pagination.total} 个实验室`">
       <el-table v-loading="loading" :data="labs" stripe>
-        <el-table-column prop="labName" label="实验室" min-width="180" />
+        <el-table-column label="实验室" min-width="220">
+          <template #default="{ row }">
+            <div class="lab-cell">
+              <div class="lab-cell__logo">
+                <img v-if="row.logoUrl" :src="resolveMedia(row.logoUrl)" alt="实验室 Logo" />
+                <span v-else>{{ (row.labName || 'L').charAt(0) }}</span>
+              </div>
+              <div class="lab-cell__copy">
+                <strong>{{ row.labName }}</strong>
+                <small>{{ row.labCode || `LAB-${row.id}` }}</small>
+              </div>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column prop="labCode" label="编码" min-width="120" />
         <el-table-column prop="teacherName" label="指导教师" min-width="120" />
         <el-table-column prop="location" label="地点" min-width="140" />
@@ -102,7 +115,7 @@
     </TablePageCard>
 
     <TablePageCard
-      v-if="isSuperAdmin"
+      v-if="isReviewAdmin"
       title="资料变更审核"
       subtitle="实验室管理员提交后，由学校管理员审核生效"
       :count-label="`${reviewPagination.total} 条`"
@@ -183,6 +196,24 @@
             <el-form-item label="状态" prop="status">
               <el-select v-model="form.status"><el-option label="开放" :value="1" /><el-option label="关闭" :value="0" /></el-select>
             </el-form-item>
+          </div>
+          <div class="media-upload-grid">
+            <ImageUploadField
+              v-model="form.logoUrl"
+              title="实验室 Logo"
+              description="用于实验室列表、详情页和品牌展示区。"
+              scene="logo"
+              accept=".jpg,.jpeg,.png,.svg,.webp"
+              :size-limit="5"
+            />
+            <ImageUploadField
+              v-model="form.coverImageUrl"
+              title="实验室封面图"
+              description="用于详情页头图和宣传展示，建议上传横向图片。"
+              scene="image"
+              accept=".jpg,.jpeg,.png,.webp"
+              :size-limit="8"
+            />
           </div>
           <el-form-item label="招新要求" prop="requireSkill"><el-input v-model="form.requireSkill" type="textarea" :rows="3" /></el-form-item>
           <el-form-item label="实验室简介" prop="labDesc"><el-input v-model="form.labDesc" type="textarea" :rows="4" /></el-form-item>
@@ -287,6 +318,7 @@
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { computed, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import ImageUploadField from '@/components/common/ImageUploadField.vue'
 import TablePageCard from '@/components/common/TablePageCard.vue'
 import { assignAdminToLab, getLabsWithAdmin, removeAdminFromLab } from '@/api/adminManagement'
 import { getCollegeOptions } from '@/api/colleges'
@@ -294,6 +326,7 @@ import { approveLabInfoReview, getLabInfoReviewHistory, getPendingLabInfoReviewP
 import { createLab, deleteLab, getLabById, getLabPage, updateLab, updateManagedLab } from '@/api/lab'
 import { useUserStore } from '@/stores/user'
 import { clearAuth } from '@/utils/auth'
+import { resolveFileUrl } from '@/utils/file'
 import request from '@/utils/request'
 
 const router = useRouter()
@@ -339,7 +372,9 @@ const form = reactive({
   status: 1,
   labDesc: '',
   basicInfo: '',
-  awards: ''
+  awards: '',
+  logoUrl: '',
+  coverImageUrl: ''
 })
 const rules = {
   labName: [{ required: true, message: '请输入实验室名称', trigger: 'blur' }],
@@ -357,10 +392,13 @@ const reviewFieldDefs = [
   { key: 'requireSkill', label: '招新要求' },
   { key: 'labDesc', label: '实验室简介' },
   { key: 'basicInfo', label: '基础信息' },
-  { key: 'awards', label: '获奖成果' }
+  { key: 'awards', label: '获奖成果' },
+  { key: 'logoUrl', label: '实验室 Logo' },
+  { key: 'coverImageUrl', label: '实验室封面图' }
 ]
 const isSuperAdmin = computed(() => userStore.userRole === 'super_admin')
 const isCollegeManager = computed(() => Boolean(userStore.userInfo?.collegeManager))
+const isReviewAdmin = computed(() => isSuperAdmin.value || isCollegeManager.value)
 const managedLabId = computed(() => userStore.userInfo?.managedLabId || userStore.userInfo?.labId || null)
 const canTransferAdmin = computed(() => !isSuperAdmin.value && Boolean(userStore.userInfo?.labManager && managedLabId.value))
 const dialogTitle = computed(() => {
@@ -383,7 +421,8 @@ const reviewComparisonRows = computed(() => {
   return reviewFieldDefs.map((item) => {
     const currentValue = formatFieldValue(item.key, official[item.key])
     const proposedValue = formatFieldValue(item.key, snapshot[item.key])
-    return { ...item, currentValue, proposedValue, changed: currentValue !== proposedValue }
+    const changed = String(official[item.key] ?? '') !== String(snapshot[item.key] ?? '')
+    return { ...item, currentValue, proposedValue, changed }
   })
 })
 
@@ -407,9 +446,11 @@ const formatDateTime = (value) => {
   if (Number.isNaN(date.getTime())) return value
   return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')} ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`
 }
+const resolveMedia = (value) => resolveFileUrl(value)
 const formatFieldValue = (key, value) => {
   if (value === null || value === undefined || value === '') return '-'
   if (key === 'status') return Number(value) === 1 ? '开放' : '关闭'
+  if (key === 'logoUrl' || key === 'coverImageUrl') return value ? '已上传' : '-'
   return String(value)
 }
 const buildLatestReviewDescription = (review) => {
@@ -422,7 +463,7 @@ const resolveCompareRowClass = ({ row }) => (row.changed ? 'changed-row' : '')
 const resetForm = () => {
   Object.assign(form, {
     id: null, labName: '', labCode: '', collegeId: undefined, teacherName: '', location: '', contactEmail: '',
-    requireSkill: '', recruitNum: 20, status: 1, labDesc: '', basicInfo: '', awards: ''
+    requireSkill: '', recruitNum: 20, status: 1, labDesc: '', basicInfo: '', awards: '', logoUrl: '', coverImageUrl: ''
   })
 }
 const fillForm = (data = {}) => {
@@ -431,7 +472,8 @@ const fillForm = (data = {}) => {
     labName: data.labName || '', labCode: data.labCode || '', collegeId: data.collegeId,
     teacherName: data.teacherName || '', location: data.location || '', contactEmail: data.contactEmail || '',
     requireSkill: data.requireSkill || '', recruitNum: data.recruitNum ?? 20, status: data.status ?? 1,
-    labDesc: data.labDesc || '', basicInfo: data.basicInfo || '', awards: data.awards || ''
+    labDesc: data.labDesc || '', basicInfo: data.basicInfo || '', awards: data.awards || '',
+    logoUrl: data.logoUrl || '', coverImageUrl: data.coverImageUrl || ''
   })
 }
 const loadColleges = async () => {
@@ -487,10 +529,15 @@ const loadLabs = async () => {
   }
 }
 const loadPendingReviews = async () => {
-  if (!isSuperAdmin.value) return
+  if (!isReviewAdmin.value) return
   reviewLoading.value = true
   try {
-    const response = await getPendingLabInfoReviewPage({ pageNum: reviewPagination.pageNum, pageSize: reviewPagination.pageSize, keyword: reviewFilters.keyword || undefined })
+    const response = await getPendingLabInfoReviewPage({
+      pageNum: reviewPagination.pageNum,
+      pageSize: reviewPagination.pageSize,
+      keyword: reviewFilters.keyword || undefined,
+      collegeId: isCollegeManager.value ? userStore.userInfo?.managedCollegeId : undefined
+    })
     pendingReviews.value = response.data.records || []
     reviewPagination.total = response.data.total || 0
   } finally {
@@ -638,7 +685,14 @@ onMounted(async () => {
 .dialog-lab-title { font-size: 16px; font-weight: 600; color: #303133; }
 .dialog-lab-subtitle { margin-top: 8px; color: #606266; }
 .transfer-form { margin-bottom: 0; }
+.lab-cell { display: flex; align-items: center; gap: 12px; }
+.lab-cell__logo { width: 44px; height: 44px; border-radius: 14px; overflow: hidden; background: linear-gradient(135deg, #0f172a, #0f766e); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0; }
+.lab-cell__logo img { width: 100%; height: 100%; object-fit: cover; }
+.lab-cell__copy { display: grid; gap: 4px; }
+.lab-cell__copy strong { color: #0f172a; }
+.lab-cell__copy small { color: #64748b; }
 .two-column-form { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+.media-upload-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin-bottom: 18px; }
 .toolbar-actions.compact { display: flex; flex-wrap: wrap; gap: 10px; }
 .history-block { border-top: 1px solid #ebeef5; padding-top: 16px; }
 .history-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
@@ -647,5 +701,5 @@ onMounted(async () => {
 .detail-card,
 .compare-table { margin-bottom: 16px; }
 :deep(.changed-row) { --el-table-tr-bg-color: #fff7e6; }
-@media (max-width: 768px) { .two-column-form { grid-template-columns: 1fr; } }
+@media (max-width: 768px) { .two-column-form, .media-upload-grid { grid-template-columns: 1fr; } }
 </style>
