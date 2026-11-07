@@ -1,0 +1,629 @@
+/**
+ * 移动端页面基元
+ *
+ * 移动端页面（src/views/mobile）共用一套类名，这里统一收敛到令牌，
+ * 页面内不再重复书写圆角、阴影与色值。
+ *
+ * 所有规则都挂在 .m-shell 下，避免与桌面端页面的通用类名（.card / .row / .title 等）互相污染。
+ */
+
+.m-shell .m-page {
+  display: grid;
+  gap: var(--ll-space-3);
+}
+
+/* ---------- 首屏横幅 ---------- */
+.m-shell .hero {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ll-space-3);
+  padding: var(--ll-space-4);
+  border-radius: var(--ll-radius-lg);
+  background: linear-gradient(135deg, var(--ll-brand-600) 0%, var(--ll-brand-700) 100%);
+  box-shadow: var(--ll-shadow-sm);
+  color: var(--ll-text-inverse);
+}
+
+.m-shell .hero-text {
+  min-width: 0;
+}
+
+.m-shell .hero-eyebrow {
+  font-size: var(--ll-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  opacity: 0.75;
+}
+
+.m-shell .hero-title {
+  margin-top: 4px;
+  font-size: var(--ll-text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.m-shell .hero-sub {
+  margin-top: 6px;
+  font-size: var(--ll-text-sm);
+  line-height: 1.55;
+  opacity: 0.85;
+}
+
+.m-shell .hero-refresh {
+  flex-shrink: 0;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--ll-radius-md);
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--ll-text-inverse);
+}
+
+.m-shell .hero-refresh:active {
+  background: rgba(255, 255, 255, 0.26);
+}
+
+.m-shell .hero-left {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-3);
+  min-width: 0;
+}
+
+/* ---------- 指标网格 ---------- */
+.m-shell .grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ll-space-3);
+}
+
+.m-shell .stat-card {
+  display: grid;
+  gap: 4px;
+  align-content: start;
+  padding: var(--ll-space-4);
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: var(--ll-shadow-xs);
+}
+
+.m-shell .stat-label {
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-secondary);
+}
+
+.m-shell .stat-value {
+  font-size: var(--ll-text-2xl);
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+  color: var(--ll-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------- 功能入口 ---------- */
+.m-shell .quick {
+  display: grid;
+  gap: var(--ll-space-2);
+}
+
+.m-shell .quick-card {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-3);
+  width: 100%;
+  text-align: left;
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: var(--ll-shadow-xs);
+  transition: border-color var(--ll-transition-fast), background-color var(--ll-transition-fast);
+}
+
+.m-shell .quick-card:active {
+  background: var(--ll-bg-muted);
+  border-color: var(--ll-border-default);
+}
+
+.m-shell .quick-icon {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-brand-50);
+  color: var(--ll-brand-600);
+}
+
+.m-shell .quick-icon.apps {
+  background: #f5f3ff;
+  color: #6d28d9;
+}
+
+.m-shell .quick-icon.notices {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.m-shell .quick-icon.labs {
+  background: var(--ll-brand-50);
+  color: var(--ll-brand-600);
+}
+
+.m-shell .quick-body {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.m-shell .quick-body strong {
+  font-size: var(--ll-text-base);
+  font-weight: 600;
+  color: var(--ll-text-primary);
+}
+
+.m-shell .quick-body span {
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+}
+
+.m-shell .quick-arrow {
+  flex-shrink: 0;
+  color: var(--ll-text-disabled);
+}
+
+/* ---------- 面板 ---------- */
+.m-shell .panel {
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: var(--ll-shadow-xs);
+  overflow: hidden;
+}
+
+.m-shell .panel-header {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ll-space-3);
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border-bottom: 1px solid var(--ll-border-subtle);
+  font-weight: 600;
+  color: var(--ll-text-primary);
+}
+
+.m-shell .panel-header h2 {
+  font-size: var(--ll-text-base);
+  font-weight: 600;
+  color: var(--ll-text-primary);
+}
+
+.m-shell .panel-link {
+  border: none;
+  background: transparent;
+  padding: 0;
+  font-size: var(--ll-text-sm);
+  font-weight: 500;
+  color: var(--ll-text-brand);
+}
+
+.m-shell .panel-body {
+  padding: var(--ll-space-4);
+  font-size: var(--ll-text-sm);
+  line-height: 1.7;
+  color: var(--ll-text-secondary);
+}
+
+/* ---------- 公告 ---------- */
+.m-shell .notice-list {
+  display: grid;
+}
+
+.m-shell .notice-item {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-3);
+  width: 100%;
+  text-align: left;
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border: none;
+  border-bottom: 1px solid var(--ll-border-subtle);
+  background: transparent;
+}
+
+.m-shell .notice-item:last-child {
+  border-bottom: none;
+}
+
+.m-shell .notice-item:active {
+  background: var(--ll-bg-muted);
+}
+
+.m-shell .notice-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 3px;
+}
+
+.m-shell .notice-title {
+  font-size: var(--ll-text-base);
+  font-weight: 500;
+  color: var(--ll-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-shell .notice-sub {
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-shell .notice-arrow {
+  flex-shrink: 0;
+  color: var(--ll-text-disabled);
+}
+
+/* ---------- 通用列表卡片 ---------- */
+.m-shell .list {
+  display: grid;
+  gap: var(--ll-space-2);
+}
+
+.m-shell .card {
+  display: grid;
+  gap: var(--ll-space-2);
+  padding: var(--ll-space-4);
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: var(--ll-shadow-xs);
+}
+
+.m-shell .card-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ll-space-3);
+}
+
+.m-shell .title {
+  font-size: var(--ll-text-base);
+  font-weight: 600;
+  color: var(--ll-text-primary);
+}
+
+.m-shell .time {
+  flex-shrink: 0;
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.m-shell .preview {
+  font-size: var(--ll-text-sm);
+  line-height: 1.6;
+  color: var(--ll-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- 属性行 ---------- */
+.m-shell .row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ll-space-3);
+  padding: 10px 0;
+  border-bottom: 1px solid var(--ll-border-subtle);
+}
+
+.m-shell .row:last-child {
+  border-bottom: none;
+}
+
+.m-shell .label {
+  font-size: var(--ll-text-sm);
+  color: var(--ll-text-secondary);
+}
+
+.m-shell .value {
+  font-size: var(--ll-text-sm);
+  font-weight: 500;
+  color: var(--ll-text-primary);
+  text-align: right;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.m-shell .muted {
+  font-size: var(--ll-text-sm);
+  color: var(--ll-text-tertiary);
+}
+
+/* ---------- 操作行 ---------- */
+.m-shell .actions {
+  display: grid;
+  gap: var(--ll-space-2);
+}
+
+.m-shell .action {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-3);
+  width: 100%;
+  text-align: left;
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+}
+
+.m-shell .action:active {
+  background: var(--ll-bg-muted);
+}
+
+.m-shell .action-main {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.m-shell .action-main strong {
+  font-size: var(--ll-text-base);
+  font-weight: 500;
+  color: var(--ll-text-primary);
+}
+
+.m-shell .action-main span {
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+}
+
+.m-shell .action.danger .action-main strong {
+  color: var(--ll-danger);
+}
+
+.m-shell .arrow {
+  flex-shrink: 0;
+  color: var(--ll-text-disabled);
+}
+
+/* ---------- 搜索与工具条 ---------- */
+.m-shell .search,
+.m-shell .toolbar {
+  display: flex;
+  gap: var(--ll-space-2);
+  align-items: center;
+}
+
+/* ---------- 实验室卡片 ---------- */
+.m-shell .lab-card {
+  display: grid;
+  gap: var(--ll-space-2);
+  align-content: start;
+  width: 100%;
+  text-align: left;
+  padding: var(--ll-space-4);
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: var(--ll-shadow-xs);
+}
+
+.m-shell .lab-card:active {
+  background: var(--ll-bg-muted);
+}
+
+.m-shell .lab-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--ll-space-2);
+}
+
+.m-shell .lab-name {
+  font-size: var(--ll-text-lg);
+  font-weight: 600;
+  color: var(--ll-text-primary);
+}
+
+.m-shell .lab-code {
+  flex-shrink: 0;
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.m-shell .lab-desc {
+  font-size: var(--ll-text-sm);
+  line-height: 1.6;
+  color: var(--ll-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.m-shell .lab-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.m-shell .meta-chip {
+  padding: 2px 8px;
+  border-radius: var(--ll-radius-xs);
+  background: var(--ll-gray-100);
+  color: var(--ll-text-secondary);
+  font-size: var(--ll-text-xs);
+}
+
+/* ---------- 加载更多 ---------- */
+.m-shell .load-more {
+  display: block;
+  width: 100%;
+  padding: var(--ll-space-3);
+  border: none;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  color: var(--ll-text-secondary);
+  font-size: var(--ll-text-sm);
+}
+
+.m-shell .load-more:active {
+  background: var(--ll-bg-muted);
+}
+
+.m-shell .no-more {
+  text-align: center;
+  padding: var(--ll-space-3);
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-disabled);
+}
+
+/* ---------- 抽屉 ---------- */
+.m-shell .drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 2100;
+  display: flex;
+  align-items: flex-end;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.m-shell .drawer-body {
+  width: 100%;
+  max-height: 82dvh;
+  overflow-y: auto;
+  background: var(--ll-bg-surface);
+  border-radius: var(--ll-radius-xl) var(--ll-radius-xl) 0 0;
+  padding: var(--ll-space-4) var(--ll-space-4) calc(var(--ll-space-6) + env(safe-area-inset-bottom));
+}
+
+.m-shell .drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ll-space-3);
+  margin-bottom: var(--ll-space-3);
+}
+
+.m-shell .drawer-title {
+  font-size: var(--ll-text-lg);
+  font-weight: 600;
+  color: var(--ll-text-primary);
+}
+
+.m-shell .drawer-close {
+  width: 28px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--ll-radius-sm);
+  background: var(--ll-bg-subtle);
+  color: var(--ll-text-secondary);
+}
+
+.m-shell .drawer-meta {
+  margin-bottom: var(--ll-space-3);
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+}
+
+/* ---------- 详情页补充 ---------- */
+.m-shell .hero-code {
+  font-size: var(--ll-text-xs);
+  opacity: 0.75;
+  font-variant-numeric: tabular-nums;
+}
+
+.m-shell .hero-desc {
+  margin-top: 6px;
+  font-size: var(--ll-text-sm);
+  line-height: 1.55;
+  opacity: 0.88;
+}
+
+.m-shell .hero-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: var(--ll-space-3);
+}
+
+.m-shell .hero-meta .meta-chip {
+  background: rgba(255, 255, 255, 0.18);
+  color: var(--ll-text-inverse);
+}
+
+.m-shell .tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: var(--ll-space-4);
+}
+
+.m-shell .tag {
+  border-radius: var(--ll-radius-xs);
+}
+
+/* ---------- 筛选与分组 ---------- */
+.m-shell .filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ll-space-2);
+}
+
+.m-shell .meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ll-space-3);
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+}
+
+.m-shell .section {
+  display: grid;
+  gap: 4px;
+}
+
+.m-shell .section-label {
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+}
+
+.m-shell .section-value {
+  font-size: var(--ll-text-sm);
+  color: var(--ll-text-primary);
+}
+
+/* ---------- 弹窗操作 ---------- */
+.m-shell .dialog-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--ll-space-2);
+}

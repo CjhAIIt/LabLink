@@ -431,7 +431,7 @@ onMounted(async () => {
 .schedule-title {
   font-size: 15px;
   font-weight: 600;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 @media (max-width: 768px) {

@@ -121,24 +121,58 @@ Element Plus 的 `el-table` 在窄屏下横向溢出，可读性差。平台采�
 
 ```
 src/
-├─ layouts/          布局外壳
-│  ├─ AdminLayout.vue          管理端（侧边栏 + 顶栏）
-│  ├─ StudentLayout.vue        学生端（侧边栏 + 顶栏）
-│  ├─ TeacherLayout.vue        教师端（侧边栏 + 顶栏）
-│  ├─ MobileStudentLayout.vue  移动端学生端（顶栏 + 底部标签栏）
-│  └─ MobileTeacherLayout.vue  移动端教师端（顶栏 + 底部标签栏）
-├─ views/            页面
+├─ layouts/
+│  ├─ AppShell.vue            桌面端共用外壳（侧边栏 + 顶栏 + 内容区）
+│  ├─ AuthLayout.vue          公开页共用外壳（品牌 + 卡片 + 能力说明）
+│  ├─ MobileShell.vue         移动端共用外壳（顶栏 + 底部标签栏）
+│  ├─ AdminLayout.vue         管理端：只提供菜单数据与业务逻辑
+│  ├─ StudentLayout.vue       学生端：同上
+│  ├─ TeacherLayout.vue       教师端：同上
+│  ├─ MobileStudentLayout.vue 移动端学生端：只提供标签栏数据
+│  └─ MobileTeacherLayout.vue 移动端教师端：同上
+├─ views/
 │  ├─ admin/  student/  teacher/   桌面端页面
 │  └─ mobile/                        移动端页面
 │     ├─ Notices.vue  Profile.vue
 │     ├─ student/  Applications.vue Dashboard.vue LabDetail.vue Labs.vue
 │     └─ teacher/  CreateApplies.vue Dashboard.vue
+├─ assets/css/
+│  ├─ tokens.css              设计令牌层
+│  ├─ global.css              桌面端页面基元与 Element Plus 覆盖
+│  └─ mobile.css              移动端页面基元
 ├─ components/       跨页面复用组件
 ├─ api/              按业务域拆分的接口封装
 └─ utils/            请求封装、鉴权、门户角色、文件地址处理
 ```
 
-桌面端三套布局共用同一套结构：左侧 `aside.sidebar` + 右侧 `div.main-shell`（内含 `header.topbar` 与 `div.content`）。新增角色端时复制 `StudentLayout.vue` 并替换菜单项，不要另起结构。
+### 5.1 三个共用外壳
+
+**`AppShell.vue`（桌面端）** —— 管理端 / 学生端 / 教师端共用，通过 props 注入：
+
+| prop | 说明 |
+| --- | --- |
+| `roleLabel` | 顶栏左侧角色标签 |
+| `menuGroups` | 导航分组 `[{ label, items: [{ path, label, icon, children? }] }]` |
+| `userName` / `userMeta` / `userInitial` | 用户信息 |
+
+新增角色端时只需复制一份 Layout 并提供 `menuGroups`，不要再复制外壳样式。
+
+两种折叠状态是分开的，不要混用：
+
+- **桌面端收成图标栏**：`isRail`，宽度 64px，`el-menu` 的 `collapse` 生效
+- **移动端抽屉**：`isDrawerOpen`，侧边栏浮出并配遮罩层
+
+**`AuthLayout.vue`（公开页）** —— 登录 / 注册 / 教师注册共用。props：`title`、`subtitle`、`features`、`width`；
+表单放默认插槽，底部链接放 `footer` 插槽。
+
+**`MobileShell.vue`（移动端）** —— 学生端 / 教师端共用。props：`tabItems`、`userInitial`、`rootPath`；
+标签栏列数由 `tabItems.length` 决定，新增标签无需改样式。
+
+### 5.2 页面骨架约定
+
+桌面端页面根元素用 `.page-shell`，内容区外层由 `AppShell` 提供最大宽度与内边距；
+移动端页面根元素用 `.m-page`，类名集中在 `mobile.css`。
+**移动端页面不要写 `<style scoped>`**，统一在 `mobile.css` 中维护，避免各处样式漂移。
 
 ## 6. 交互约定
 
@@ -217,11 +251,14 @@ const StudentLabs = () => import('@/views/student/Labs.vue')
 
 ## 10. 新增页面检查清单
 
-- [ ] 根元素使用 `.page-shell`，横幅使用 `.page-hero`，内容区使用 `.panel-card`
+- [ ] 根元素使用 `.page-shell`，头部使用 `.page-hero`（工作台首页用 `.page-hero--brand`），内容区使用 `.panel-card`
 - [ ] 表格或筛选表单在 768px 以下可用（卡片列表或横向滚动）
 - [ ] 弹窗宽度使用 `min(420px, 92vw)` 一类的相对值
 - [ ] 监听 `resize` 的组件在 `onBeforeUnmount` 中移除监听
 - [ ] 移动端需要该页面时，同步在 `src/views/mobile/` 下提供对应实现，并在 `src/router/index.js` 注册 `/m/*` 路由
+- [ ] 移动端页面**没有** `<style scoped>`，样式统一写在 `assets/css/mobile.css`
 - [ ] 路由中该页面使用动态 `import()` 声明，未改成静态导入
 - [ ] 新引用的编程式 Element Plus 组件已补充到 `src/assets/css/element-plus-programmatic.js`
+- [ ] 页面样式里没有裸十六进制色值与超过 16px 的圆角，一律用 `var(--ll-*)`
+- [ ] 新增导航项时同步维护 `menuGroups` 的分组标题；新增移动端标签时标签栏列数自动跟随
 - [ ] `npm run build` 与 `npx eslint . --ext .vue,.js` 均无报错

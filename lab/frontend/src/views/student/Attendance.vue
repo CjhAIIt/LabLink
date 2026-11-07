@@ -192,13 +192,13 @@ onMounted(() => {
 
 .summary-item {
   padding: 14px 16px;
-  border-radius: 16px;
+  border-radius: var(--ll-radius-md);
   background: rgba(248, 250, 252, 0.92);
   display: grid;
   gap: 6px;
 }
 
 .summary-item span {
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 </style>

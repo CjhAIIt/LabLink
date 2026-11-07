@@ -159,8 +159,8 @@ onMounted(() => {
 
 .hero-note-card {
   padding: 16px 18px;
-  border-radius: 22px;
-  color: #f0fdfa;
+  border-radius: var(--ll-radius-lg);
+  color: var(--ll-brand-50);
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.22);
   display: grid;
@@ -170,29 +170,39 @@ onMounted(() => {
 .plan-list,
 .notice-list {
   display: grid;
-  gap: 12px;
 }
 
 .plan-item,
 .notice-item {
   display: flex;
   justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(236, 254, 255, 0.9));
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  align-items: flex-start;
+  gap: var(--ll-space-4);
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border-bottom: 1px solid var(--ll-border-subtle);
+  transition: background-color var(--ll-transition-fast);
+}
+
+.plan-item:last-child,
+.notice-item:last-child {
+  border-bottom: none;
+}
+
+.plan-item:hover,
+.notice-item:hover {
+  background: var(--ll-bg-muted);
 }
 
 .plan-item p,
 .notice-item p,
 .notice-item span {
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .inline-link {
-  color: #0f766e;
+  color: var(--ll-brand-600);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
+  white-space: nowrap;
 }
 </style>

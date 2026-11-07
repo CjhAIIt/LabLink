@@ -803,8 +803,8 @@ onMounted(async () => {
 
 .hero-chip {
   padding: 10px 14px;
-  border-radius: 999px;
-  color: #ecfeff;
+  border-radius: var(--ll-radius-full);
+  color: var(--ll-brand-50);
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }
@@ -845,7 +845,7 @@ onMounted(async () => {
 }
 
 .done-text {
-  color: #64748b;
+  color: var(--ll-text-secondary);
   font-size: 13px;
 }
 

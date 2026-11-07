@@ -344,7 +344,7 @@ onMounted(() => {
 
 .section-heading h3 {
   margin: 4px 0 0;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .college-section,
@@ -360,14 +360,14 @@ onMounted(() => {
 
 .college-card {
   border: 1px solid rgba(148, 163, 184, 0.22);
-  border-radius: 24px;
+  border-radius: var(--ll-radius-lg);
   background: linear-gradient(135deg, rgba(248, 250, 252, 0.98), rgba(236, 254, 255, 0.92));
   padding: 20px 22px;
   display: grid;
   gap: 8px;
   text-align: left;
   cursor: pointer;
-  color: #0f172a;
+  color: var(--ll-text-primary);
   transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
 }
 
@@ -379,7 +379,7 @@ onMounted(() => {
 }
 
 .college-card-code {
-  color: #0f766e;
+  color: var(--ll-brand-600);
   font-weight: 700;
 }
 
@@ -390,7 +390,7 @@ onMounted(() => {
 }
 
 .lab-card {
-  border-radius: 24px;
+  border-radius: var(--ll-radius-lg);
 }
 
 .lab-card-head {
@@ -402,16 +402,16 @@ onMounted(() => {
 
 .lab-card-head h3 {
   margin-top: 4px;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .lab-code {
-  color: #0f766e;
+  color: var(--ll-brand-600);
   font-weight: 700;
 }
 
 .lab-desc {
-  color: #475569;
+  color: var(--ll-text-secondary);
   line-height: 1.7;
   min-height: 68px;
 }
@@ -420,7 +420,7 @@ onMounted(() => {
   display: grid;
   gap: 8px;
   margin: 16px 0;
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .plan-chip-group {
@@ -452,7 +452,7 @@ onMounted(() => {
 
   .college-card {
     padding: 18px;
-    border-radius: 20px;
+    border-radius: var(--ll-radius-lg);
   }
 
   .lab-card-head {

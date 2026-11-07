@@ -121,7 +121,7 @@ onMounted(() => {
 
 .notice-card {
   padding: 18px 20px;
-  border-radius: 20px;
+  border-radius: var(--ll-radius-lg);
   background: linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(236, 254, 255, 0.88));
   border: 1px solid rgba(148, 163, 184, 0.18);
 }
@@ -134,12 +134,12 @@ onMounted(() => {
 }
 
 .scope-pill {
-  color: #0f766e;
+  color: var(--ll-brand-600);
   font-weight: 700;
 }
 
 .notice-card-content {
-  color: #475569;
+  color: var(--ll-text-secondary);
   line-height: 1.8;
 }
 
@@ -148,7 +148,7 @@ onMounted(() => {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  color: #64748b;
+  color: var(--ll-text-secondary);
   font-size: 12px;
 }
 

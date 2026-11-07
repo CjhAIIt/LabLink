@@ -608,7 +608,7 @@ a:hover {
     width: 100% !important;
   }
 
-  .panel-header,
+  /* .panel-header 由移动端专属的 mobile.css 控制，不在此处纵向堆叠 */
   .rank-item,
   .rank-item-main {
     flex-direction: column;

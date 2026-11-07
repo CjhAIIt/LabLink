@@ -508,13 +508,13 @@ onMounted(() => {
   font-size: 18px;
   font-weight: bold;
   margin-top: 10px;
-  color: #303133;
+  color: var(--ll-text-primary);
 }
 
 .user-id,
 .user-role {
   font-size: 14px;
-  color: #909399;
+  color: var(--ll-text-tertiary);
 }
 
 .info-section {
@@ -524,7 +524,7 @@ onMounted(() => {
 .info-item {
   display: flex;
   margin-bottom: 15px;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--ll-gray-100);
   padding-bottom: 10px;
 }
 
@@ -536,13 +536,13 @@ onMounted(() => {
 
 .info-label {
   width: 88px;
-  color: #909399;
+  color: var(--ll-text-tertiary);
   font-size: 14px;
 }
 
 .info-value {
   flex: 1;
-  color: #303133;
+  color: var(--ll-text-primary);
   font-size: 14px;
   word-break: break-word;
 }
@@ -571,7 +571,7 @@ onMounted(() => {
 }
 
 .avatar-preview-text {
-  color: #606266;
+  color: var(--ll-text-secondary);
   font-size: 14px;
 }
 

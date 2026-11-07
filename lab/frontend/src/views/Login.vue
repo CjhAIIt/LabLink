@@ -1,171 +1,132 @@
 <template>
-  <div class="auth-page">
-    <div class="auth-shell">
-      <section class="auth-hero">
-        <BrandLogo
-          class="brand"
-          size="lg"
-          title="LabLink"
-          subtitle="高校实验室管理平台"
+  <AuthLayout
+    title="账号登录"
+    subtitle="请输入管理员账号、学生学号或教师工号登录平台"
+    :features="features"
+  >
+    <el-form
+      ref="loginFormRef"
+      :model="loginForm"
+      :rules="loginRules"
+      label-position="top"
+      size="large"
+    >
+      <el-form-item label="账号 / 学号 / 工号" prop="username">
+        <el-input
+          v-model="loginForm.username"
+          :prefix-icon="User"
+          placeholder="请输入账号、学号或工号"
         />
+      </el-form-item>
 
-        <div class="hero-card">
-          <h2>面向高校的实验室管理与协同平台</h2>
-          <p>
-            平台覆盖学校、学院、实验室、教师与学生等多角色场景，支持实验室信息管理、
-            教师注册审批、实验室创建申请、成员申请、公告发布和统计分析。
-          </p>
-          <div class="hero-grid">
-            <div class="hero-item">
-              <span class="hero-label">学生入口</span>
-              <strong>学生注册后可浏览实验室、提交申请并跟踪审核结果</strong>
-            </div>
-            <div class="hero-item">
-              <span class="hero-label">教师入口</span>
-              <strong>教师通过注册审批后可发起实验室创建申请并查看流程状态</strong>
-            </div>
-            <div class="hero-item">
-              <span class="hero-label">管理侧</span>
-              <strong>支持学院初审、学校终审、统一检索与统计分析</strong>
-            </div>
-          </div>
+      <el-form-item label="密码" prop="password">
+        <el-input
+          v-model="loginForm.password"
+          :prefix-icon="Lock"
+          type="password"
+          placeholder="请输入密码"
+          show-password
+          @keyup.enter="handleLogin"
+        />
+      </el-form-item>
+
+      <div class="aux-links">
+        <button class="link-button" type="button" @click="openForgotDialog">忘记密码？</button>
+      </div>
+
+      <el-form-item class="form-actions">
+        <el-button type="primary" :loading="loading" class="submit-button" @click="handleLogin">
+          登录
+        </el-button>
+      </el-form-item>
+
+      <el-form-item>
+        <div class="register-link">
+          <router-link to="/register">学生注册</router-link>
+          <span class="divider">|</span>
+          <router-link to="/teacher-register">教师注册</router-link>
         </div>
+      </el-form-item>
+    </el-form>
+  </AuthLayout>
 
-        <div class="hero-footer">
-          <router-link class="ghost-link" to="/intro">查看平台介绍</router-link>
-        </div>
-      </section>
+  <el-dialog v-model="forgotDialogVisible" title="找回密码" width="min(460px, 92vw)">
+    <p class="dialog-tip">请输入账号和注册邮箱，校验通过后即可重置密码。</p>
 
-      <section class="auth-panel">
-        <el-card class="auth-card" shadow="never">
-          <template #header>
-            <div class="card-header">
-              <div>
-                <h2>账号登录</h2>
-                <p>请输入管理员账号、学生学号或教师工号登录平台</p>
-              </div>
-            </div>
-          </template>
+    <el-form
+      ref="forgotFormRef"
+      :model="forgotForm"
+      :rules="forgotRules"
+      label-position="top"
+    >
+      <el-form-item label="账号" prop="username">
+        <el-input
+          v-model="forgotForm.username"
+          :prefix-icon="User"
+          placeholder="请输入账号、学号或工号"
+        />
+      </el-form-item>
 
-          <el-form
-            ref="loginFormRef"
-            :model="loginForm"
-            :rules="loginRules"
-            label-position="top"
-            size="large"
+      <el-form-item label="注册邮箱" prop="email">
+        <el-input
+          v-model="forgotForm.email"
+          :prefix-icon="Message"
+          placeholder="请输入注册时使用的邮箱"
+        />
+      </el-form-item>
+
+      <el-form-item label="邮箱验证码" prop="code">
+        <div class="code-row">
+          <el-input
+            v-model="forgotForm.code"
+            maxlength="6"
+            placeholder="请输入 6 位验证码"
+            @input="sanitizeResetCode"
+          />
+          <el-button
+            type="primary"
+            plain
+            :loading="resetCodeLoading"
+            :disabled="resetCodeCountdown > 0"
+            @click="sendResetCode"
           >
-            <el-form-item label="账号 / 学号 / 工号" prop="username">
-              <el-input
-                v-model="loginForm.username"
-                :prefix-icon="User"
-                placeholder="请输入账号、学号或工号"
-              />
-            </el-form-item>
-
-            <el-form-item label="密码" prop="password">
-              <el-input
-                v-model="loginForm.password"
-                :prefix-icon="Lock"
-                type="password"
-                placeholder="请输入密码"
-                show-password
-                @keyup.enter="handleLogin"
-              />
-            </el-form-item>
-
-            <div class="aux-links">
-              <button class="link-button" type="button" @click="openForgotDialog">忘记密码？</button>
-            </div>
-
-            <el-form-item class="form-actions">
-              <el-button type="primary" :loading="loading" style="width: 100%" @click="handleLogin">
-                登录
-              </el-button>
-            </el-form-item>
-
-            <el-form-item>
-              <div class="register-link">
-                <router-link to="/register">学生注册</router-link>
-                <span class="divider">|</span>
-                <router-link to="/teacher-register">教师注册</router-link>
-              </div>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </section>
-    </div>
-
-    <el-dialog v-model="forgotDialogVisible" title="找回密码" width="460px">
-      <p class="dialog-tip">请输入账号和注册邮箱，校验通过后即可重置密码。</p>
-
-      <el-form
-        ref="forgotFormRef"
-        :model="forgotForm"
-        :rules="forgotRules"
-        label-position="top"
-        size="default"
-      >
-        <el-form-item label="账号 / 学号 / 工号" prop="username">
-          <el-input v-model="forgotForm.username" :prefix-icon="User" placeholder="请输入账号" />
-        </el-form-item>
-
-        <el-form-item label="邮箱" prop="email">
-          <el-input v-model="forgotForm.email" :prefix-icon="Message" placeholder="请输入注册邮箱" />
-        </el-form-item>
-
-        <el-form-item label="邮箱验证码" prop="code">
-          <div class="code-row">
-            <el-input
-              v-model="forgotForm.code"
-              maxlength="6"
-              placeholder="请输入 6 位验证码"
-              @input="sanitizeResetCode"
-            />
-            <el-button
-              type="primary"
-              plain
-              :loading="resetCodeLoading"
-              :disabled="resetCodeCountdown > 0"
-              @click="sendResetCode"
-            >
-              {{ resetCodeCountdown > 0 ? `${resetCodeCountdown}s 后重发` : '发送验证码' }}
-            </el-button>
-          </div>
-        </el-form-item>
-
-        <el-form-item label="新密码" prop="newPassword">
-          <el-input
-            v-model="forgotForm.newPassword"
-            :prefix-icon="Lock"
-            type="password"
-            placeholder="请输入新密码"
-            show-password
-            @keyup.enter="handleResetPassword"
-          />
-        </el-form-item>
-
-        <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input
-            v-model="forgotForm.confirmPassword"
-            :prefix-icon="Lock"
-            type="password"
-            placeholder="请再次输入新密码"
-            show-password
-            @keyup.enter="handleResetPassword"
-          />
-        </el-form-item>
-      </el-form>
-
-      <template #footer>
-        <div class="dialog-actions">
-          <el-button @click="forgotDialogVisible = false">取消</el-button>
-          <el-button type="primary" :loading="resetLoading" @click="handleResetPassword">
-            重置密码
+            {{ resetCodeCountdown > 0 ? `${resetCodeCountdown}s 后重发` : '发送验证码' }}
           </el-button>
         </div>
-      </template>
-    </el-dialog>
-  </div>
+      </el-form-item>
+
+      <el-form-item label="新密码" prop="newPassword">
+        <el-input
+          v-model="forgotForm.newPassword"
+          :prefix-icon="Lock"
+          type="password"
+          placeholder="请输入新密码"
+          show-password
+          @keyup.enter="handleResetPassword"
+        />
+      </el-form-item>
+
+      <el-form-item label="确认新密码" prop="confirmPassword">
+        <el-input
+          v-model="forgotForm.confirmPassword"
+          :prefix-icon="Lock"
+          type="password"
+          placeholder="请再次输入新密码"
+          show-password
+          @keyup.enter="handleResetPassword"
+        />
+      </el-form-item>
+    </el-form>
+
+    <template #footer>
+      <div class="dialog-actions">
+        <el-button @click="forgotDialogVisible = false">取消</el-button>
+        <el-button type="primary" :loading="resetLoading" @click="handleResetPassword">
+          重置密码
+        </el-button>
+      </div>
+    </template>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -179,7 +140,7 @@ import {
   resetPassword,
   sendPasswordResetCode
 } from '@/api/auth'
-import BrandLogo from '@/components/BrandLogo.vue'
+import AuthLayout from '@/layouts/AuthLayout.vue'
 import { useUserStore } from '@/stores/user'
 import { resolvePortalHome } from '@/utils/portal'
 
@@ -187,6 +148,12 @@ const router = useRouter()
 const userStore = useUserStore()
 const loading = ref(false)
 const loginFormRef = ref()
+
+const features = [
+  { label: '学生入口', text: '注册后可浏览实验室、提交入组申请并跟踪审核结果' },
+  { label: '教师入口', text: '通过注册审批后可发起实验室创建申请并查看流程状态' },
+  { label: '管理侧', text: '支持学院初审、学校终审、统一检索与统计分析' }
+]
 
 const forgotDialogVisible = ref(false)
 const forgotFormRef = ref()
@@ -392,206 +359,72 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.auth-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 32px 16px;
-  background: radial-gradient(circle at top left, #e8f0ff 0%, #f6f7fb 45%, #f7f0ff 100%);
-}
-
-.auth-shell {
-  width: min(1120px, 100%);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 28px;
-  align-items: start;
-}
-
-.auth-hero {
-  position: sticky;
-  top: 32px;
-  padding: 32px;
-  border-radius: 24px;
-  color: #0f1b36;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(243, 247, 255, 0.9));
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
-  overflow: hidden;
-}
-
-.auth-hero::before {
-  content: '';
-  position: absolute;
-  width: 220px;
-  height: 220px;
-  right: -80px;
-  top: -80px;
-  background: radial-gradient(circle, rgba(59, 130, 246, 0.25), transparent 70%);
-}
-
-.brand {
-  margin-bottom: 24px;
-}
-
-.hero-card {
-  background: rgba(255, 255, 255, 0.7);
-  border-radius: 18px;
-  padding: 22px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-}
-
-.hero-card h2 {
-  margin: 0 0 8px;
-  font-size: 20px;
-}
-
-.hero-card p {
-  margin: 0 0 16px;
-  color: #475569;
-  line-height: 1.6;
-}
-
-.hero-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.hero-item {
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-}
-
-.hero-label {
-  display: block;
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.hero-footer {
-  margin-top: 18px;
-}
-
-.ghost-link {
-  color: #1d4ed8;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.ghost-link:hover {
-  text-decoration: underline;
-}
-
-.auth-panel {
-  display: flex;
-  align-items: flex-start;
-}
-
-.auth-card {
-  width: 100%;
-  border-radius: 20px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-}
-
-.card-header h2 {
-  margin: 0 0 6px;
-  color: #0f172a;
-}
-
-.card-header p {
-  margin: 0;
-  color: #64748b;
-  font-size: 14px;
-}
-
 .aux-links {
   display: flex;
   justify-content: flex-end;
-  margin-top: -6px;
-  margin-bottom: 12px;
+  margin: calc(var(--ll-space-2) * -1) 0 var(--ll-space-4);
 }
 
 .link-button {
-  border: 0;
+  border: none;
   background: transparent;
   padding: 0;
-  color: #1d4ed8;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+  font-size: var(--ll-text-sm);
+  color: var(--ll-text-secondary);
+  transition: color var(--ll-transition-fast);
 }
 
 .link-button:hover {
-  text-decoration: underline;
+  color: var(--ll-text-brand);
 }
 
 .form-actions {
-  margin-top: 6px;
+  margin-bottom: var(--ll-space-2);
+}
+
+.submit-button {
+  width: 100%;
+  height: 38px;
+  font-size: var(--ll-text-base);
+  font-weight: 500;
 }
 
 .register-link {
-  text-align: center;
-  font-size: 14px;
-  color: #64748b;
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 12px;
+  align-items: center;
+  gap: var(--ll-space-2);
+  font-size: var(--ll-text-sm);
 }
 
-.register-link a {
-  color: #1d4ed8;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.register-link a:hover {
-  text-decoration: underline;
-}
-
-.divider {
-  color: #cbd5e1;
-}
-
-.dialog-tip {
-  margin: 0 0 16px;
-  color: #64748b;
-  line-height: 1.6;
+.register-link .divider {
+  color: var(--ll-border-default);
 }
 
 .code-row {
+  display: flex;
+  gap: var(--ll-space-2);
   width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+}
+
+.code-row .el-input {
+  flex: 1;
+}
+
+.code-row .el-button {
+  flex-shrink: 0;
+}
+
+.dialog-tip {
+  margin-bottom: var(--ll-space-4);
+  font-size: var(--ll-text-sm);
+  line-height: 1.6;
+  color: var(--ll-text-secondary);
 }
 
 .dialog-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 12px;
-}
-
-@media (max-width: 768px) {
-  .auth-hero {
-    padding: 24px;
-  }
-
-  .auth-panel {
-    padding-bottom: 12px;
-  }
-
-  .code-row {
-    grid-template-columns: 1fr;
-  }
-
-  .register-link {
-    flex-direction: column;
-    gap: 6px;
-  }
+  gap: var(--ll-space-2);
 }
 </style>

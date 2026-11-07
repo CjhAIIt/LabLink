@@ -177,9 +177,9 @@ onBeforeUnmount(() => {
   display: grid;
   gap: 14px;
   padding: 16px;
-  border-radius: 20px;
+  border-radius: var(--ll-radius-lg);
   border: 1px solid rgba(148, 163, 184, 0.18);
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  background: linear-gradient(180deg, var(--ll-bg-surface), var(--ll-bg-surface));
 }
 
 .apply-mobile-head {
@@ -195,14 +195,14 @@ onBeforeUnmount(() => {
 }
 
 .apply-mobile-title-group strong {
-  color: #0f172a;
+  color: var(--ll-text-primary);
   font-size: 16px;
 }
 
 .apply-mobile-title-group span,
 .apply-mobile-meta,
 .apply-mobile-section p {
-  color: #475569;
+  color: var(--ll-text-secondary);
   line-height: 1.7;
 }
 
@@ -216,7 +216,7 @@ onBeforeUnmount(() => {
 }
 
 .apply-mobile-section label {
-  color: #0f766e;
+  color: var(--ll-brand-600);
   font-size: 12px;
   font-weight: 700;
 }

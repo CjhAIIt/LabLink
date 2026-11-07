@@ -319,8 +319,8 @@ onMounted(async () => {
 
 .hero-chip {
   padding: 10px 14px;
-  border-radius: 999px;
-  color: #f8fafc;
+  border-radius: var(--ll-radius-full);
+  color: var(--ll-bg-muted);
   background: rgba(255, 255, 255, 0.16);
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
@@ -355,14 +355,14 @@ onMounted(async () => {
   display: grid;
   gap: 6px;
   padding: 14px 16px;
-  border-radius: 18px;
+  border-radius: var(--ll-radius-lg);
   background: linear-gradient(135deg, rgba(248, 250, 252, 0.92), rgba(240, 249, 255, 0.92));
   border: 1px solid rgba(148, 163, 184, 0.18);
 }
 
 .result-item p {
   margin: 0;
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 @media (max-width: 900px) {

@@ -168,6 +168,10 @@ docker compose --env-file .env.cloud -f docker-compose.cloud.yml up -d --build
 - 平台介绍页、实验室详情页在窗口重新可见时自动刷新数据
 - 管理端综合检索新增学院、公告范围、显示条数筛选
 - 路由改为按需加载，Element Plus 改为按需引入并统一中文语言包
+- 抽取 AppShell / AuthLayout / MobileShell 三个共用外壳，三端桌面布局与公开页不再各写一份
+- 侧边栏支持收成 64px 图标栏，移动端为抽屉，两种折叠状态相互独立
+- 登录 / 注册 / 教师注册改为居中单栏卡片，平台介绍页改为导航 + 首屏 + 特性网格
+- 移动端页面样式统一收敛到 assets/css/mobile.css，指标网格改为两列
 
 详细说明见 [FRONTEND-UI-GUIDE.md](/C:/Users/cjh/Documents/LabLink/lab/docs/FRONTEND-UI-GUIDE.md) 与 [MOBILE-ADAPTATION.md](/C:/Users/cjh/Documents/LabLink/lab/docs/MOBILE-ADAPTATION.md)。
 
