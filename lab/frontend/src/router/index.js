@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken, getUserInfo } from '@/utils/auth'
 import { isMobilePortal, resolvePortalHome, resolvePortalRole } from '@/utils/portal'
+import { createHasRoute, resolvePortalTarget } from '@/router/routeResolution'
 
 // 页面组件全部按路由懒加载，首屏只下载实际访问的模块。
 const AdminLayout = () => import('@/layouts/AdminLayout.vue')
@@ -181,20 +182,7 @@ const resolveCurrentPortalRole = () => {
   return resolvePortalRole(getUserInfo())
 }
 
-const CATCH_ALL_ROUTE_PATH = '/:pathMatch(.*)*'
-
-const hasRoute = (path) => {
-  const resolved = router.resolve({ path })
-  return resolved.matched.length > 0 && !resolved.matched.some((record) => record.path === CATCH_ALL_ROUTE_PATH)
-}
-
-const resolveCounterpartPath = (path, fromPrefix, toPrefix) => {
-  if (!path.startsWith(fromPrefix)) {
-    return null
-  }
-  const candidate = path.replace(fromPrefix, toPrefix)
-  return hasRoute(candidate) ? candidate : null
-}
+const hasRoute = createHasRoute((path) => router.resolve({ path }).matched)
 
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title ? `${to.meta.title} - ${PLATFORM_TITLE}` : PLATFORM_TITLE
@@ -203,28 +191,10 @@ router.beforeEach((to, from, next) => {
   const portalRole = resolveCurrentPortalRole()
   const shouldUseMobile = isMobilePortal()
 
-  if (shouldUseMobile) {
-    const studentTarget = resolveCounterpartPath(to.path, '/student', '/m/student')
-    if (studentTarget) {
-      next({ path: studentTarget, query: to.query, hash: to.hash })
-      return
-    }
-    const teacherTarget = resolveCounterpartPath(to.path, '/teacher', '/m/teacher')
-    if (teacherTarget) {
-      next({ path: teacherTarget, query: to.query, hash: to.hash })
-      return
-    }
-  } else {
-    const studentTarget = resolveCounterpartPath(to.path, '/m/student', '/student')
-    if (studentTarget) {
-      next({ path: studentTarget, query: to.query, hash: to.hash })
-      return
-    }
-    const teacherTarget = resolveCounterpartPath(to.path, '/m/teacher', '/teacher')
-    if (teacherTarget) {
-      next({ path: teacherTarget, query: to.query, hash: to.hash })
-      return
-    }
+  const portalTarget = resolvePortalTarget(to.path, { isMobile: shouldUseMobile, hasRoute })
+  if (portalTarget) {
+    next({ path: portalTarget, query: to.query, hash: to.hash })
+    return
   }
 
   if (token && ['/', '/login', '/register', '/teacher-register', '/intro'].includes(to.path)) {

@@ -49,6 +49,9 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
+      - name: 单元测试
+        run: npm run test
+
       - name: ESLint 检查
         run: npx eslint . --ext .vue,.js,.jsx,.cjs,.mjs --ignore-path .gitignore
 

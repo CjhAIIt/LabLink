@@ -181,6 +181,8 @@ docker compose --env-file .env.cloud -f docker-compose.cloud.yml up -d --build
 - 新增 GitHub Actions：后端构建测试打包、前端 ESLint 与构建
 - 根目录补充 `.gitignore`，运行期日志、上传文件与构建产物不再入库
 - 移除冗余的 vuex 依赖与未被路由引用的旧版布局组件
+- 引入 Vitest 前端测试体系，路由互斥解析、门户角色、请求拦截器、主题切换共 33 项用例并接入 CI
+- 修复会话失效后停留在工作台且数据为空的问题：401 时先清空本地会话再跳登录页
 
 ## 当前仍需继续推进的需求
 
