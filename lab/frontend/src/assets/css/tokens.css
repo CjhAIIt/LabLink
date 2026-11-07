@@ -73,6 +73,10 @@
   --ll-info: #0284c7;
   --ll-info-bg: #f0f9ff;
 
+  /* ---------- 图表辅助色 ---------- */
+  --ll-accent: #8b5cf6;
+  --ll-accent-soft: #d946ef;
+
   /* ---------- 代码编辑区 ---------- */
   --ll-code-bg: #0f172a;
   --ll-code-fg: #d1fae5;
@@ -196,6 +200,10 @@
   --ll-danger-bg: rgba(239, 68, 68, 0.14);
   --ll-info: #38bdf8;
   --ll-info-bg: rgba(56, 189, 248, 0.14);
+
+  /* ---------- 图表辅助色 ---------- */
+  --ll-accent: #a78bfa;
+  --ll-accent-soft: #e879f9;
 
   /* ---------- 代码编辑区 ---------- */
   --ll-code-bg: #0b0d11;

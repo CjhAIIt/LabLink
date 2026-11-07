@@ -1,6 +1,6 @@
 <template>
   <div class="page-shell stats-page">
-    <section class="page-hero stats-hero">
+    <section class="page-hero page-hero--brand stats-hero">
       <div class="hero-content">
         <div class="hero-text">
           <p class="eyebrow">数据洞察</p>
@@ -222,7 +222,7 @@ watch(activeTab, (newTab) => {
   })
 })
 
-const vizColors = ['var(--ll-brand-400)', 'var(--ll-success)', 'var(--ll-warning)', 'var(--ll-danger)', '#8b5cf6']
+const vizColors = ['var(--ll-brand-400)', 'var(--ll-success)', 'var(--ll-warning)', 'var(--ll-danger)', 'var(--ll-accent)']
 
 const scopeType = computed(() => {
   if (overview.value.scopeType) return overview.value.scopeType
@@ -327,7 +327,7 @@ const getMainPercentage = (data) => {
 
 const getBarColor = (item, key) => {
   if (key === 'recruitConversionRanking') return 'linear-gradient(90deg, var(--ll-brand-500), var(--ll-brand-400))'
-  if (key === 'activityRanking') return 'linear-gradient(90deg, #8b5cf6, #d946ef)'
+  if (key === 'activityRanking') return 'linear-gradient(90deg, var(--ll-accent), var(--ll-accent-soft))'
   return 'linear-gradient(90deg, var(--ll-brand-600), var(--ll-success))'
 }
 
@@ -376,11 +376,7 @@ onMounted(() => {
 }
 
 .stats-hero {
-  background: linear-gradient(135deg, var(--ll-text-primary) 0%, var(--ll-info) 100%);
-  color: white;
-  padding: 40px 60px;
-  margin: 0 0 24px 0;
-  border-radius: var(--ll-radius-lg);
+  padding: var(--ll-space-6) var(--ll-space-8);
 }
 
 .hero-content {

@@ -269,7 +269,30 @@ const StudentLabs = () => import('@/views/student/Labs.vue')
 
 这些页面不会进入打包产物：Vite 只打包被引用的模块，未在路由中注册即不会生成对应 chunk。但它们会占用代码评审与维护精力，启用模块开关时应同步补齐路由。
 
-## 10. 新增页面检查清单
+## 10. 前端测试
+
+前端使用 Vitest（jsdom 环境），测试文件放在被测模块同级，命名为 `*.test.js`。
+
+```bash
+npm run test          # 跑一次
+npm run test:watch    # 监听模式
+```
+
+配置文件是 `vitest.config.mjs`（独立于 `vite.config.mjs`，避免测试环境加载按需引入插件）。
+
+当前覆盖：
+
+| 文件 | 覆盖内容 |
+| --- | --- |
+| `src/router/routeResolution.test.js` | 桌面端与移动端路由互斥解析，含「没有对端实现时不得改写路径」这条规则 |
+| `src/utils/portal.test.js` | 门户角色判定与落地页选择 |
+| `src/utils/request.test.js` | 响应拦截器，重点是会话失效时清空会话并跳登录页 |
+| `src/composables/useTheme.test.js` | 主题持久化、切换与系统偏好兜底 |
+
+新增业务逻辑时优先把纯逻辑抽成独立模块再写单测（`routeResolution.js` 就是这么做的），
+这样不必为了测试而加载整个应用。
+
+## 11. 新增页面检查清单
 
 - [ ] 根元素使用 `.page-shell`，头部使用 `.page-hero`（工作台首页用 `.page-hero--brand`），内容区使用 `.panel-card`
 - [ ] 表格或筛选表单在 768px 以下可用（卡片列表或横向滚动）

@@ -1,7 +1,33 @@
 import axios from 'axios'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { getToken } from './auth'
+import { getToken, clearAuth } from './auth'
 import router from '@/router'
+import { useUserStore } from '@/stores/user'
+
+/** 是否已经就「登录状态失效」提示过，避免并发请求反复弹窗。 */
+let sessionExpiredNotified = false
+
+/**
+ * 清空本地会话。
+ *
+ * 令牌过期后必须把 token 一起清掉，否则路由守卫会认为用户仍然登录，
+ * 把跳转到登录页的请求又弹回工作台，用户卡在「有身份但没有数据」的状态里。
+ */
+const clearSession = () => {
+  try {
+    useUserStore().clearUserInfo()
+  } catch (error) {
+    clearAuth()
+  }
+}
+
+/** 会话失效后跳登录页，已在登录页时不重复跳转。 */
+const redirectToLogin = () => {
+  clearSession()
+  if (router.currentRoute.value.path !== '/login') {
+    router.push('/login')
+  }
+}
 
 const request = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || '',
@@ -27,18 +53,24 @@ request.interceptors.response.use(
       ElMessage.error(res.message || '请求失败')
 
       if (res.code === 401) {
-        ElMessageBox.confirm('当前登录状态已失效，请重新登录', '系统提示', {
-          confirmButtonText: '重新登录',
-          cancelButtonText: '取消',
-          type: 'warning'
-        }).then(() => {
-          router.push('/login')
-        })
+        clearSession()
+        if (!sessionExpiredNotified) {
+          sessionExpiredNotified = true
+          ElMessageBox.confirm('当前登录状态已失效，请重新登录', '系统提示', {
+            confirmButtonText: '重新登录',
+            cancelButtonText: '取消',
+            type: 'warning'
+          }).then(() => {
+            redirectToLogin()
+          })
+        }
       }
 
       return Promise.reject(new Error(res.message || '请求失败'))
     }
 
+    // 请求恢复正常，解除「登录状态失效」的一次性提示限制
+    sessionExpiredNotified = false
     return res
   },
   (error) => {
@@ -51,7 +83,7 @@ request.interceptors.response.use(
           break
         case 401:
           message = '未授权，请重新登录'
-          router.push('/login')
+          redirectToLogin()
           break
         case 403:
           message = '拒绝访问'
