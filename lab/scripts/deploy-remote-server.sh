@@ -12,6 +12,26 @@ DB_PASS=__DB_PASS__
 JWT_SECRET_VALUE=__JWT_SECRET__
 MAIL_USERNAME_VALUE=__MAIL_USERNAME__
 MAIL_PASSWORD_VALUE=__MAIL_PASSWORD__
+# 允许访问后端 API 的前端来源，多个用英文逗号分隔。不要填 * ，生产环境必须收敛为具体域名。
+ALLOWED_ORIGINS_CSV=__ALLOWED_ORIGINS_CSV__
+SERVER_PUBLIC_HOST=101.35.79.76
+
+echo '[0/8] validate placeholders'
+for placeholder in DB_PASS JWT_SECRET_VALUE ALLOWED_ORIGINS_CSV; do
+  value="${!placeholder}"
+  if [[ -z "$value" || "$value" == __*__ ]]; then
+    echo "ERROR: placeholder $placeholder is not substituted"
+    exit 1
+  fi
+done
+if [[ ${#JWT_SECRET_VALUE} -lt 32 ]]; then
+  echo "ERROR: JWT secret is shorter than 32 characters"
+  exit 1
+fi
+if [[ "$ALLOWED_ORIGINS_CSV" == *"*"* ]]; then
+  echo "ERROR: ALLOWED_ORIGINS_CSV must not contain a wildcard"
+  exit 1
+fi
 
 echo '[1/8] prepare directories'
 mkdir -p "$APP_ROOT" "$WEB_ROOT" "$DATA_ROOT/uploads" "$DATA_ROOT/judge-work" "$DATA_ROOT/logs"
@@ -22,6 +42,8 @@ unzip -oq "$UPLOAD_ZIP" -d "$APP_DIR"
 echo '[2/8] write backend env'
 cat > "$APP_ROOT/backend.env" <<ENVEOF
 SERVER_PORT=8081
+# 容器使用 host 网络，只监听回环地址，避免 8081 直接暴露在公网，统一由 nginx 出网。
+SERVER_ADDRESS=127.0.0.1
 DB_URL=jdbc:mysql://127.0.0.1:3306/lab_recruitment?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true
 DB_USERNAME=$DB_USER
 DB_PASSWORD=$DB_PASS
@@ -35,7 +57,11 @@ JUDGE_CPP_COMPILER_COMMAND=g++
 JUDGE_JAVA_COMPILER_COMMAND=javac
 JUDGE_JAVA_COMMAND=java
 JUDGE_WORK_DIR=/app/judge-work
-APP_SECURITY_ALLOWED_ORIGINS_CSV=http://101.35.79.76
+APP_SECURITY_ALLOWED_ORIGINS_CSV=$ALLOWED_ORIGINS_CSV
+# 打开后启动时会强制校验密钥与来源白名单，不满足直接拒绝启动。
+APP_SECURITY_ENVIRONMENT=production
+# 在线判题默认关闭：执行用户提交的代码需要额外的隔离方案。
+APP_JUDGE_ENABLED=false
 ENVEOF
 chmod 600 "$APP_ROOT/backend.env"
 
@@ -104,6 +130,12 @@ server {
     index index.html;
     client_max_body_size 20m;
 
+    # 基础安全响应头。启用 TLS 后建议再加 Strict-Transport-Security。
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), microphone=(), camera=()" always;
+
     location / {
         try_files $uri $uri/ /index.html;
     }
@@ -149,5 +181,16 @@ echo '[8/8] verify backend and frontend'
 curl -i -sS 'http://127.0.0.1:8081/labs/list?pageNum=1&pageSize=1' | head -n 20
 curl -i -sS 'http://127.0.0.1/api/labs/list?pageNum=1&pageSize=1' | head -n 20
 curl -i -sS 'http://127.0.0.1/' | head -n 20
+
+echo '[8/8] check listening ports'
+for port in 8081 3306; do
+  if command -v ss >/dev/null 2>&1; then
+    listeners=$(ss -ltn "( sport = :$port )" | tail -n +2 | awk '{print $4}')
+    if echo "$listeners" | grep -qE '^(0\.0\.0\.0|\*|\[::\])'; then
+      echo "WARN: port $port is listening on all interfaces: $listeners"
+      echo "      bind it to 127.0.0.1 to keep it off the public network"
+    fi
+  fi
+done
 
 echo 'DEPLOY_FIXED_OK'
