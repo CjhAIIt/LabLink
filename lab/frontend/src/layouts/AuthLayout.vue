@@ -83,7 +83,7 @@ defineProps({
   background: var(--ll-bg-surface);
   border: 1px solid var(--ll-border-subtle);
   border-radius: var(--ll-radius-xl);
-  box-shadow: var(--ll-shadow-md);
+  box-shadow: var(--ll-shadow-sm);
   padding: var(--ll-space-8);
 }
 

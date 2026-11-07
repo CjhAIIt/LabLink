@@ -88,12 +88,12 @@ onMounted(async () => {
 <style scoped>
 /* ================== 1. 变量定义 (适配 Light Theme) ================== */
 .lab-students-page {
-  --bg: #f8fafc;
-  --panel: #ffffff;
-  --line: #e2e8f0;
-  --text: #1e293b;
-  --muted: #64748b;
-  --brand: #0ea5e9;
+  --bg: var(--ll-bg-muted);
+  --panel: var(--ll-bg-surface);
+  --line: var(--ll-border-subtle);
+  --text: var(--ll-text-primary);
+  --muted: var(--ll-text-secondary);
+  --brand: var(--ll-brand-400);
   --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
   --radius: 20px;
   --max: 1280px;
@@ -107,7 +107,7 @@ onMounted(async () => {
 /* ================== 2. 背景与组件 ================== */
 .bg-grid {
   position: fixed; inset: 0; pointer-events: none; opacity: 0.6; z-index: 0;
-  background-image: linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
+  background-image: linear-gradient(var(--ll-border-subtle) 1px, transparent 1px), linear-gradient(90deg, var(--ll-border-subtle) 1px, transparent 1px);
   background-size: 40px 40px;
   mask-image: linear-gradient(to bottom, rgba(0,0,0,1), rgba(0,0,0,0));
 }
@@ -132,7 +132,7 @@ onMounted(async () => {
 .hero-tag {
   display: inline-block;
   padding: 6px 16px;
-  border-radius: 999px;
+  border-radius: var(--ll-radius-full);
   background: rgba(14, 165, 233, 0.1);
   color: var(--brand);
   font-weight: 600;
@@ -143,7 +143,7 @@ onMounted(async () => {
   font-size: 48px;
   font-weight: 800;
   margin: 0 0 16px;
-  color: #1e293b;
+  color: var(--ll-text-primary);
   letter-spacing: -1px;
 }
 
@@ -152,14 +152,14 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 12px 24px;
-  border-radius: 999px;
+  border-radius: var(--ll-radius-full);
   text-decoration: none;
   font-weight: 600;
   transition: all 0.3s ease;
   border: 1px solid var(--line);
   color: var(--text);
   background: white;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+  box-shadow: var(--ll-shadow-xs);
 }
 .ghost-btn:hover {
   border-color: var(--brand);
@@ -192,7 +192,7 @@ onMounted(async () => {
 
 .student-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 20px 40px -10px rgba(14, 165, 233, 0.15);
+  box-shadow: var(--ll-shadow-sm);
   border-color: var(--brand);
 }
 
@@ -207,11 +207,11 @@ onMounted(async () => {
 
 .student-avatar {
   background-color: var(--brand);
-  color: #fff;
+  color: var(--ll-bg-surface);
   font-size: 32px;
   flex-shrink: 0;
   border: 4px solid white;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  box-shadow: var(--ll-shadow-sm);
 }
 
 .student-info h2 {
@@ -234,13 +234,13 @@ onMounted(async () => {
   padding: 8px 16px;
   background: rgba(14, 165, 233, 0.1);
   color: var(--brand);
-  border-radius: 8px;
+  border-radius: var(--ll-radius-sm);
   font-weight: 600;
   font-size: 14px;
 }
 
 .text-content {
-  color: #334155;
+  color: var(--ll-text-secondary);
   line-height: 1.8;
   white-space: pre-wrap;
   font-size: 16px;

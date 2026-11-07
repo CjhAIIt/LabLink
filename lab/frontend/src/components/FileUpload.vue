@@ -304,15 +304,15 @@ defineExpose({
 }
 
 .drag-area {
-  border: 2px dashed #d9d9d9;
-  border-radius: 6px;
+  border: 2px dashed var(--ll-border-default);
+  border-radius: var(--ll-radius-sm);
   width: 100%;
   height: 180px;
   display: flex;
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  background: #fafafa;
+  background: var(--ll-bg-muted);
 }
 
 .preview-frame {

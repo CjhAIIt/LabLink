@@ -46,6 +46,20 @@ button:disabled {
   cursor: not-allowed;
 }
 
+/* 键盘可达：所有可聚焦元素在键盘导航下给出清晰轮廓 */
+:focus-visible {
+  outline: 2px solid var(--ll-brand-500);
+  outline-offset: 2px;
+  border-radius: var(--ll-radius-xs);
+}
+
+.el-button:focus-visible,
+.el-input__wrapper:focus-visible,
+.el-select__wrapper:focus-visible {
+  outline: 2px solid var(--ll-brand-500);
+  outline-offset: 1px;
+}
+
 a {
   color: var(--ll-text-brand);
   text-decoration: none;
@@ -259,8 +273,8 @@ a:hover {
   justify-content: space-between;
   gap: var(--ll-space-6);
   align-items: flex-start;
-  padding: var(--ll-space-5) var(--ll-space-6);
-  border-radius: var(--ll-radius-lg);
+  padding: var(--ll-space-6) var(--ll-space-8);
+  border-radius: var(--ll-radius-md);
   background: var(--ll-bg-surface);
   border: 1px solid var(--ll-border-subtle);
   box-shadow: var(--ll-shadow-xs);
@@ -294,8 +308,8 @@ a:hover {
 .page-hero--brand {
   color: var(--ll-text-inverse);
   border-color: transparent;
-  background: linear-gradient(135deg, #4f46e5 0%, #4338ca 58%, #3730a3 100%);
-  box-shadow: var(--ll-shadow-md);
+  background: linear-gradient(110deg, var(--ll-brand-700), var(--ll-brand-600));
+  box-shadow: none;
 }
 
 .page-hero--brand h1,
@@ -324,17 +338,17 @@ a:hover {
   gap: var(--ll-space-2);
   align-content: start;
   padding: var(--ll-space-5);
-  border-radius: var(--ll-radius-lg);
+  border-radius: var(--ll-radius-md);
   background: var(--ll-bg-surface);
   border: 1px solid var(--ll-border-subtle);
-  box-shadow: var(--ll-shadow-xs);
+  box-shadow: none;
   transition: box-shadow var(--ll-transition-base), border-color var(--ll-transition-base),
     transform var(--ll-transition-base);
 }
 
 .metric-card:hover {
-  border-color: var(--ll-border-default);
-  box-shadow: var(--ll-shadow-sm);
+  border-color: var(--ll-brand-200);
+  transform: translateY(-1px);
 }
 
 .metric-label {
@@ -367,9 +381,9 @@ a:hover {
 /* ---------- 卡片 ---------- */
 .panel-card,
 .toolbar-card {
-  border-radius: var(--ll-radius-lg);
+  border-radius: var(--ll-radius-md);
   border: 1px solid var(--ll-border-subtle);
-  box-shadow: var(--ll-shadow-xs);
+  box-shadow: none;
   background: var(--ll-bg-surface);
 }
 
@@ -549,11 +563,12 @@ a:hover {
   }
 
   .metric-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ll-space-2);
   }
 
   .metric-card {
-    padding: var(--ll-space-4);
+    padding: var(--ll-space-3);
     border-radius: var(--ll-radius-md);
   }
 

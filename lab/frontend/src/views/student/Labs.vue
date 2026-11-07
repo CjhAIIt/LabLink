@@ -374,7 +374,7 @@ onMounted(() => {
 .college-card:hover,
 .college-card.active {
   border-color: rgba(15, 118, 110, 0.45);
-  box-shadow: 0 14px 28px -22px rgba(15, 118, 110, 0.7);
+  box-shadow: var(--ll-shadow-sm);
   transform: translateY(-2px);
 }
 

@@ -319,9 +319,9 @@ onBeforeUnmount(() => {
 
 /* ---------- 主内容 ---------- */
 .main-content {
-  max-width: 1200px;
+  max-width: 1360px;
   margin: 0 auto;
-  padding: var(--ll-space-10) var(--ll-space-6) var(--ll-space-12);
+  padding: var(--ll-space-6) var(--ll-space-8) var(--ll-space-12);
   display: flex;
   flex-direction: column;
   gap: var(--ll-space-8);
@@ -330,8 +330,8 @@ onBeforeUnmount(() => {
 /* ---------- 首屏 ---------- */
 .hero {
   display: grid;
-  gap: var(--ll-space-8);
-  padding: var(--ll-space-10) 0 var(--ll-space-6);
+  gap: var(--ll-space-6);
+  padding: var(--ll-space-6) 0 var(--ll-space-2);
 }
 
 .hero-eyebrow {
@@ -346,17 +346,16 @@ onBeforeUnmount(() => {
 }
 
 .hero h1 {
-  margin-top: var(--ll-space-4);
-  font-size: 40px;
+  margin-top: var(--ll-space-3);
+  font-size: 36px;
   font-weight: 600;
-  line-height: 1.2;
-  letter-spacing: -0.025em;
+  line-height: 1.3;
 }
 
 .hero p {
-  margin-top: var(--ll-space-4);
+  margin-top: var(--ll-space-3);
   max-width: 640px;
-  font-size: var(--ll-text-lg);
+  font-size: var(--ll-text-base);
   line-height: 1.7;
   color: var(--ll-text-secondary);
 }
@@ -365,7 +364,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ll-space-3);
-  margin-top: var(--ll-space-6);
+  margin-top: var(--ll-space-4);
 }
 
 .primary-btn,
@@ -408,25 +407,26 @@ onBeforeUnmount(() => {
 /* ---------- 特性网格 ---------- */
 .hero-features {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: var(--ll-space-4);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--ll-border-subtle);
+  border-bottom: 1px solid var(--ll-border-subtle);
 }
 
 .feature-card {
   display: grid;
-  gap: var(--ll-space-2);
-  align-content: start;
-  padding: var(--ll-space-5);
-  border-radius: var(--ll-radius-lg);
-  background: var(--ll-bg-surface);
-  border: 1px solid var(--ll-border-subtle);
-  box-shadow: var(--ll-shadow-xs);
-  transition: box-shadow var(--ll-transition-base), border-color var(--ll-transition-base);
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  column-gap: var(--ll-space-3);
+  row-gap: 2px;
+  min-height: 76px;
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border-right: 1px solid var(--ll-border-subtle);
 }
 
-.feature-card:hover {
-  border-color: var(--ll-border-default);
-  box-shadow: var(--ll-shadow-sm);
+.feature-card:last-child {
+  border-right: 0;
 }
 
 .feature-icon {
@@ -435,7 +435,8 @@ onBeforeUnmount(() => {
   justify-content: center;
   width: 34px;
   height: 34px;
-  border-radius: var(--ll-radius-md);
+  grid-row: span 2;
+  border-radius: var(--ll-radius-sm);
   background: var(--ll-brand-50);
   color: var(--ll-brand-600);
   margin-bottom: var(--ll-space-1);
@@ -448,17 +449,22 @@ onBeforeUnmount(() => {
 
 .feature-card p {
   font-size: var(--ll-text-sm);
-  line-height: 1.65;
+  line-height: 1.45;
   color: var(--ll-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ---------- 筛选面板 ---------- */
 .panel {
   background: var(--ll-bg-surface);
   border: 1px solid var(--ll-border-subtle);
-  border-radius: var(--ll-radius-lg);
-  box-shadow: var(--ll-shadow-xs);
-  padding: var(--ll-space-6);
+  border-radius: var(--ll-radius-md);
+  box-shadow: none;
+  padding: var(--ll-space-5) var(--ll-space-6);
 }
 
 .panel-header {
@@ -594,8 +600,8 @@ onBeforeUnmount(() => {
 
 .labs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: var(--ll-space-4);
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--ll-space-3);
 }
 
 .lab-card {
@@ -604,17 +610,17 @@ onBeforeUnmount(() => {
   align-content: start;
   text-align: left;
   padding: var(--ll-space-5);
-  border-radius: var(--ll-radius-lg);
+  border-radius: var(--ll-radius-md);
   background: var(--ll-bg-surface);
   border: 1px solid var(--ll-border-subtle);
-  box-shadow: var(--ll-shadow-xs);
-  transition: box-shadow var(--ll-transition-base), border-color var(--ll-transition-base),
+  box-shadow: none;
+  transition: border-color var(--ll-transition-base), background-color var(--ll-transition-base),
     transform var(--ll-transition-base);
 }
 
 .lab-card:hover {
   border-color: var(--ll-brand-200);
-  box-shadow: var(--ll-shadow-sm);
+  background: var(--ll-gray-25);
   transform: translateY(-1px);
 }
 
@@ -694,16 +700,12 @@ onBeforeUnmount(() => {
   }
 
   .main-content {
-    padding: var(--ll-space-6) var(--ll-space-4) var(--ll-space-10);
+    padding: var(--ll-space-4) var(--ll-space-4) var(--ll-space-10);
     gap: var(--ll-space-6);
   }
 
-  .hero {
-    padding-top: var(--ll-space-6);
-  }
-
   .hero h1 {
-    font-size: 28px;
+    font-size: 26px;
   }
 
   .hero p {
@@ -717,6 +719,18 @@ onBeforeUnmount(() => {
 
   .filter-item {
     width: 100%;
+  }
+
+  .hero-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .feature-card:nth-child(2) {
+    border-right: 0;
+  }
+
+  .feature-card:nth-child(n + 3) {
+    border-top: 1px solid var(--ll-border-subtle);
   }
 
   .labs-grid {

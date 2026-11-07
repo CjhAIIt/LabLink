@@ -250,7 +250,7 @@ onMounted(() => {
 
 .senior-card:hover {
   border-color: var(--ll-brand-500);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--ll-shadow-sm);
 }
 
 .senior-info strong {

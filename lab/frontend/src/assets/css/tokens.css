@@ -9,14 +9,19 @@
 
 :root {
   /* ---------- 品牌色 ---------- */
-  --ll-brand-50: #eef2ff;
-  --ll-brand-100: #e0e7ff;
-  --ll-brand-200: #c7d2fe;
-  --ll-brand-300: #a5b4fc;
-  --ll-brand-400: #818cf8;
-  --ll-brand-500: #6366f1;
-  --ll-brand-600: #4f46e5;
-  --ll-brand-700: #4338ca;
+  --ll-brand-50: #eff6ff;
+  --ll-brand-100: #dbeafe;
+  --ll-brand-200: #bfdbfe;
+  --ll-brand-300: #93c5fd;
+  --ll-brand-400: #60a5fa;
+  --ll-brand-500: #3b82f6;
+  --ll-brand-600: #2563eb;
+  --ll-brand-700: #1d4ed8;
+
+  /* 品牌标识色块的三段渐变，保留 Logo 的蓝青识别度 */
+  --ll-logo-from: #1d4ed8;
+  --ll-logo-mid: #38bdf8;
+  --ll-logo-to: #22d3ee;
 
   /* ---------- 中性色 ---------- */
   --ll-gray-0: #ffffff;
@@ -64,6 +69,10 @@
   --ll-info: #0284c7;
   --ll-info-bg: #f0f9ff;
 
+  /* ---------- 代码编辑区 ---------- */
+  --ll-code-bg: #0f172a;
+  --ll-code-fg: #d1fae5;
+
   /* ---------- 圆角 ---------- */
   --ll-radius-xs: 4px;
   --ll-radius-sm: 6px;
@@ -77,7 +86,7 @@
   --ll-shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.06), 0 1px 2px rgba(16, 24, 40, 0.04);
   --ll-shadow-md: 0 4px 12px rgba(16, 24, 40, 0.08), 0 1px 3px rgba(16, 24, 40, 0.04);
   --ll-shadow-lg: 0 12px 32px rgba(16, 24, 40, 0.12), 0 2px 6px rgba(16, 24, 40, 0.05);
-  --ll-shadow-focus: 0 0 0 3px rgba(99, 102, 241, 0.16);
+  --ll-shadow-focus: 0 0 0 3px rgba(37, 99, 235, 0.16);
 
   /* ---------- 间距 ---------- */
   --ll-space-1: 4px;

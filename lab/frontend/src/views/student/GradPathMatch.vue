@@ -268,8 +268,8 @@ onMounted(() => {
 .score-card {
   background:
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 25%),
-    linear-gradient(135deg, #082f49, #0f766e);
-  color: #f8fafc;
+    linear-gradient(135deg, var(--ll-text-primary), var(--ll-brand-600));
+  color: var(--ll-bg-muted);
 }
 
 .eyebrow {
@@ -289,7 +289,7 @@ onMounted(() => {
 .score-circle {
   width: 180px;
   height: 180px;
-  border-radius: 999px;
+  border-radius: var(--ll-radius-full);
   display: grid;
   place-items: center;
   background: rgba(255, 255, 255, 0.1);
@@ -341,21 +341,21 @@ onMounted(() => {
 .advice-item,
 .gap-item {
   padding: 16px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border-radius: var(--ll-radius-lg);
+  background: linear-gradient(180deg, var(--ll-bg-surface), var(--ll-bg-muted));
   border: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .advice-item strong,
 .gap-item strong {
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .advice-item p,
 .gap-item p {
   margin: 8px 0 0;
   line-height: 1.8;
-  color: #475569;
+  color: var(--ll-text-secondary);
 }
 
 .summary-actions {
@@ -370,7 +370,7 @@ onMounted(() => {
   justify-content: space-between;
   gap: 12px;
   margin-bottom: 12px;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 @media (max-width: 960px) {

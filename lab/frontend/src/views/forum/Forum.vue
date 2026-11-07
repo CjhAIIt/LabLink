@@ -203,7 +203,7 @@ onMounted(fetchPosts)
   justify-content: space-between;
   align-items: flex-end;
   margin-bottom: 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--ll-border-subtle);
   padding-bottom: 10px;
 }
 
@@ -212,7 +212,7 @@ onMounted(fetchPosts)
   align-items: center;
   gap: 10px;
   margin: 0 0 15px 0;
-  color: #303133;
+  color: var(--ll-text-primary);
 }
 
 .forum-tabs {
@@ -254,11 +254,11 @@ onMounted(fetchPosts)
 .post-title {
   margin: 0;
   font-size: 18px;
-  color: #303133;
+  color: var(--ll-text-primary);
 }
 
 .post-preview {
-  color: #606266;
+  color: var(--ll-text-secondary);
   font-size: 14px;
   margin: 0 0 12px 0;
   line-height: 1.5;
@@ -270,7 +270,7 @@ onMounted(fetchPosts)
   align-items: center;
   gap: 20px;
   font-size: 12px;
-  color: #909399;
+  color: var(--ll-text-tertiary);
 }
 
 .author {
@@ -292,7 +292,7 @@ onMounted(fetchPosts)
 }
 
 .liked {
-  color: #e6a23c;
+  color: var(--ll-warning);
 }
 
 .pagination {

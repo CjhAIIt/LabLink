@@ -111,20 +111,20 @@ const handleNavigate = (item) => {
   font-size: 12px;
   letter-spacing: 0.14em;
   font-weight: 700;
-  color: #0284c7;
+  color: var(--ll-info);
 }
 
 .nav-copy h1 {
   margin: 0;
   font-size: 28px;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .description {
   margin: 12px 0 0;
   max-width: 760px;
   line-height: 1.8;
-  color: #475569;
+  color: var(--ll-text-secondary);
 }
 
 .actions {
@@ -142,11 +142,11 @@ const handleNavigate = (item) => {
 
 .nav-link {
   border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: 18px;
+  border-radius: var(--ll-radius-lg);
   padding: 16px 14px;
   text-align: left;
   background: rgba(255, 255, 255, 0.92);
-  color: #334155;
+  color: var(--ll-text-secondary);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
 }
@@ -164,18 +164,18 @@ const handleNavigate = (item) => {
   margin-top: 8px;
   font-size: 12px;
   line-height: 1.6;
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .nav-link:hover,
 .nav-link.active {
   transform: translateY(-2px);
   border-color: rgba(14, 165, 233, 0.34);
-  box-shadow: 0 12px 28px rgba(14, 165, 233, 0.1);
+  box-shadow: var(--ll-shadow-sm);
 }
 
 .nav-link.active {
-  background: linear-gradient(180deg, #eff6ff, #ecfeff);
+  background: linear-gradient(180deg, var(--ll-brand-50), var(--ll-brand-50));
 }
 
 .nav-link:disabled,

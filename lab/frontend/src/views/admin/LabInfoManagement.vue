@@ -366,7 +366,7 @@ onMounted(async () => {
 
 .field-hint {
   margin-left: 12px;
-  color: #909399;
+  color: var(--ll-text-tertiary);
   font-size: 12px;
 }
 

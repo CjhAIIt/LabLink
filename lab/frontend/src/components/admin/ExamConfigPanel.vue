@@ -617,7 +617,7 @@ onMounted(async () => {
 .question-toolbar p,
 .question-content {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--ll-text-secondary);
   line-height: 1.7;
 }
 
@@ -636,8 +636,8 @@ onMounted(async () => {
 .env-panel {
   margin-top: 12px;
   padding: 18px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, #f8fbff, #f8fafc);
+  border-radius: var(--ll-radius-lg);
+  background: linear-gradient(180deg, var(--ll-bg-surface), var(--ll-bg-muted));
   border: 1px solid rgba(14, 165, 233, 0.14);
 }
 
@@ -650,13 +650,13 @@ onMounted(async () => {
 
 .env-card {
   padding: 14px;
-  border-radius: 16px;
-  background: #fff;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-bg-surface);
   border: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .env-card.unavailable {
-  background: #fffbeb;
+  background: var(--ll-warning-bg);
   border-color: rgba(245, 158, 11, 0.3);
 }
 
@@ -670,7 +670,7 @@ onMounted(async () => {
 
 .env-card-line,
 .env-card-tip {
-  color: #475569;
+  color: var(--ll-text-secondary);
   line-height: 1.7;
   word-break: break-all;
 }
@@ -692,14 +692,14 @@ onMounted(async () => {
 
 .question-card {
   padding: 18px;
-  border-radius: 18px;
-  background: linear-gradient(180deg, #ffffff, #f8fafc);
+  border-radius: var(--ll-radius-lg);
+  background: linear-gradient(180deg, var(--ll-bg-surface), var(--ll-bg-muted));
   border: 1px solid rgba(148, 163, 184, 0.16);
 }
 
 .question-index {
   margin: 0 0 8px;
-  color: #0f766e;
+  color: var(--ll-brand-600);
   font-size: 12px;
   letter-spacing: 0.08em;
   font-weight: 700;
@@ -707,7 +707,7 @@ onMounted(async () => {
 
 .question-card h4 {
   margin: 0;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .score-item {

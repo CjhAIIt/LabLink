@@ -517,7 +517,7 @@ onBeforeUnmount(() => {
 }
 
 .delivery-card {
-  border-radius: 22px;
+  border-radius: var(--ll-radius-lg);
   border: 1px solid rgba(148, 163, 184, 0.16);
 }
 
@@ -537,7 +537,7 @@ onBeforeUnmount(() => {
 .card-subtitle {
   margin-top: 6px;
   font-size: 13px;
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .offer-list,
@@ -552,7 +552,7 @@ onBeforeUnmount(() => {
   justify-content: space-between;
   gap: 16px;
   padding: 14px 16px;
-  border-radius: 14px;
+  border-radius: var(--ll-radius-md);
   background: rgba(255, 255, 255, 0.78);
   border: 1px solid rgba(251, 191, 36, 0.18);
 }
@@ -564,19 +564,19 @@ onBeforeUnmount(() => {
 .offer-title {
   font-size: 16px;
   font-weight: 700;
-  color: #7c2d12;
+  color: var(--ll-warning);
 }
 
 .offer-meta {
   margin-top: 6px;
   font-size: 13px;
-  color: #9a3412;
+  color: var(--ll-warning);
 }
 
 .offer-comment {
   margin-top: 8px;
   line-height: 1.6;
-  color: #7c2d12;
+  color: var(--ll-warning);
   white-space: pre-wrap;
 }
 
@@ -592,10 +592,10 @@ onBeforeUnmount(() => {
 
 .delivery-mobile-card {
   padding: 16px;
-  border-radius: 18px;
+  border-radius: var(--ll-radius-lg);
   border: 1px solid rgba(148, 163, 184, 0.16);
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
-  box-shadow: 0 14px 24px rgba(15, 23, 42, 0.04);
+  background: linear-gradient(180deg, var(--ll-bg-surface), var(--ll-bg-surface));
+  box-shadow: var(--ll-shadow-xs);
 }
 
 .delivery-mobile-top {
@@ -608,13 +608,13 @@ onBeforeUnmount(() => {
 .delivery-mobile-title {
   font-size: 16px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .delivery-mobile-time {
   margin-top: 6px;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--ll-text-tertiary);
 }
 
 .delivery-mobile-body {
@@ -623,7 +623,7 @@ onBeforeUnmount(() => {
 
 .delivery-mobile-reason {
   line-height: 1.7;
-  color: #475569;
+  color: var(--ll-text-secondary);
 }
 
 .delivery-mobile-meta {
@@ -631,7 +631,7 @@ onBeforeUnmount(() => {
   gap: 6px;
   margin-top: 12px;
   font-size: 12px;
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .delivery-mobile-actions {
@@ -655,10 +655,10 @@ onBeforeUnmount(() => {
 }
 
 .comment-content {
-  color: #606266;
-  background-color: #f5f7fa;
+  color: var(--ll-text-secondary);
+  background-color: var(--ll-bg-muted);
   padding: 10px;
-  border-radius: 10px;
+  border-radius: var(--ll-radius-md);
 }
 
 .attachments-list {

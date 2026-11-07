@@ -118,17 +118,17 @@
                     <!-- 模拟折线 -->
                     <polyline
                       fill="none"
-                      stroke="#0ea5e9"
+                      stroke="var(--ll-brand-400)"
                       stroke-width="3"
                       points="50,150 150,100 250,120 350,60 450,80 550,40"
                     />
                     <!-- 模拟数据点 -->
-                    <circle cx="50" cy="150" r="4" fill="#0ea5e9" />
-                    <circle cx="150" cy="100" r="4" fill="#0ea5e9" />
-                    <circle cx="250" cy="120" r="4" fill="#0ea5e9" />
-                    <circle cx="350" cy="60" r="4" fill="#0ea5e9" />
-                    <circle cx="450" cy="80" r="4" fill="#0ea5e9" />
-                    <circle cx="550" cy="40" r="4" fill="#0ea5e9" />
+                    <circle cx="50" cy="150" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="150" cy="100" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="250" cy="120" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="350" cy="60" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="450" cy="80" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="550" cy="40" r="4" fill="var(--ll-brand-400)" />
                   </svg>
                   <div class="chart-x-axis">
                     <span v-for="m in lastSixMonths" :key="m">{{ m }}</span>
@@ -222,7 +222,7 @@ watch(activeTab, (newTab) => {
   })
 })
 
-const vizColors = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+const vizColors = ['var(--ll-brand-400)', 'var(--ll-success)', 'var(--ll-warning)', 'var(--ll-danger)', '#8b5cf6']
 
 const scopeType = computed(() => {
   if (overview.value.scopeType) return overview.value.scopeType
@@ -326,9 +326,9 @@ const getMainPercentage = (data) => {
 }
 
 const getBarColor = (item, key) => {
-  if (key === 'recruitConversionRanking') return 'linear-gradient(90deg, #3b82f6, #0ea5e9)'
+  if (key === 'recruitConversionRanking') return 'linear-gradient(90deg, var(--ll-brand-500), var(--ll-brand-400))'
   if (key === 'activityRanking') return 'linear-gradient(90deg, #8b5cf6, #d946ef)'
-  return 'linear-gradient(90deg, #0f766e, #10b981)'
+  return 'linear-gradient(90deg, var(--ll-brand-600), var(--ll-success))'
 }
 
 const loadStatistics = async () => {
@@ -376,7 +376,7 @@ onMounted(() => {
 }
 
 .stats-hero {
-  background: linear-gradient(135deg, var(--ll-text-primary) 0%, #0369a1 100%);
+  background: linear-gradient(135deg, var(--ll-text-primary) 0%, var(--ll-info) 100%);
   color: white;
   padding: 40px 60px;
   margin: 0 0 24px 0;

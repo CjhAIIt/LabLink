@@ -499,10 +499,10 @@ export default {
 }
 
 .comment-content {
-  color: #606266;
-  background-color: #f5f7fa;
+  color: var(--ll-text-secondary);
+  background-color: var(--ll-bg-muted);
   padding: 10px;
-  border-radius: 4px;
+  border-radius: var(--ll-radius-xs);
 }
 
 .attachments-list {

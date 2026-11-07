@@ -278,7 +278,7 @@ onMounted(() => {
 .title {
   margin: 0 0 15px 0;
   font-size: 24px;
-  color: #303133;
+  color: var(--ll-text-primary);
 }
 
 .meta-row {
@@ -287,7 +287,7 @@ onMounted(() => {
   align-items: center;
   margin-bottom: 20px;
   padding-bottom: 20px;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--ll-bg-muted);
   gap: 16px;
 }
 
@@ -304,12 +304,12 @@ onMounted(() => {
 
 .name {
   font-weight: 600;
-  color: #303133;
+  color: var(--ll-text-primary);
 }
 
 .time {
   font-size: 12px;
-  color: #909399;
+  color: var(--ll-text-tertiary);
 }
 
 .actions {
@@ -321,7 +321,7 @@ onMounted(() => {
 .post-content {
   font-size: 16px;
   line-height: 1.8;
-  color: #303133;
+  color: var(--ll-text-primary);
   min-height: 100px;
   white-space: pre-wrap;
 }
@@ -340,14 +340,14 @@ onMounted(() => {
 
 .like-count {
   font-size: 14px;
-  color: #606266;
+  color: var(--ll-text-secondary);
 }
 
 .comments-section {
-  background: #fff;
+  background: var(--ll-bg-surface);
   padding: 20px;
-  border-radius: 4px;
-  border: 1px solid #e4e7ed;
+  border-radius: var(--ll-radius-xs);
+  border: 1px solid var(--ll-border-subtle);
 }
 
 .comments-section h3 {
@@ -368,7 +368,7 @@ onMounted(() => {
   display: flex;
   gap: 15px;
   padding: 15px 0;
-  border-bottom: 1px solid #f0f2f5;
+  border-bottom: 1px solid var(--ll-bg-muted);
 }
 
 .comment-body {
@@ -388,12 +388,12 @@ onMounted(() => {
 
 .comment-header .time {
   font-size: 12px;
-  color: #909399;
+  color: var(--ll-text-tertiary);
 }
 
 .comment-text {
   font-size: 14px;
-  color: #606266;
+  color: var(--ll-text-secondary);
   line-height: 1.6;
   white-space: pre-wrap;
 }
