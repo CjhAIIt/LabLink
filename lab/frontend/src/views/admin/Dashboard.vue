@@ -1,6 +1,6 @@
 <template>
   <div class="page-shell">
-    <section class="page-hero admin-hero">
+    <section class="page-hero page-hero--brand">
       <div>
         <p class="eyebrow">管理工作台</p>
         <h1>{{ dashboardTitle }}</h1>
@@ -397,11 +397,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-hero {
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 118, 110, 0.86)),
-    radial-gradient(circle at top right, rgba(125, 211, 252, 0.26), transparent 28%);
-}
 
 .hero-side {
   display: grid;

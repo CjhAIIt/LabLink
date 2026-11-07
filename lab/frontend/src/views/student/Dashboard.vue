@@ -1,6 +1,6 @@
 <template>
   <div class="page-shell">
-    <section class="page-hero student-hero">
+    <section class="page-hero page-hero--brand">
       <div>
         <p class="eyebrow">学生工作台</p>
         <h1>实验室申请与信息查询</h1>
@@ -156,11 +156,6 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.student-hero {
-  background:
-    linear-gradient(135deg, rgba(15, 118, 110, 0.94), rgba(14, 165, 233, 0.86)),
-    radial-gradient(circle at top right, rgba(254, 240, 138, 0.22), transparent 30%);
-}
 
 .hero-note-card {
   padding: 16px 18px;

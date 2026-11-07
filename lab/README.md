@@ -191,6 +191,7 @@ docker compose --env-file .env.cloud -f docker-compose.cloud.yml up -d --build
 - [AIIT-SCHOOL-EDITION.md](/C:/Users/cjh/Documents/LabLink/lab/docs/AIIT-SCHOOL-EDITION.md)
 - [DEPLOYMENT-SECURITY.md](/C:/Users/cjh/Documents/LabLink/lab/docs/DEPLOYMENT-SECURITY.md)
 - [FRONTEND-UI-GUIDE.md](/C:/Users/cjh/Documents/LabLink/lab/docs/FRONTEND-UI-GUIDE.md)
+- [FRONTEND-REDESIGN-PROMPT.md](/C:/Users/cjh/Documents/LabLink/lab/docs/FRONTEND-REDESIGN-PROMPT.md)
 - [MOBILE-ADAPTATION.md](/C:/Users/cjh/Documents/LabLink/lab/docs/MOBILE-ADAPTATION.md)
 - [Desktop_Android_Development_Guide.md](/C:/Users/cjh/Documents/LabLink/lab/docs/Desktop_Android_Development_Guide.md)
 - [application.yml](/C:/Users/cjh/Documents/LabLink/lab/src/main/resources/application.yml)

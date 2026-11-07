@@ -4,7 +4,29 @@
 
 ## 1. 视觉基线
 
-### 1.1 品牌
+### 1.1 设计令牌
+
+所有视觉取值集中在 `src/assets/css/tokens.css`，由 `global.css` 的 `@import` 引入。
+**页面里不写裸十六进制色值**，一律用 `var(--ll-*)`；确需新色先加令牌再用。
+
+| 令牌组 | 说明 |
+| --- | --- |
+| `--ll-brand-50` … `--ll-brand-700` | 主色阶，主色为 `--ll-brand-600`（#4f46e5） |
+| `--ll-gray-0` … `--ll-gray-900` | 中性色阶 |
+| `--ll-bg-body` / `--ll-bg-surface` / `--ll-bg-subtle` / `--ll-bg-hover` | 语义背景 |
+| `--ll-text-primary` / `secondary` / `tertiary` / `disabled` / `inverse` | 语义文字 |
+| `--ll-border-subtle` / `default` / `strong` / `brand` | 语义描边 |
+| `--ll-radius-xs` … `--ll-radius-full` | 圆角，小 4 / 中 8 / 卡片 12 / 大 16 |
+| `--ll-shadow-xs` … `--ll-shadow-lg` | 阴影，很浅；仅浮层可用 `md` 以上 |
+| `--ll-space-1` … `--ll-space-12` | 4px 基准间距 |
+| `--ll-text-xs` … `--ll-text-3xl` | 字号 |
+| `--ll-sidebar-width` / `--ll-topbar-height` / `--ll-control-height` | 布局尺寸 |
+| `--ll-transition-fast` / `--ll-transition-base` | 动效时长 |
+
+分层原则：**用 1px 描边而不是阴影做分隔**，阴影只留给浮层（下拉、弹窗、抽屉）。
+圆角上限 16px。数字（指标值、表格数值）统一 `font-variant-numeric: tabular-nums`。
+
+### 1.2 品牌
 
 平台统一品牌标识为 **LabLink**，对应中文副标题“高校实验室管理平台”。
 
@@ -12,20 +34,19 @@
 - 标识色块文字固定为 `Link`，主色为品牌蓝 `#2563eb`（深色态 `#1d4ed8`）
 - 品牌在侧边栏、登录页、注册页、平台介绍页中的标题必须来自 `BrandLogo` 的 `title` / `subtitle` 属性，不要在页面里重复硬编码全称
 
-### 1.2 颜色
+### 1.3 颜色
 
 | 用途 | 色值 |
 | --- | --- |
-| 主色 | `#2563eb` / `#1d4ed8` |
-| 学生端主色 | `#2563eb` |
-| 教师端主色 | `#7c3aed` |
-| 页面底色 | `#f8fafc`，渐变至 `#f1f5f9` |
-| 卡片底色 | `#ffffff` |
-| 主文字 | `#0f172a` |
-| 次文字 | `#64748b` |
-| 分隔线 | `#e2e8f0` |
+| 主色 | `--ll-brand-600` / `#4f46e5` |
+| 页面底色 | `--ll-bg-body`，`#f7f8fa` |
+| 卡片底色 | `--ll-bg-surface`，`#ffffff` |
+| 主文字 | `--ll-text-primary`，`#171a23` |
+| 次文字 | `--ll-text-secondary`，`#646b7d` |
+| 分隔线 | `--ll-border-subtle`，`#e8eaee` |
 
-页面级渐变统一使用 `linear-gradient`，圆角统一 20px 以上（移动端 20px，桌面端 16px 居多），阴影使用低透明度蓝灰色如 `rgba(148, 163, 184, 0.18)`。
+页面级渐变只允许出现在 `.page-hero--brand`（工作台首页的强调头部），
+其余位置一律使用扁平卡片。
 
 ### 1.3 字体与滚动条
 
@@ -57,15 +78,18 @@
 
 | 类名 | 用途 |
 | --- | --- |
-| `.page-shell` | 页面根容器，纵向 flex + gap |
-| `.page-hero` | 顶部横幅区，深色渐变背景，大圆角 |
-| `.page-hero h1` / `.hero-subtitle` / `.eyebrow` | 横幅内的标题、副标题、眉标 |
-| `.metric-grid` / `.metric-card` | 指标卡网格与单卡。桌面按容器宽度自适应（`auto-fit` + `minmax(180px, 1fr)`），768px 以下固定为 1 列 |
+| `.page-shell` | 页面根容器，纵向 grid + gap |
+| `.page-hero` | 页面头部，**扁平**：白底 + 1px 描边，标题 / 说明 / 右侧操作区 |
+| `.page-hero--brand` | 强调型头部，仅工作台首页使用（品牌深色渐变） |
+| `.page-hero h1` / `.hero-subtitle` / `.eyebrow` | 头部内的标题、副标题、眉标 |
+| `.metric-grid` / `.metric-card` | 指标卡网格与单卡。桌面按容器宽度自适应（`auto-fit` + `minmax(200px, 1fr)`），768px 以下固定为 1 列 |
 | `.metric-label` / `.metric-value` / `.metric-tip` | 指标卡的标签、数值、补充说明 |
 | `.content-grid.two-column` | 双栏内容区 |
-| `.panel-card` / `.toolbar-card` | 内容卡片、工具条卡片 |
+| `.panel-card` / `.toolbar-card` | 内容卡片、筛选工具条卡片 |
 | `.toolbar-main` / `.toolbar-actions` / `.toolbar-form` | 工具条内部的标题区、操作区、筛选表单区 |
 | `.panel-header` | 卡片头部，标题 + 操作按钮 |
+| `.section-title` | 区块标题，左侧带品牌色竖条 |
+| `.icon-chip` | 图标底片，36px 方块 |
 | `.empty-panel` / `.rank-list` / `.rank-item` | 空状态与排行榜 |
 
 ### 3.3 表格与表单容器
