@@ -3,7 +3,7 @@
     <aside class="sidebar" :class="{ 'is-collapsed': isCollapse }">
       <div class="sidebar-inner">
         <div class="sidebar-brand">
-          <BrandLogo title="安徽信息工程学院" subtitle="实验室管理平台" tone="dark" size="sm" />
+          <BrandLogo title="LabLink" subtitle="高校实验室管理平台" tone="dark" size="sm" />
         </div>
 
         <el-menu :default-active="$route.fullPath" router class="sidebar-menu" :collapse="false">
@@ -25,6 +25,7 @@
         </el-menu>
       </div>
     </aside>
+    <div v-if="sidebarVisible" class="sidebar-mask" @click="closeSidebar"></div>
 
     <div class="main-shell">
       <header class="topbar">
@@ -34,7 +35,7 @@
               <component :is="isCollapse ? Expand : Fold" />
             </el-icon>
           </el-button>
-          <div>
+          <div class="topbar-title">
             <p class="topbar-label">管理端</p>
             <h2>{{ $route.meta.title || '工作台' }}</h2>
           </div>
@@ -81,19 +82,38 @@ import {
   Fold
 } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
-import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
 import request from '@/utils/request'
 import BrandLogo from '@/components/BrandLogo.vue'
 import { useUserStore } from '@/stores/user'
 
+const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
 
-const isCollapse = ref(false)
+const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth <= 960 : false)
+const isCollapse = ref(isMobile.value)
+const sidebarVisible = computed(() => isMobile.value && !isCollapse.value)
+
+const updateViewport = () => {
+  const mobile = window.innerWidth <= 960
+  if (mobile !== isMobile.value) {
+    isMobile.value = mobile
+    isCollapse.value = mobile
+    return
+  }
+  isMobile.value = mobile
+}
 
 const toggleCollapse = () => {
   isCollapse.value = !isCollapse.value
+}
+
+const closeSidebar = () => {
+  if (isMobile.value) {
+    isCollapse.value = true
+  }
 }
 
 const isSchoolDirector = computed(() => Boolean(userStore.userInfo?.schoolDirector))
@@ -163,8 +183,21 @@ const handleCommand = async (command) => {
   }
 }
 
+watch(
+  () => route.fullPath,
+  () => {
+    closeSidebar()
+  }
+)
+
 onMounted(() => {
+  updateViewport()
+  window.addEventListener('resize', updateViewport)
   ensureProfile()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewport)
 })
 </script>
 
@@ -174,6 +207,7 @@ onMounted(() => {
   display: flex;
   background-color: #ffffff;
   overflow: hidden;
+  position: relative;
 }
 
 .sidebar {
@@ -246,18 +280,33 @@ onMounted(() => {
   height: 100vh;
 }
 
+.sidebar-mask {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.4);
+  backdrop-filter: blur(2px);
+  z-index: 90;
+}
+
 .topbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 16px 24px;
   background: #ffffff;
+  gap: 16px;
+  border-bottom: 1px solid #e2e8f0;
 }
 
 .topbar-left {
   display: flex;
   align-items: center;
   gap: 16px;
+  min-width: 0;
+}
+
+.topbar-title {
+  min-width: 0;
 }
 
 .collapse-btn {
@@ -283,6 +332,9 @@ onMounted(() => {
   margin-bottom: 0;
   color: #0f172a;
   font-size: 20px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .user-chip {
@@ -323,15 +375,19 @@ onMounted(() => {
 @media (max-width: 960px) {
   .sidebar {
     position: fixed;
-    z-index: 100;
-    height: 100vh;
+    top: 0;
+    left: 0;
+    z-index: 120;
+    height: 100dvh;
     border-right: 1px solid #e5e5e5;
+    box-shadow: 0 18px 42px rgba(15, 23, 42, 0.18);
   }
 
   .sidebar.is-collapsed {
     transform: translateX(-100%);
     opacity: 0;
     margin-left: 0;
+    pointer-events: none;
   }
 
   .content {
@@ -340,6 +396,56 @@ onMounted(() => {
 
   .topbar {
     padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .main-shell {
+    height: 100dvh;
+  }
+
+  .topbar {
+    padding: 12px 14px;
+    gap: 12px;
+  }
+
+  .topbar-left {
+    gap: 12px;
+  }
+
+  .topbar-label {
+    font-size: 11px;
+    letter-spacing: 0.12em;
+  }
+
+  .topbar h2 {
+    font-size: 16px;
+  }
+
+  .user-chip {
+    max-width: 132px;
+    gap: 8px;
+    padding: 6px 8px;
+  }
+
+  .user-chip div {
+    min-width: 0;
+  }
+
+  .user-chip span {
+    display: none;
+  }
+
+  .user-chip strong {
+    display: block;
+    font-size: 13px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .content {
+    padding: 0 12px 16px;
   }
 }
 </style>

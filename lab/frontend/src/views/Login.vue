@@ -5,12 +5,12 @@
         <BrandLogo
           class="brand"
           size="lg"
-          title="安徽信息工程学院"
-          subtitle="实验室管理平台"
+          title="LabLink"
+          subtitle="高校实验室管理平台"
         />
 
         <div class="hero-card">
-          <h2>面向全校的实验室管理与协同平台</h2>
+          <h2>面向高校的实验室管理与协同平台</h2>
           <p>
             平台覆盖学校、学院、实验室、教师与学生等多角色场景，支持实验室信息管理、
             教师注册审批、实验室创建申请、成员申请、公告发布和统计分析。

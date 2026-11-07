@@ -1,42 +1,53 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { getToken, getUserInfo } from '@/utils/auth'
-import { resolvePortalHome, resolvePortalRole } from '@/utils/portal'
+import { isMobilePortal, resolvePortalHome, resolvePortalRole } from '@/utils/portal'
 
-import AdminLayout from '@/layouts/AdminLayout.vue'
-import StudentLayout from '@/layouts/StudentLayout.vue'
-import TeacherLayout from '@/layouts/TeacherLayout.vue'
+// 页面组件全部按路由懒加载，首屏只下载实际访问的模块。
+const AdminLayout = () => import('@/layouts/AdminLayout.vue')
+const StudentLayout = () => import('@/layouts/StudentLayout.vue')
+const TeacherLayout = () => import('@/layouts/TeacherLayout.vue')
+const MobileStudentLayout = () => import('@/layouts/MobileStudentLayout.vue')
+const MobileTeacherLayout = () => import('@/layouts/MobileTeacherLayout.vue')
 
-import Intro from '@/views/Intro.vue'
-import Login from '@/views/Login.vue'
-import Register from '@/views/Register.vue'
-import TeacherRegister from '@/views/TeacherRegister.vue'
-import LabInfoDetail from '@/views/LabInfoDetail.vue'
-import AdminApplications from '@/views/admin/Applications.vue'
-import AdminAttendanceTasks from '@/views/admin/AttendanceTasks.vue'
-import AdminColleges from '@/views/admin/Colleges.vue'
-import AdminCreateApplies from '@/views/admin/LabCreateApplies.vue'
-import AdminDashboard from '@/views/admin/Dashboard.vue'
-import AdminLabWorkspace from '@/views/admin/LabWorkspace.vue'
-import AdminLabs from '@/views/admin/Labs.vue'
-import AdminMembers from '@/views/admin/Members.vue'
-import AdminNotices from '@/views/admin/Notices.vue'
-import AdminPlans from '@/views/admin/Plans.vue'
-import AdminSearchCenter from '@/views/admin/SearchCenter.vue'
-import AdminStatistics from '@/views/admin/Statistics.vue'
-import AdminTeacherRegisterApplies from '@/views/admin/TeacherRegisterApplies.vue'
-import StudentApplications from '@/views/student/Applications.vue'
-import StudentAttendance from '@/views/student/Attendance.vue'
-import StudentDashboard from '@/views/student/Dashboard.vue'
-import StudentLabs from '@/views/student/Labs.vue'
-import StudentLabDetail from '@/views/student/LabDetail.vue'
-import StudentMyLab from '@/views/student/MyLab.vue'
-import StudentNotices from '@/views/student/Notices.vue'
-import StudentSpace from '@/views/student/Space.vue'
-import Profile from '@/views/student/Profile.vue'
-import TeacherDashboard from '@/views/teacher/Dashboard.vue'
-import TeacherLabCreateApplies from '@/views/teacher/LabCreateApplies.vue'
+const Intro = () => import('@/views/Intro.vue')
+const Login = () => import('@/views/Login.vue')
+const Register = () => import('@/views/Register.vue')
+const TeacherRegister = () => import('@/views/TeacherRegister.vue')
+const LabInfoDetail = () => import('@/views/LabInfoDetail.vue')
+const AdminApplications = () => import('@/views/admin/Applications.vue')
+const AdminAttendanceTasks = () => import('@/views/admin/AttendanceTasks.vue')
+const AdminColleges = () => import('@/views/admin/Colleges.vue')
+const AdminCreateApplies = () => import('@/views/admin/LabCreateApplies.vue')
+const AdminDashboard = () => import('@/views/admin/Dashboard.vue')
+const AdminLabWorkspace = () => import('@/views/admin/LabWorkspace.vue')
+const AdminLabs = () => import('@/views/admin/Labs.vue')
+const AdminMembers = () => import('@/views/admin/Members.vue')
+const AdminNotices = () => import('@/views/admin/Notices.vue')
+const AdminPlans = () => import('@/views/admin/Plans.vue')
+const AdminSearchCenter = () => import('@/views/admin/SearchCenter.vue')
+const AdminStatistics = () => import('@/views/admin/Statistics.vue')
+const AdminTeacherRegisterApplies = () => import('@/views/admin/TeacherRegisterApplies.vue')
+const StudentApplications = () => import('@/views/student/Applications.vue')
+const StudentAttendance = () => import('@/views/student/Attendance.vue')
+const StudentDashboard = () => import('@/views/student/Dashboard.vue')
+const StudentLabs = () => import('@/views/student/Labs.vue')
+const StudentLabDetail = () => import('@/views/student/LabDetail.vue')
+const StudentMyLab = () => import('@/views/student/MyLab.vue')
+const StudentNotices = () => import('@/views/student/Notices.vue')
+const StudentSpace = () => import('@/views/student/Space.vue')
+const Profile = () => import('@/views/student/Profile.vue')
+const TeacherDashboard = () => import('@/views/teacher/Dashboard.vue')
+const TeacherLabCreateApplies = () => import('@/views/teacher/LabCreateApplies.vue')
+const MobileNotices = () => import('@/views/mobile/Notices.vue')
+const MobileProfile = () => import('@/views/mobile/Profile.vue')
+const MobileStudentApplications = () => import('@/views/mobile/student/Applications.vue')
+const MobileStudentDashboard = () => import('@/views/mobile/student/Dashboard.vue')
+const MobileStudentLabDetail = () => import('@/views/mobile/student/LabDetail.vue')
+const MobileStudentLabs = () => import('@/views/mobile/student/Labs.vue')
+const MobileTeacherCreateApplies = () => import('@/views/mobile/teacher/CreateApplies.vue')
+const MobileTeacherDashboard = () => import('@/views/mobile/teacher/Dashboard.vue')
 
-const PLATFORM_TITLE = '安徽信息工程学院实验室管理平台'
+const PLATFORM_TITLE = 'LabLink'
 
 const routes = [
   {
@@ -126,6 +137,32 @@ const routes = [
     ]
   },
   {
+    path: '/m/student',
+    component: MobileStudentLayout,
+    meta: { requiresAuth: true, role: 'student' },
+    children: [
+      { path: '', redirect: '/m/student/dashboard' },
+      { path: 'dashboard', component: MobileStudentDashboard, meta: { title: '学生首页' } },
+      { path: 'labs', component: MobileStudentLabs, meta: { title: '实验室总览' } },
+      { path: 'labs/:id', component: MobileStudentLabDetail, meta: { title: '实验室详情' } },
+      { path: 'applications', component: MobileStudentApplications, meta: { title: '我的申请' } },
+      { path: 'notices', component: MobileNotices, meta: { title: '公告中心' } },
+      { path: 'profile', component: MobileProfile, meta: { title: '我的' } }
+    ]
+  },
+  {
+    path: '/m/teacher',
+    component: MobileTeacherLayout,
+    meta: { requiresAuth: true, role: 'teacher' },
+    children: [
+      { path: '', redirect: '/m/teacher/dashboard' },
+      { path: 'dashboard', component: MobileTeacherDashboard, meta: { title: '教师首页' } },
+      { path: 'create-applies', component: MobileTeacherCreateApplies, meta: { title: '创建申请' } },
+      { path: 'notices', component: MobileNotices, meta: { title: '公告中心' } },
+      { path: 'profile', component: MobileProfile, meta: { title: '我的' } }
+    ]
+  },
+  {
     path: '/:pathMatch(.*)*',
     redirect: '/login'
   }
@@ -144,11 +181,51 @@ const resolveCurrentPortalRole = () => {
   return resolvePortalRole(getUserInfo())
 }
 
+const CATCH_ALL_ROUTE_PATH = '/:pathMatch(.*)*'
+
+const hasRoute = (path) => {
+  const resolved = router.resolve({ path })
+  return resolved.matched.length > 0 && !resolved.matched.some((record) => record.path === CATCH_ALL_ROUTE_PATH)
+}
+
+const resolveCounterpartPath = (path, fromPrefix, toPrefix) => {
+  if (!path.startsWith(fromPrefix)) {
+    return null
+  }
+  const candidate = path.replace(fromPrefix, toPrefix)
+  return hasRoute(candidate) ? candidate : null
+}
+
 router.beforeEach((to, from, next) => {
   document.title = to.meta.title ? `${to.meta.title} - ${PLATFORM_TITLE}` : PLATFORM_TITLE
 
   const token = getToken()
   const portalRole = resolveCurrentPortalRole()
+  const shouldUseMobile = isMobilePortal()
+
+  if (shouldUseMobile) {
+    const studentTarget = resolveCounterpartPath(to.path, '/student', '/m/student')
+    if (studentTarget) {
+      next({ path: studentTarget, query: to.query, hash: to.hash })
+      return
+    }
+    const teacherTarget = resolveCounterpartPath(to.path, '/teacher', '/m/teacher')
+    if (teacherTarget) {
+      next({ path: teacherTarget, query: to.query, hash: to.hash })
+      return
+    }
+  } else {
+    const studentTarget = resolveCounterpartPath(to.path, '/m/student', '/student')
+    if (studentTarget) {
+      next({ path: studentTarget, query: to.query, hash: to.hash })
+      return
+    }
+    const teacherTarget = resolveCounterpartPath(to.path, '/m/teacher', '/teacher')
+    if (teacherTarget) {
+      next({ path: teacherTarget, query: to.query, hash: to.hash })
+      return
+    }
+  }
 
   if (token && ['/', '/login', '/register', '/teacher-register', '/intro'].includes(to.path)) {
     next(resolvePortalHome(portalRole))

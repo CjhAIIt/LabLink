@@ -27,7 +27,36 @@
     </section>
 
     <el-card shadow="never" class="panel-card">
-      <el-table v-loading="loading" :data="applies" stripe>
+      <div v-if="isMobile" v-loading="loading" class="apply-mobile-list">
+        <template v-if="applies.length">
+          <article v-for="row in applies" :key="row.id" class="apply-mobile-card">
+            <div class="apply-mobile-head">
+              <div class="apply-mobile-title-group">
+                <strong>{{ row.labName || '未命名实验室' }}</strong>
+                <span>{{ row.planTitle || '未命名招新计划' }}</span>
+              </div>
+              <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
+            </div>
+
+            <div class="apply-mobile-meta">
+              <span>提交时间：{{ formatDateTime(row.createTime) }}</span>
+            </div>
+
+            <div class="apply-mobile-section">
+              <label>申请理由</label>
+              <p>{{ row.applyReason || '暂无申请理由' }}</p>
+            </div>
+
+            <div class="apply-mobile-section">
+              <label>审核意见</label>
+              <p>{{ row.auditComment || '暂未反馈审核意见' }}</p>
+            </div>
+          </article>
+        </template>
+        <el-empty v-else description="暂无申请记录" />
+      </div>
+
+      <el-table v-else v-loading="loading" :data="applies" stripe>
         <el-table-column prop="labName" label="实验室" min-width="160" />
         <el-table-column prop="planTitle" label="招新计划" min-width="180" />
         <el-table-column prop="status" label="状态" min-width="120">
@@ -58,11 +87,12 @@
 
 <script setup>
 import dayjs from 'dayjs'
-import { onMounted, reactive, ref } from 'vue'
+import { onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { getMyLabApplyPage } from '@/api/labApplies'
 
 const loading = ref(false)
 const applies = ref([])
+const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth <= 768 : false)
 
 const filters = reactive({
   status: ''
@@ -73,6 +103,10 @@ const pagination = reactive({
   pageSize: 10,
   total: 0
 })
+
+const updateViewport = () => {
+  isMobile.value = window.innerWidth <= 768
+}
 
 const loadApplies = async () => {
   loading.value = true
@@ -117,7 +151,13 @@ const statusTagType = (status) => {
 const formatDateTime = (value) => (value ? dayjs(value).format('YYYY-MM-DD HH:mm') : '-')
 
 onMounted(() => {
+  updateViewport()
+  window.addEventListener('resize', updateViewport)
   loadApplies()
+})
+
+onBeforeUnmount(() => {
+  window.removeEventListener('resize', updateViewport)
 })
 </script>
 
@@ -126,5 +166,64 @@ onMounted(() => {
   display: flex;
   justify-content: flex-end;
   margin-top: 18px;
+}
+
+.apply-mobile-list {
+  display: grid;
+  gap: 14px;
+}
+
+.apply-mobile-card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(180deg, #ffffff, #f8fbff);
+}
+
+.apply-mobile-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.apply-mobile-title-group {
+  display: grid;
+  gap: 6px;
+}
+
+.apply-mobile-title-group strong {
+  color: #0f172a;
+  font-size: 16px;
+}
+
+.apply-mobile-title-group span,
+.apply-mobile-meta,
+.apply-mobile-section p {
+  color: #475569;
+  line-height: 1.7;
+}
+
+.apply-mobile-meta {
+  font-size: 12px;
+}
+
+.apply-mobile-section {
+  display: grid;
+  gap: 6px;
+}
+
+.apply-mobile-section label {
+  color: #0f766e;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+@media (max-width: 768px) {
+  .pagination-row {
+    justify-content: center;
+  }
 }
 </style>

@@ -42,6 +42,14 @@
             <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
           </template>
         </el-table-column>
+        <el-table-column label="简历" min-width="140">
+          <template #default="{ row }">
+            <el-link v-if="row.resume" :href="resolveFileUrl(row.resume)" target="_blank" type="primary">
+              查看简历
+            </el-link>
+            <span v-else class="muted-text">未上传</span>
+          </template>
+        </el-table-column>
         <el-table-column prop="applyReason" label="申请理由" min-width="220" show-overflow-tooltip />
         <el-table-column label="提交时间" min-width="170">
           <template #default="{ row }">{{ formatDateTime(row.createTime) }}</template>
@@ -91,6 +99,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { onMounted, reactive, ref } from 'vue'
 import { auditLabApply, getLabApplyPage } from '@/api/labApplies'
 import { downloadCsv } from '@/utils/export'
+import { resolveFileUrl } from '@/utils/file'
 
 const loading = ref(false)
 const exporting = ref(false)
@@ -198,6 +207,10 @@ onMounted(() => {
 </script>
 
 <style scoped>
+.muted-text {
+  color: #94a3b8;
+}
+
 .pagination-row {
   display: flex;
   justify-content: flex-end;

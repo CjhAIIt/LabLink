@@ -28,6 +28,20 @@
             <el-icon><Search /></el-icon>
           </template>
         </el-input>
+        <el-select v-model="searchOptions.collegeId" clearable size="large" placeholder="学院筛选">
+          <el-option v-for="item in collegeOptions" :key="item.id" :label="item.collegeName" :value="item.id" />
+        </el-select>
+        <el-select v-model="searchOptions.noticeScope" clearable size="large" placeholder="公告范围">
+          <el-option label="全范围" value="" />
+          <el-option label="全校" value="school" />
+          <el-option label="学院" value="college" />
+          <el-option label="实验室" value="lab" />
+        </el-select>
+        <el-select v-model="searchOptions.pageSize" size="large" placeholder="显示条数">
+          <el-option :value="6" label="每类 6 条" />
+          <el-option :value="12" label="每类 12 条" />
+          <el-option :value="20" label="每类 20 条" />
+        </el-select>
         <el-button type="primary" size="large" :loading="loading" @click="handleSearch">
           开始检索
         </el-button>
@@ -115,11 +129,11 @@
 </template>
 
 <script setup>
-import { computed, reactive, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { Search } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { getAdminStudentPage } from '@/api/admin'
-import { getCollegePage } from '@/api/colleges'
+import { getCollegeOptions, getCollegePage } from '@/api/colleges'
 import { getLabPage } from '@/api/lab'
 import { getNoticePage } from '@/api/notices'
 import { downloadCsv } from '@/utils/export'
@@ -128,6 +142,13 @@ const keyword = ref('')
 const loading = ref(false)
 const exportLoading = ref(false)
 const hasSearched = ref(false)
+const collegeOptions = ref([])
+
+const searchOptions = reactive({
+  collegeId: null,
+  noticeScope: '',
+  pageSize: 6
+})
 
 const results = reactive({
   colleges: [],
@@ -157,10 +178,21 @@ const fillResults = (target, source = []) => {
 const fetchSearchResults = (normalizedKeyword, pageSize) =>
   Promise.all([
     getCollegePage({ pageNum: 1, pageSize, keyword: normalizedKeyword }),
-    getLabPage({ pageNum: 1, pageSize, labName: normalizedKeyword }),
+    getLabPage({ pageNum: 1, pageSize, collegeId: searchOptions.collegeId, labName: normalizedKeyword }),
     getAdminStudentPage({ pageNum: 1, pageSize, keyword: normalizedKeyword }),
-    getNoticePage({ pageNum: 1, pageSize, keyword: normalizedKeyword })
+    getNoticePage({
+      pageNum: 1,
+      pageSize,
+      publishScope: searchOptions.noticeScope || undefined,
+      collegeId: searchOptions.collegeId || undefined,
+      keyword: normalizedKeyword
+    })
   ])
+
+const loadCollegeOptions = async () => {
+  const response = await getCollegeOptions()
+  collegeOptions.value = response.data || []
+}
 
 const applySearchResults = ([collegeRes, labRes, studentRes, noticeRes]) => {
   fillResults(results.colleges, collegeRes.data?.records || [])
@@ -185,7 +217,7 @@ const handleSearch = async () => {
   hasSearched.value = true
 
   try {
-    const responseSet = await fetchSearchResults(normalizedKeyword, 6)
+    const responseSet = await fetchSearchResults(normalizedKeyword, searchOptions.pageSize)
     applySearchResults(responseSet)
   } finally {
     loading.value = false
@@ -247,6 +279,9 @@ const handleExport = async () => {
 const resetSearch = () => {
   keyword.value = ''
   hasSearched.value = false
+  searchOptions.collegeId = null
+  searchOptions.noticeScope = ''
+  searchOptions.pageSize = 6
   fillResults(results.colleges)
   fillResults(results.labs)
   fillResults(results.students)
@@ -261,8 +296,12 @@ const emptyDescription = (label) => {
   if (!hasSearched.value) {
     return `输入关键词后开始检索${label}`
   }
-  return `未检索到相关${label}`
+  return `未检索到相关${label}，可尝试更短关键词或切换筛选项`
 }
+
+onMounted(async () => {
+  await loadCollegeOptions()
+})
 </script>
 
 <style scoped>
@@ -296,8 +335,9 @@ const emptyDescription = (label) => {
 
 .search-row {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto auto;
+  grid-template-columns: minmax(260px, 1fr) repeat(6, auto);
   gap: 12px;
+  align-items: center;
 }
 
 .results-grid {

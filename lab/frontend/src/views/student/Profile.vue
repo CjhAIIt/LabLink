@@ -1,7 +1,7 @@
 <template>
   <div class="profile-page">
     <el-row :gutter="20">
-      <el-col :span="8">
+      <el-col :xs="24" :sm="24" :md="8">
         <el-card class="profile-card">
           <template #header>
             <div class="card-header">
@@ -63,7 +63,7 @@
         </el-card>
       </el-col>
 
-      <el-col :span="16">
+      <el-col :xs="24" :sm="24" :md="16">
         <el-card class="password-card">
           <template #header>
             <span>修改密码</span>
@@ -111,7 +111,7 @@
       </el-col>
     </el-row>
 
-    <el-dialog v-model="showEditDialog" title="编辑个人信息" width="50%" :close-on-click-modal="false">
+    <el-dialog v-model="showEditDialog" title="编辑个人信息" width="min(720px, 92vw)" :close-on-click-modal="false">
       <el-form ref="profileFormRef" :model="profileForm" :rules="profileRules" label-width="90px">
         <el-form-item label="账号">
           <el-input :model-value="accountValue" disabled />
@@ -158,7 +158,7 @@
       </template>
     </el-dialog>
 
-    <el-dialog v-model="showAvatarUpload" title="更换头像" width="420px" :close-on-click-modal="false">
+    <el-dialog v-model="showAvatarUpload" title="更换头像" width="min(420px, 92vw)" :close-on-click-modal="false">
       <div class="avatar-dialog-content">
         <div class="avatar-preview-box">
           <el-avatar :size="120" :src="avatarPreviewUrl">
@@ -577,5 +577,40 @@ onMounted(() => {
 
 .resume-link {
   margin-top: 12px;
+}
+
+@media (max-width: 768px) {
+  .card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .info-item {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .info-label {
+    width: auto;
+  }
+
+  .password-form {
+    max-width: none;
+  }
+
+  .password-form :deep(.el-form-item__content) {
+    margin-left: 0 !important;
+  }
+
+  .dialog-footer {
+    width: 100%;
+    flex-direction: column-reverse;
+  }
+
+  .dialog-footer .el-button {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 </style>

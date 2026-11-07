@@ -5,8 +5,8 @@
         <BrandLogo
           class="brand"
           size="lg"
-          title="安徽信息工程学院"
-          subtitle="实验室管理平台 · 学生注册"
+          title="LabLink"
+          subtitle="高校实验室管理平台 · 学生注册"
         />
 
         <div class="hero-card">

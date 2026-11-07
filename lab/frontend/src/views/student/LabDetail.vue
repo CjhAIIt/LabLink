@@ -18,7 +18,7 @@
           </div>
         </div>
         <div class="hero-actions">
-          <el-button type="primary" size="large" @click="handleApply" :disabled="!!userStore.userInfo?.labId">
+          <el-button type="primary" size="large" :disabled="!!userStore.userInfo?.labId" @click="handleApply">
             {{ userStore.userInfo?.labId ? '已加入实验室' : '立即申请加入' }}
           </el-button>
           <el-button size="large" @click="$router.back()">返回列表</el-button>
@@ -28,7 +28,7 @@
 
     <div v-if="lab" class="detail-container">
       <el-row :gutter="24">
-        <el-col :span="16">
+        <el-col :xs="24" :sm="24" :md="16">
           <!-- 实验室介绍 -->
           <el-card shadow="never" class="panel-card info-section">
             <template #header>
@@ -59,7 +59,7 @@
           </el-card>
         </el-col>
 
-        <el-col :span="8">
+        <el-col :xs="24" :sm="24" :md="8">
           <!-- 优秀学长 -->
           <el-card shadow="never" class="panel-card senior-section">
             <template #header>
@@ -288,14 +288,45 @@ onMounted(() => {
 }
 
 @media (max-width: 768px) {
+  .detail-hero {
+    padding: 26px 20px;
+    margin: -16px -12px 20px -12px;
+    border-radius: 0 0 24px 24px;
+  }
+
   .hero-content {
     flex-direction: column;
     align-items: flex-start;
-    gap: 24px;
+    gap: 20px;
   }
-  
+
+  .hero-text h1 {
+    font-size: 24px;
+    line-height: 1.3;
+  }
+
+  .hero-subtitle {
+    font-size: 14px;
+    margin-bottom: 16px;
+  }
+
+  .hero-meta {
+    flex-direction: column;
+    gap: 10px;
+  }
+
   .hero-actions {
     width: 100%;
+    flex-direction: column;
+  }
+
+  .hero-actions .el-button {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .detail-container :deep(.el-row) {
+    row-gap: 20px;
   }
 }
 </style>

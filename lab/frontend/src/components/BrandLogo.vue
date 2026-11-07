@@ -1,7 +1,7 @@
 <template>
   <div class="brand-logo" :class="[sizeClass, `tone-${tone}`]" :aria-label="title">
     <div class="brand-mark" aria-hidden="true">
-      <span class="brand-mark-text">AIIT</span>
+      <span class="brand-mark-text">Link</span>
     </div>
 
     <div v-if="showText" class="brand-copy">
@@ -87,9 +87,7 @@ const sizeClass = computed(() => `size-${props.size}`)
   place-items: center;
   color: #f8fafc;
   font-weight: 900;
-  letter-spacing: 0.18em;
-  text-indent: 0.18em;
-  text-transform: uppercase;
+  letter-spacing: 0.08em;
   text-shadow: 0 4px 18px rgba(8, 15, 35, 0.28);
 }
 

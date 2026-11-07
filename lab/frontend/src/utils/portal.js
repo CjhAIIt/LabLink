@@ -1,5 +1,22 @@
 const ADMIN_ROLES = new Set(['admin', 'super_admin'])
 
+export function isMobilePortal() {
+  if (typeof window === 'undefined') {
+    return false
+  }
+
+  try {
+    const isNative = Boolean(window?.Capacitor?.isNativePlatform?.())
+    if (isNative) {
+      return true
+    }
+  } catch (error) {
+    // ignore
+  }
+
+  return window.matchMedia?.('(max-width: 768px)')?.matches ?? window.innerWidth <= 768
+}
+
 export function resolvePortalRole(userInfo) {
   if (!userInfo) {
     return ''
@@ -28,7 +45,7 @@ export function resolvePortalHome(userInfoOrRole) {
     return '/admin/dashboard'
   }
   if (portalRole === 'teacher') {
-    return '/teacher/dashboard'
+    return isMobilePortal() ? '/m/teacher/dashboard' : '/teacher/dashboard'
   }
-  return '/student/dashboard'
+  return isMobilePortal() ? '/m/student/dashboard' : '/student/dashboard'
 }
