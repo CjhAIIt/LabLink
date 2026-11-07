@@ -12,6 +12,11 @@ import java.util.List;
 @ConfigurationProperties(prefix = "app.security")
 public class AppSecurityProperties {
 
+    /**
+     * 运行环境标识。local 仅告警，production 会强制校验密钥与来源白名单，不满足直接拒绝启动。
+     */
+    private String environment = "local";
+
     private List<String> allowedOrigins = new ArrayList<>(Arrays.asList(
             "http://localhost:3000",
             "http://127.0.0.1:3000",
@@ -22,6 +27,20 @@ public class AppSecurityProperties {
     ));
 
     private RateLimitProperties rateLimit = new RateLimitProperties();
+
+    private JudgeProperties judge = new JudgeProperties();
+
+    public String getEnvironment() {
+        return environment;
+    }
+
+    public void setEnvironment(String environment) {
+        this.environment = environment;
+    }
+
+    public boolean isProduction() {
+        return "production".equalsIgnoreCase(environment);
+    }
 
     public List<String> getAllowedOrigins() {
         return allowedOrigins;
@@ -56,12 +75,78 @@ public class AppSecurityProperties {
         this.rateLimit = rateLimit;
     }
 
+    /**
+     * 代码评测（在线判题）相关配置。
+     */
+    public static class JudgeProperties {
+        /**
+         * 是否开启在线判题。执行用户提交的代码存在逃逸风险，默认关闭，需要时显式开启。
+         */
+        private boolean enabled = false;
+
+        /**
+         * 单次评测的墙钟超时（秒）。
+         */
+        private int timeoutSeconds = 5;
+
+        /**
+         * Java 评测进程的最大堆内存（MB）。
+         */
+        private int maxMemoryMb = 128;
+
+        /**
+         * 单次评测允许捕获的最大输出字节数。
+         */
+        private int maxOutputBytes = 64 * 1024;
+
+        public boolean isEnabled() {
+            return enabled;
+        }
+
+        public void setEnabled(boolean enabled) {
+            this.enabled = enabled;
+        }
+
+        public int getTimeoutSeconds() {
+            return timeoutSeconds;
+        }
+
+        public void setTimeoutSeconds(int timeoutSeconds) {
+            this.timeoutSeconds = timeoutSeconds;
+        }
+
+        public int getMaxMemoryMb() {
+            return maxMemoryMb;
+        }
+
+        public void setMaxMemoryMb(int maxMemoryMb) {
+            this.maxMemoryMb = maxMemoryMb;
+        }
+
+        public int getMaxOutputBytes() {
+            return maxOutputBytes;
+        }
+
+        public void setMaxOutputBytes(int maxOutputBytes) {
+            this.maxOutputBytes = maxOutputBytes;
+        }
+    }
+
+    public JudgeProperties getJudge() {
+        return judge;
+    }
+
+    public void setJudge(JudgeProperties judge) {
+        this.judge = judge;
+    }
+
     public static class RateLimitProperties {
         private LimitRule login = new LimitRule(8, 60);
         private LimitRule register = new LimitRule(4, 300);
         private LimitRule emailCode = new LimitRule(3, 300);
         private LimitRule passwordReset = new LimitRule(5, 300);
         private LimitRule upload = new LimitRule(20, 300);
+        private LimitRule judge = new LimitRule(10, 60);
 
         public LimitRule getLogin() {
             return login;
@@ -101,6 +186,14 @@ public class AppSecurityProperties {
 
         public void setUpload(LimitRule upload) {
             this.upload = upload;
+        }
+
+        public LimitRule getJudge() {
+            return judge;
+        }
+
+        public void setJudge(LimitRule judge) {
+            this.judge = judge;
         }
     }
 

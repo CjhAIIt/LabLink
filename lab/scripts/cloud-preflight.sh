@@ -29,13 +29,35 @@ if [[ -z "${MYSQL_ROOT_PASSWORD:-}" ]]; then
   exit 1
 fi
 
+if [[ "${MYSQL_ROOT_PASSWORD:-}" == "cjh041217" ]]; then
+  echo "ERROR: MYSQL_ROOT_PASSWORD is still the repository default"
+  echo "HINT: generate one with 'openssl rand -base64 24'"
+  exit 1
+fi
+
 if [[ -z "${JWT_SECRET:-}" || "${JWT_SECRET:-}" == "ChangeThisJwtSecretBeforeProduction" ]]; then
   echo "ERROR: JWT_SECRET is still placeholder"
   exit 1
 fi
 
+if [[ ${#JWT_SECRET} -lt 32 ]]; then
+  echo "ERROR: JWT_SECRET is shorter than 32 characters"
+  echo "HINT: generate one with 'openssl rand -hex 32'"
+  exit 1
+fi
+
 if [[ -z "${APP_SECURITY_ALLOWED_ORIGINS_CSV:-}" ]]; then
   echo "ERROR: APP_SECURITY_ALLOWED_ORIGINS_CSV is empty"
+  exit 1
+fi
+
+if [[ "${APP_SECURITY_ALLOWED_ORIGINS_CSV:-}" == *"*"* ]]; then
+  echo "ERROR: APP_SECURITY_ALLOWED_ORIGINS_CSV must not contain a wildcard"
+  exit 1
+fi
+
+if [[ "${APP_SECURITY_ALLOWED_ORIGINS_CSV:-}" == *"your-domain.example.com"* ]]; then
+  echo "ERROR: APP_SECURITY_ALLOWED_ORIGINS_CSV is still the example placeholder"
   exit 1
 fi
 

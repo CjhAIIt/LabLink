@@ -19,6 +19,7 @@ import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
 import java.util.Arrays;
+import java.util.List;
 
 /**
  * Spring Security配置类
@@ -39,6 +40,9 @@ public class SecurityConfig {
      */
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
+
+    @Autowired
+    private AppSecurityProperties securityProperties;
 
     /**
      * JWT认证入口点，处理认证失败的情况
@@ -107,7 +111,7 @@ public class SecurityConfig {
                     "/api/user/login",
                     "/api/user/register"
             ).permitAll()
-            .antMatchers("/file/upload", "/file/view").permitAll()
+            .antMatchers("/file/view").permitAll()
             .antMatchers("/uploads/**").permitAll()
             .antMatchers(HttpMethod.GET, "/labs/list", "/api/labs/list").permitAll()
             .antMatchers(HttpMethod.GET, "/labs/*", "/api/labs/*").permitAll()
@@ -137,11 +141,21 @@ public class SecurityConfig {
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
-        configuration.setAllowCredentials(true);
-        
+        configuration.setMaxAge(3600L);
+
+        List<String> origins = securityProperties.resolveAllowedOrigins();
+        boolean allowAnyOrigin = origins.stream().anyMatch(origin -> "*".equals(origin.trim()));
+
+        if (allowAnyOrigin) {
+            configuration.setAllowedOriginPatterns(origins);
+            configuration.setAllowCredentials(false);
+        } else {
+            configuration.setAllowedOrigins(origins);
+            configuration.setAllowCredentials(true);
+        }
+
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
         return source;

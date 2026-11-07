@@ -2,8 +2,11 @@ package com.lab.recruitment.config;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.lab.recruitment.utils.Result;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
@@ -20,6 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 @Component
 public class RequestRateLimitFilter extends OncePerRequestFilter {
 
+    private static final Logger log = LoggerFactory.getLogger(RequestRateLimitFilter.class);
+
     private static final String LOGIN_PATH = "/auth/login";
     private static final String REGISTER_PATH = "/auth/register";
     private static final String TEACHER_REGISTER_PATH = "/auth/teacher-register";
@@ -28,6 +33,14 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
     private static final String PASSWORD_RESET_SEND_CODE_PATH = "/auth/password-reset/send-code";
     private static final String PASSWORD_RESET_CONFIRM_PATH = "/auth/password-reset/confirm";
     private static final String UPLOAD_PATH = "/file/upload";
+    private static final String JUDGE_SUBMIT_PATH = "/grad-path/judge/submit";
+    private static final String JUDGE_DEBUG_PATH = "/grad-path/judge/debug";
+    private static final String JUDGE_ANALYZE_PATH = "/grad-path/judge/analyze";
+
+    /**
+     * 限流桶的最长保留时长，超过后由定时任务回收，避免长期运行时桶数量无限增长。
+     */
+    private static final long BUCKET_RETENTION_SECONDS = 3600L;
 
     private final Map<String, RateLimitBucket> buckets = new ConcurrentHashMap<>();
     private final ObjectMapper objectMapper = new ObjectMapper();
@@ -89,7 +102,32 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
         if (UPLOAD_PATH.equals(path)) {
             return new RateLimitRule(UPLOAD_PATH, rateLimit.getUpload().getMaxRequests(), rateLimit.getUpload().getWindowSeconds());
         }
+        if (JUDGE_SUBMIT_PATH.equals(path) || JUDGE_DEBUG_PATH.equals(path) || JUDGE_ANALYZE_PATH.equals(path)) {
+            return new RateLimitRule(path, rateLimit.getJudge().getMaxRequests(), rateLimit.getJudge().getWindowSeconds());
+        }
         return null;
+    }
+
+    /**
+     * 定时回收长时间未使用的限流桶。
+     *
+     * <p>桶以「路径 + 客户端 IP」为键，来源不受控时键数量会持续增长，
+     * 长期运行会拖慢请求处理并占用内存，因此这里定期清理。</p>
+     */
+    @Scheduled(fixedDelay = 300000L)
+    public void evictExpiredBuckets() {
+        long now = Instant.now().getEpochSecond();
+        int removed = 0;
+        for (Map.Entry<String, RateLimitBucket> entry : buckets.entrySet()) {
+            if (now - entry.getValue().lastAccessEpochSecond() > BUCKET_RETENTION_SECONDS) {
+                if (buckets.remove(entry.getKey(), entry.getValue())) {
+                    removed++;
+                }
+            }
+        }
+        if (removed > 0) {
+            log.info("回收过期限流桶 {} 个，当前剩余 {} 个", removed, buckets.size());
+        }
     }
 
     private String buildClientKey(HttpServletRequest request, String path) {
@@ -114,9 +152,11 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
     private static class RateLimitBucket {
         private final AtomicInteger counter = new AtomicInteger(0);
         private volatile long windowStartEpochSecond = 0L;
+        private volatile long lastAccessEpochSecond = 0L;
 
         private synchronized RateLimitDecision consume(int limit, long windowSeconds) {
             long now = Instant.now().getEpochSecond();
+            lastAccessEpochSecond = now;
             if (windowStartEpochSecond == 0L || now - windowStartEpochSecond >= windowSeconds) {
                 windowStartEpochSecond = now;
                 counter.set(0);
@@ -127,6 +167,10 @@ public class RequestRateLimitFilter extends OncePerRequestFilter {
             long retryAfter = allowed ? 0L : Math.max(windowSeconds - (now - windowStartEpochSecond), 1L);
             int remaining = allowed ? limit - used : 0;
             return new RateLimitDecision(allowed, remaining, retryAfter);
+        }
+
+        private long lastAccessEpochSecond() {
+            return lastAccessEpochSecond;
         }
     }
 

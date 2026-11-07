@@ -1,7 +1,9 @@
 package com.lab.recruitment.service.impl;
 
+import com.lab.recruitment.config.AppSecurityProperties;
 import com.lab.recruitment.dto.JudgeCaseDTO;
 import lombok.Data;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
@@ -29,9 +31,31 @@ import java.util.stream.Collectors;
 @Service
 public class CodeJudgeService {
 
-    private static final Duration PROCESS_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration ENVIRONMENT_CACHE_TTL = Duration.ofSeconds(45);
-    private static final int MAX_STREAM_CAPTURE_BYTES = 64 * 1024;
+    private static final String JUDGE_DISABLED_MESSAGE =
+            "在线判题未开启，如需启用请设置 APP_JUDGE_ENABLED=true 并自行评估执行隔离方案";
+
+    @Autowired
+    private AppSecurityProperties securityProperties;
+
+    private Duration processTimeout() {
+        int seconds = securityProperties.getJudge().getTimeoutSeconds();
+        return Duration.ofSeconds(seconds > 0 ? seconds : 5);
+    }
+
+    private int maxStreamCaptureBytes() {
+        int bytes = securityProperties.getJudge().getMaxOutputBytes();
+        return bytes > 0 ? bytes : 64 * 1024;
+    }
+
+    private int maxMemoryMb() {
+        int megabytes = securityProperties.getJudge().getMaxMemoryMb();
+        return megabytes > 0 ? megabytes : 128;
+    }
+
+    private boolean judgeEnabled() {
+        return securityProperties.getJudge().isEnabled();
+    }
 
     @Value("${judge.python-command:python}")
     private String pythonCommand;
@@ -121,6 +145,9 @@ public class CodeJudgeService {
     }
 
     public JudgeResult judge(String language, String code, List<JudgeCaseDTO> judgeCases) {
+        if (!judgeEnabled()) {
+            return unavailable(JUDGE_DISABLED_MESSAGE);
+        }
         if (!StringUtils.hasText(language)) {
             return unavailable("Please select a programming language");
         }
@@ -146,6 +173,9 @@ public class CodeJudgeService {
     }
 
     public RunResult run(String language, String code, String input) {
+        if (!judgeEnabled()) {
+            return runUnavailable(JUDGE_DISABLED_MESSAGE);
+        }
         if (!StringUtils.hasText(language)) {
             return runUnavailable("Please select a programming language");
         }
@@ -191,7 +221,7 @@ public class CodeJudgeService {
                 if (compileResult.exitCode != 0) {
                     return failedRun("compile_error", "Compilation failed", compileResult.stderr, compileResult.stdout);
                 }
-                return buildRunResult(runProcess(new String[]{runtime, "Main"}, workDir, input));
+                return buildRunResult(runProcess(new String[]{runtime, "-Xmx" + maxMemoryMb() + "m", "Main"}, workDir, input));
             } finally {
                 deleteDirectoryQuietly(workDir);
             }
@@ -290,7 +320,7 @@ public class CodeJudgeService {
                 if (compileResult.exitCode != 0) {
                     return failedWithMessage("Compilation failed", compileResult.stderr);
                 }
-                return runJudgeCases(workDir, new String[]{runtime, "Main"}, judgeCases);
+                return runJudgeCases(workDir, new String[]{runtime, "-Xmx" + maxMemoryMb() + "m", "Main"}, judgeCases);
             } finally {
                 deleteDirectoryQuietly(workDir);
             }
@@ -426,7 +456,7 @@ public class CodeJudgeService {
             process.getOutputStream().close();
         }
 
-        boolean finished = process.waitFor(PROCESS_TIMEOUT.toMillis(), TimeUnit.MILLISECONDS);
+        boolean finished = process.waitFor(processTimeout().toMillis(), TimeUnit.MILLISECONDS);
         ProcessResult result = new ProcessResult();
         if (!finished) {
             result.timedOut = true;
@@ -555,15 +585,16 @@ public class CodeJudgeService {
     }
 
     private String readStream(InputStream inputStream) throws IOException {
+        int captureLimit = maxStreamCaptureBytes();
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         byte[] buffer = new byte[4096];
         int total = 0;
         int read;
         boolean truncated = false;
-        while ((read = inputStream.read(buffer, 0, Math.min(buffer.length, MAX_STREAM_CAPTURE_BYTES - total))) != -1) {
+        while ((read = inputStream.read(buffer, 0, Math.min(buffer.length, captureLimit - total))) != -1) {
             outputStream.write(buffer, 0, read);
             total += read;
-            if (total >= MAX_STREAM_CAPTURE_BYTES) {
+            if (total >= captureLimit) {
                 truncated = inputStream.read() != -1;
                 break;
             }

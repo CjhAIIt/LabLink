@@ -85,6 +85,13 @@ Get-Content $envFile | ForEach-Object {
     }
 }
 
+$jwtSecret = $envMap["JWT_SECRET"]
+if (-not $jwtSecret) {
+    # 本地开发没有配置密钥时自动生成一个，避免把仓库中的默认值带进运行环境。
+    $jwtSecret = [System.Guid]::NewGuid().ToString("N") + [System.Guid]::NewGuid().ToString("N")
+    Write-Host "JWT_SECRET not configured, generated a temporary local secret."
+}
+
 if (-not (Test-Path $backendJar)) {
     $javaHome = Find-JavaHome
     if (-not $javaHome) {
@@ -127,7 +134,9 @@ if (-not $backendListening) {
         "-Dspring.datasource.url=jdbc:mysql://localhost:3307/lab_recruitment?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=GMT%2B8&allowPublicKeyRetrieval=true",
         "-Dspring.datasource.username=root",
         "-Dspring.datasource.password=$($envMap["MYSQL_ROOT_PASSWORD"])",
-        "-Djwt.secret=$($envMap["JWT_SECRET"])",
+        "-Djwt.secret=$jwtSecret",
+        "-Dapp.security.environment=local",
+        "-Dspring.profiles.active=dev",
         "-Dfile.upload-path=./uploads/",
         "-Djudge.work-dir=$judgeWorkDir",
         "-jar",

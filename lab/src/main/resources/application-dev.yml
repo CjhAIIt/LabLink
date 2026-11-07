@@ -1,0 +1,6 @@
+# 本地开发专用配置：打开 SQL 打印便于排查。
+# 通过 SPRING_PROFILES_ACTIVE=dev 或 --spring.profiles.active=dev 激活。
+# 生产环境不要激活此 profile，避免 SQL 与绑定参数（含手机号、邮箱、密码哈希）写入日志。
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl

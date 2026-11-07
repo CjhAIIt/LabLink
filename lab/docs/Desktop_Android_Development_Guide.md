@@ -44,7 +44,7 @@ Tauri 是一个用于为所有主流桌面操作系统构建微小、极速二�
 ### 1.2 备选方案：Electron
 如果项目中未来需要大量调用 Node.js 的底层系统 API（如极深度的文件系统操作或原生硬件交互），可以使用 Electron。
 - 安装：`npm install -D electron electron-builder vite-plugin-electron`
-- 配置：修改 `vite.config.js` 引入 electron 插件，编写 `main.js` 作为主进程入口。
+- 配置：修改 `vite.config.mjs` 引入 electron 插件，编写 `main.js` 作为主进程入口。
 
 ---
 
@@ -93,6 +93,9 @@ Capacitor 允许你将现有的 Web 应用（如本项目的 Vue 产物）直接
    - 适配刘海屏和状态栏，在 CSS 中使用 `env(safe-area-inset-top)` 等属性。
 3. **网络请求**：
    - Android App 中无法使用相对路径进行 API 请求。需确保 Axios 的 `baseURL` 配置为后端的绝对路径（如 `https://api.lab.aiit.edu.cn`），并处理好跨域或 SSL 证书问题。
+
+> **当前实现状态**：上述 3 项适配已在 Web 端落地，移动端界面体系、路由分流与安全区适配均已实现，原生打包工具链（Capacitor CLI、Android 工程）尚未引入。
+> 详见 [MOBILE-ADAPTATION.md](./MOBILE-ADAPTATION.md)，界面规范见 [FRONTEND-UI-GUIDE.md](./FRONTEND-UI-GUIDE.md)。
 
 ---
 

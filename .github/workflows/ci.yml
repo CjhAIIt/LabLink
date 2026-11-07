@@ -1,0 +1,56 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+
+jobs:
+  backend:
+    name: 后端构建与测试
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lab
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 JDK 11
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '11'
+          cache: maven
+          cache-dependency-path: lab/pom.xml
+
+      - name: 编译并运行测试
+        run: mvn -B -Dfile.encoding=UTF-8 test
+
+      - name: 打包
+        run: mvn -B -DskipTests package
+
+  frontend:
+    name: 前端检查与构建
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: lab/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: 安装 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: lab/frontend/package-lock.json
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: ESLint 检查
+        run: npx eslint . --ext .vue,.js,.jsx,.cjs,.mjs --ignore-path .gitignore
+
+      - name: 构建
+        run: npm run build

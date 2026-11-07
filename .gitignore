@@ -1,0 +1,39 @@
+# 运行期产物
+/logs/
+/uploads/
+/uploads_protected/
+/.judge-work/
+/target/
+
+# 临时脚本与调试产物
+/codex-review-test.txt
+/changed-files.txt
+/latest-workspace.patch
+/*.zip
+/*.tar
+/*.tar.gz
+/*.tgz
+
+# 依赖与构建输出
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+
+# 环境变量与密钥
+.env
+.env.*
+!.env.example
+!.env.cloud.example
+*.pem
+*.key
+*.pub
+
+# IDE
+.idea/
+.vscode/
+*.iml
+
+# 系统文件
+.DS_Store
+Thumbs.db

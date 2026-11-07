@@ -1,3 +1,0 @@
-member: updated lab_admin record for user 2 in lab 1
-member: updated lab_admin record for user 3 in lab 2
-member: updated lab_admin record for user 4 in lab 3
