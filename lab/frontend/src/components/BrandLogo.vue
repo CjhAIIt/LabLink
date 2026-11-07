@@ -85,7 +85,7 @@ const sizeClass = computed(() => `size-${props.size}`)
   width: 100%;
   height: 100%;
   place-items: center;
-  color: var(--ll-bg-muted);
+  color: var(--ll-on-brand);
   font-weight: 900;
   letter-spacing: 0.08em;
   text-shadow: 0 4px 18px rgba(8, 15, 35, 0.28);
@@ -121,7 +121,7 @@ const sizeClass = computed(() => `size-${props.size}`)
 }
 
 .tone-light .brand-title {
-  color: var(--ll-bg-muted);
+  color: var(--ll-text-primary);
 }
 
 .tone-light .brand-subtitle {

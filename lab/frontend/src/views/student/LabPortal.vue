@@ -598,7 +598,7 @@ onMounted(async () => {
 .stat-card {
   padding: 16px;
   border-radius: var(--ll-radius-lg);
-  background: rgba(255, 255, 255, 0.88);
+  background: var(--ll-bg-chrome);
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 

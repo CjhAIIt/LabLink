@@ -51,22 +51,25 @@
           </div>
         </div>
 
-        <el-dropdown @command="$emit('command', $event)">
-          <button class="user-chip" type="button">
-            <el-avatar :size="30">{{ userInitial }}</el-avatar>
-            <span class="user-chip-text">
-              <strong>{{ userName }}</strong>
-              <small>{{ userMeta }}</small>
-            </span>
-            <el-icon class="user-chip-caret"><ArrowDown /></el-icon>
-          </button>
-          <template #dropdown>
-            <el-dropdown-menu>
-              <el-dropdown-item command="profile">个人信息</el-dropdown-item>
-              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
-            </el-dropdown-menu>
-          </template>
-        </el-dropdown>
+        <div class="topbar-actions">
+          <ThemeToggle />
+          <el-dropdown @command="$emit('command', $event)">
+            <button class="user-chip" type="button">
+              <el-avatar :size="30">{{ userInitial }}</el-avatar>
+              <span class="user-chip-text">
+                <strong>{{ userName }}</strong>
+                <small>{{ userMeta }}</small>
+              </span>
+              <el-icon class="user-chip-caret"><ArrowDown /></el-icon>
+            </button>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+                <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </div>
       </header>
 
       <main class="content">
@@ -83,6 +86,7 @@ import { ArrowDown, Expand, Fold } from '@element-plus/icons-vue'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BrandLogo from '@/components/BrandLogo.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 defineProps({
   /** 顶栏左侧的角色标签，例如「管理端」 */
@@ -305,6 +309,13 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: var(--ll-space-2);
   min-width: 0;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-2);
+  flex-shrink: 0;
 }
 
 .topbar-heading {

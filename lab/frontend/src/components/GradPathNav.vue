@@ -96,7 +96,7 @@ const handleNavigate = (item) => {
   border: 1px solid rgba(14, 165, 233, 0.14);
   background:
     radial-gradient(circle at top right, rgba(125, 211, 252, 0.2), transparent 28%),
-    linear-gradient(135deg, rgba(255, 255, 255, 0.94), rgba(240, 249, 255, 0.96));
+    linear-gradient(135deg, var(--ll-bg-surface), var(--ll-brand-50));
 }
 
 .nav-copy {
@@ -145,7 +145,7 @@ const handleNavigate = (item) => {
   border-radius: var(--ll-radius-lg);
   padding: 16px 14px;
   text-align: left;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--ll-bg-chrome);
   color: var(--ll-text-secondary);
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;

@@ -415,7 +415,7 @@ onMounted(() => {
 .hero-chip {
   padding: 6px 14px;
   border-radius: var(--ll-radius-full);
-  color: var(--ll-text-inverse);
+  color: var(--ll-on-brand);
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.2);
   font-size: var(--ll-text-sm);

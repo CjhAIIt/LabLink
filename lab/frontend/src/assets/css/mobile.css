@@ -22,7 +22,7 @@
   border-radius: var(--ll-radius-lg);
   background: linear-gradient(135deg, var(--ll-brand-600) 0%, var(--ll-brand-700) 100%);
   box-shadow: var(--ll-shadow-sm);
-  color: var(--ll-text-inverse);
+  color: var(--ll-on-brand);
 }
 
 .m-shell .hero-text {
@@ -60,7 +60,7 @@
   border: none;
   border-radius: var(--ll-radius-md);
   background: rgba(255, 255, 255, 0.16);
-  color: var(--ll-text-inverse);
+  color: var(--ll-on-brand);
 }
 
 .m-shell .hero-refresh:active {
@@ -577,7 +577,7 @@
 
 .m-shell .hero-meta .meta-chip {
   background: rgba(255, 255, 255, 0.18);
-  color: var(--ll-text-inverse);
+  color: var(--ll-on-brand);
 }
 
 .m-shell .tags {

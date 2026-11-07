@@ -7,17 +7,20 @@
       <div class="m-title">
         <span class="m-title-text">{{ title }}</span>
       </div>
-      <el-dropdown placement="bottom-end" @command="$emit('command', $event)">
-        <button class="m-user-btn" type="button">
-          <el-avatar :size="30">{{ userInitial }}</el-avatar>
-        </button>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item command="profile">个人信息</el-dropdown-item>
-            <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
+      <div class="m-topbar-actions">
+        <ThemeToggle />
+        <el-dropdown placement="bottom-end" @command="$emit('command', $event)">
+          <button class="m-user-btn" type="button">
+            <el-avatar :size="30">{{ userInitial }}</el-avatar>
+          </button>
+          <template #dropdown>
+            <el-dropdown-menu>
+              <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+              <el-dropdown-item command="logout" divided>退出登录</el-dropdown-item>
+            </el-dropdown-menu>
+          </template>
+        </el-dropdown>
+      </div>
     </header>
 
     <main class="m-content">
@@ -44,6 +47,7 @@
 import { ArrowLeft } from '@element-plus/icons-vue'
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const props = defineProps({
   /** 底部标签 [{ path, label, icon }] */
@@ -83,7 +87,7 @@ const isActive = (path) => route.path === path || (path !== props.rootPath && ro
   gap: var(--ll-space-2);
   height: 52px;
   padding: env(safe-area-inset-top) 12px 0 12px;
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--ll-bg-chrome);
   border-bottom: 1px solid var(--ll-border-subtle);
   backdrop-filter: blur(12px);
 }
@@ -119,6 +123,13 @@ const isActive = (path) => route.path === path || (path !== props.rootPath && ro
   text-overflow: ellipsis;
 }
 
+.m-topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-2);
+  flex-shrink: 0;
+}
+
 .m-user-btn {
   width: 32px;
   height: 32px;
@@ -149,7 +160,7 @@ const isActive = (path) => route.path === path || (path !== props.rootPath && ro
   grid-template-columns: repeat(v-bind('tabItems.length'), minmax(0, 1fr));
   gap: 2px;
   padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
-  background: rgba(255, 255, 255, 0.94);
+  background: var(--ll-bg-chrome);
   border-top: 1px solid var(--ll-border-subtle);
   backdrop-filter: blur(14px);
 }

@@ -3,6 +3,7 @@
     <header class="portal-nav">
       <BrandLogo size="sm" title="LabLink" subtitle="高校实验室综合管理平台" />
       <nav class="portal-nav-links">
+        <ThemeToggle />
         <router-link to="/register">学生注册</router-link>
         <router-link to="/teacher-register">教师注册</router-link>
         <router-link class="nav-cta" to="/login">登录</router-link>
@@ -135,6 +136,7 @@
 <script setup>
 import { DocumentChecked, OfficeBuilding, TrendCharts, UserFilled } from '@element-plus/icons-vue'
 import BrandLogo from '@/components/BrandLogo.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCollegeOptions } from '@/api/colleges'
@@ -280,7 +282,7 @@ onBeforeUnmount(() => {
   gap: var(--ll-space-4);
   height: 64px;
   padding: 0 var(--ll-space-8);
-  background: rgba(255, 255, 255, 0.86);
+  background: var(--ll-bg-chrome);
   backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--ll-border-subtle);
   position: sticky;
@@ -291,7 +293,7 @@ onBeforeUnmount(() => {
 .portal-nav-links {
   display: flex;
   align-items: center;
-  gap: var(--ll-space-5);
+  gap: var(--ll-space-4);
   font-size: var(--ll-text-sm);
 }
 
@@ -308,13 +310,13 @@ onBeforeUnmount(() => {
   padding: 6px 16px;
   border-radius: var(--ll-radius-md);
   background: var(--ll-brand-600);
-  color: var(--ll-text-inverse);
+  color: var(--ll-on-brand);
   font-weight: 500;
 }
 
 .portal-nav-links .nav-cta:hover {
   background: var(--ll-brand-700);
-  color: var(--ll-text-inverse);
+  color: var(--ll-on-brand);
 }
 
 /* ---------- 主内容 ---------- */
@@ -383,13 +385,13 @@ onBeforeUnmount(() => {
 
 .primary-btn {
   background: var(--ll-brand-600);
-  color: var(--ll-text-inverse);
+  color: var(--ll-on-brand);
   box-shadow: var(--ll-shadow-sm);
 }
 
 .primary-btn:hover {
   background: var(--ll-brand-700);
-  color: var(--ll-text-inverse);
+  color: var(--ll-on-brand);
 }
 
 .ghost-btn {
@@ -550,7 +552,7 @@ onBeforeUnmount(() => {
 .college-pill.active {
   background: var(--ll-brand-600);
   border-color: var(--ll-brand-600);
-  color: var(--ll-text-inverse);
+  color: var(--ll-on-brand);
 }
 
 .pill-meta {

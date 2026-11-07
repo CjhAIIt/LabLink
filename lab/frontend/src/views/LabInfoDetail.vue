@@ -270,7 +270,7 @@ onBeforeUnmount(() => {
 .graduate-card {
   border: 1px solid var(--line);
   border-radius: var(--ll-radius-lg);
-  background: rgba(255, 255, 255, 0.92);
+  background: var(--ll-bg-chrome);
   padding: 18px;
   display: grid;
   gap: 12px;

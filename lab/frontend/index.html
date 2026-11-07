@@ -4,7 +4,22 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>安徽信息工程学院实验室管理平台</title>
+    <title>LabLink 高校实验室管理平台</title>
+    <script>
+      // 在首帧渲染前套用主题，避免暗色用户看到一闪的白屏
+      (function () {
+        try {
+          var stored = localStorage.getItem('lab_theme')
+          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+          var theme = stored || (prefersDark ? 'dark' : 'light')
+          if (theme === 'dark') {
+            document.documentElement.setAttribute('data-theme', 'dark')
+          }
+        } catch (error) {
+          /* localStorage 不可用时退回亮色 */
+        }
+      })()
+    </script>
   </head>
   <body>
     <div id="app"></div>

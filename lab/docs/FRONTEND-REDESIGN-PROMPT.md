@@ -214,7 +214,15 @@
 | Element Plus 按需引入后样式完整 | 已补 `element-plus-programmatic.js` |
 | 键盘可达 | `global.css` 已提供全局 `:focus-visible` 轮廓 |
 
-未做：暗色主题。
+### 暗色主题（追加）
+
+在上述改造之外补齐了暗色主题：
+
+- `tokens.css` 增加 `[data-theme='dark']` 令牌块，覆盖中性色、语义色、阴影与品牌标识渐变
+- `global.css` 增加 Element Plus 暗色变量覆盖与组件级修正，表格、弹窗、下拉、分页、标签页等无需改动即可跟随
+- 新增 `--ll-on-brand`（品牌色实心背景上的文字，两套主题都保持浅色）与 `--ll-bg-chrome`（吸顶栏半透明底色）两个不随主题反转的令牌
+- 新增 `composables/useTheme.js` 与 `components/ThemeToggle.vue`，切换入口接入桌面顶栏、移动端顶栏、公开页与平台介绍页
+- `index.html` 内联脚本在首帧渲染前套用主题，避免暗色用户看到白闪；首次访问跟随系统 `prefers-color-scheme`
 
 ---
 

@@ -3,6 +3,7 @@
     <div class="auth-column">
       <header class="auth-brand">
         <BrandLogo size="lg" title="LabLink" subtitle="高校实验室管理平台" />
+        <ThemeToggle class="auth-theme-toggle" />
       </header>
 
       <section class="auth-card">
@@ -32,6 +33,7 @@
 
 <script setup>
 import BrandLogo from '@/components/BrandLogo.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 
 defineProps({
   /** 卡片标题 */
@@ -76,7 +78,9 @@ defineProps({
 
 .auth-brand {
   display: flex;
+  align-items: center;
   justify-content: center;
+  gap: var(--ll-space-3);
 }
 
 .auth-card {

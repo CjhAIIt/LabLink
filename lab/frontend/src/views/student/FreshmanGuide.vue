@@ -533,7 +533,7 @@ onMounted(() => {
   padding: 12px 16px;
   border-radius: var(--ll-radius-lg);
   border: 1px solid rgba(148, 163, 184, 0.18);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.96), rgba(248, 250, 252, 0.94));
+  background: linear-gradient(180deg, var(--ll-bg-surface), var(--ll-bg-muted));
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,

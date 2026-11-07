@@ -44,6 +44,8 @@
   --ll-bg-muted: var(--ll-gray-50);
   --ll-bg-hover: rgba(15, 23, 42, 0.04);
   --ll-bg-active: var(--ll-brand-50);
+  /* 吸顶栏等半透明 chrome 层 */
+  --ll-bg-chrome: rgba(255, 255, 255, 0.88);
 
   /* ---------- 语义色：文字 ---------- */
   --ll-text-primary: var(--ll-gray-900);
@@ -52,6 +54,8 @@
   --ll-text-disabled: var(--ll-gray-400);
   --ll-text-inverse: #ffffff;
   --ll-text-brand: var(--ll-brand-600);
+  /* 品牌色实心背景上的文字，两套主题下都保持浅色 */
+  --ll-on-brand: #ffffff;
 
   /* ---------- 语义色：描边 ---------- */
   --ll-border-subtle: var(--ll-gray-200);
@@ -125,4 +129,87 @@
   --ll-z-drawer-mask: 70;
   --ll-z-topbar: 50;
   --ll-z-dropdown: 2000;
+}
+
+/**
+ * 暗色主题
+ *
+ * 通过覆盖语义令牌实现，页面本身不需要感知主题。
+ * 挂载在 <html data-theme="dark"> 上，由 useTheme 负责切换与持久化。
+ */
+[data-theme='dark'] {
+  color-scheme: dark;
+
+  /* ---------- 品牌色：暗色下用更亮的一档保证对比度 ---------- */
+  --ll-brand-50: #1e1b4b;
+  --ll-brand-100: #262261;
+  --ll-brand-200: #312e81;
+  --ll-brand-300: #4338ca;
+  --ll-brand-400: #6366f1;
+  --ll-brand-500: #818cf8;
+  --ll-brand-600: #818cf8;
+  --ll-brand-700: #a5b4fc;
+
+  /* ---------- 中性色 ---------- */
+  --ll-gray-0: #171a21;
+  --ll-gray-25: #15181e;
+  --ll-gray-50: #1a1e26;
+  --ll-gray-100: #1f232c;
+  --ll-gray-200: #262a34;
+  --ll-gray-300: #333846;
+  --ll-gray-400: #454c5c;
+  --ll-gray-500: #6b7280;
+  --ll-gray-600: #8b93a5;
+  --ll-gray-700: #aeb5c4;
+  --ll-gray-800: #d3d8e2;
+  --ll-gray-900: #e8eaf0;
+
+  /* ---------- 语义色：背景 ---------- */
+  --ll-bg-body: #0f1115;
+  --ll-bg-surface: #171a21;
+  --ll-bg-subtle: #1f232c;
+  --ll-bg-muted: #1a1e26;
+  --ll-bg-hover: rgba(255, 255, 255, 0.06);
+  --ll-bg-active: rgba(99, 102, 241, 0.18);
+  --ll-bg-chrome: rgba(23, 26, 33, 0.9);
+
+  /* ---------- 语义色：文字 ---------- */
+  --ll-text-primary: #e8eaf0;
+  --ll-text-secondary: #a3a9b8;
+  --ll-text-tertiary: #7a8090;
+  --ll-text-disabled: #565c6b;
+  --ll-text-inverse: #0f1115;
+  --ll-text-brand: #a5b4fc;
+
+  /* ---------- 语义色：描边 ---------- */
+  --ll-border-subtle: #262a34;
+  --ll-border-default: #333846;
+  --ll-border-strong: #454c5c;
+  --ll-border-brand: #4338ca;
+
+  /* ---------- 状态色 ---------- */
+  --ll-success: #4ade80;
+  --ll-success-bg: rgba(34, 197, 94, 0.14);
+  --ll-warning: #fbbf24;
+  --ll-warning-bg: rgba(245, 158, 11, 0.14);
+  --ll-danger: #f87171;
+  --ll-danger-bg: rgba(239, 68, 68, 0.14);
+  --ll-info: #38bdf8;
+  --ll-info-bg: rgba(56, 189, 248, 0.14);
+
+  /* ---------- 代码编辑区 ---------- */
+  --ll-code-bg: #0b0d11;
+  --ll-code-fg: #d1fae5;
+
+  /* ---------- 阴影：暗色下靠描边而非投影分层 ---------- */
+  --ll-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --ll-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.5), 0 1px 2px rgba(0, 0, 0, 0.3);
+  --ll-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.55), 0 1px 3px rgba(0, 0, 0, 0.35);
+  --ll-shadow-lg: 0 12px 32px rgba(0, 0, 0, 0.65), 0 2px 6px rgba(0, 0, 0, 0.4);
+  --ll-shadow-focus: 0 0 0 3px rgba(129, 140, 248, 0.32);
+
+  /* ---------- 品牌标识：暗色下保持识别度 ---------- */
+  --ll-logo-from: #4338ca;
+  --ll-logo-mid: #38bdf8;
+  --ll-logo-to: #22d3ee;
 }
