@@ -12,6 +12,8 @@
 | 令牌组 | 说明 |
 | --- | --- |
 | `--ll-brand-50` … `--ll-brand-700` | 主色阶，主色为 `--ll-brand-600`（#4f46e5） |
+| `--ll-logo-from` / `--ll-logo-mid` / `--ll-logo-to` | 品牌标识色块的三段蓝青渐变 |
+| `--ll-code-bg` / `--ll-code-fg` | 代码编辑区底色与前景色 |
 | `--ll-gray-0` … `--ll-gray-900` | 中性色阶 |
 | `--ll-bg-body` / `--ll-bg-surface` / `--ll-bg-subtle` / `--ll-bg-hover` | 语义背景 |
 | `--ll-text-primary` / `secondary` / `tertiary` / `disabled` / `inverse` | 语义文字 |
@@ -25,6 +27,8 @@
 
 分层原则：**用 1px 描边而不是阴影做分隔**，阴影只留给浮层（下拉、弹窗、抽屉）。
 圆角上限 16px。数字（指标值、表格数值）统一 `font-variant-numeric: tabular-nums`。
+
+当前全库 `.vue` 文件的裸色值与超大圆角均已清零，新增代码请沿用令牌，不要再写十六进制色值。
 
 ### 1.2 品牌
 
@@ -177,7 +181,7 @@ src/
 ## 6. 交互约定
 
 - 所有 `button` 统一 `cursor: pointer`，禁用态 `cursor: not-allowed`
-- 可点击元素必须提供 hover 反馈与 `:focus-visible` 轮廓，不要移除浏览器默认焦点环
+- 可点击元素必须提供 hover 反馈；`global.css` 已提供全局 `:focus-visible` 轮廓，不要移除浏览器默认焦点环
 - 移动端按钮最小点击区域不小于 44px，主要操作按钮在窄屏下占满整行
 - 顶部标题在窄屏下必须截断而非换行，使用 `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`
 - 移动端底部标签栏必须预留 `env(safe-area-inset-bottom)`，内容区预留等高的底部内边距，避免被标签栏遮挡
