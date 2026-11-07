@@ -563,7 +563,7 @@ onMounted(() => {
 
 .header-row p {
   margin: 6px 0 0;
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .toolbar {
@@ -603,9 +603,9 @@ onMounted(() => {
 .option-label {
   width: 36px;
   height: 36px;
-  border-radius: 10px;
-  background: #eff6ff;
-  color: #1d4ed8;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-brand-50);
+  color: var(--ll-brand-700);
   display: grid;
   place-items: center;
   font-weight: 700;

@@ -1,6 +1,6 @@
 <template>
   <div class="page-shell">
-    <section class="page-hero teacher-hero">
+    <section class="page-hero page-hero--brand">
       <div>
         <p class="eyebrow">教师工作台</p>
         <h1>教师注册已接入审批链，实验室创建申请可在线流转</h1>
@@ -146,16 +146,11 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.teacher-hero {
-  background:
-    linear-gradient(135deg, rgba(21, 128, 61, 0.94), rgba(22, 163, 74, 0.86)),
-    radial-gradient(circle at top right, rgba(190, 242, 100, 0.22), transparent 30%);
-}
 
 .hero-note-card {
   padding: 16px 18px;
-  border-radius: 22px;
-  color: #f0fdf4;
+  border-radius: var(--ll-radius-lg);
+  color: var(--ll-success-bg);
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.22);
   display: grid;
@@ -168,26 +163,33 @@ onMounted(() => {
 
 .notice-list {
   display: grid;
-  gap: 12px;
 }
 
 .notice-item {
   display: grid;
-  gap: 8px;
-  padding: 14px 16px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(240, 253, 244, 0.88));
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  gap: 6px;
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border-bottom: 1px solid var(--ll-border-subtle);
+  transition: background-color var(--ll-transition-fast);
+}
+
+.notice-item:last-child {
+  border-bottom: none;
+}
+
+.notice-item:hover {
+  background: var(--ll-bg-muted);
 }
 
 .notice-item p,
 .notice-item span {
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .inline-link {
-  color: #15803d;
+  color: var(--ll-brand-600);
   text-decoration: none;
-  font-weight: 600;
+  font-weight: 500;
+  white-space: nowrap;
 }
 </style>

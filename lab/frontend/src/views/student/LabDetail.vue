@@ -166,11 +166,11 @@ onMounted(() => {
 
 <style scoped>
 .lab-detail-page {
-  background-color: #f8fafc;
+  background-color: var(--ll-bg-muted);
 }
 
 .detail-hero {
-  background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+  background: linear-gradient(135deg, var(--ll-text-primary) 0%, var(--ll-text-primary) 100%);
   color: white;
   padding: 48px 60px;
   margin: -24px -24px 24px -24px;
@@ -192,7 +192,7 @@ onMounted(() => {
 
 .hero-subtitle {
   font-size: 16px;
-  color: #94a3b8;
+  color: var(--ll-text-tertiary);
   max-width: 600px;
   margin-bottom: 20px;
 }
@@ -200,7 +200,7 @@ onMounted(() => {
 .hero-meta {
   display: flex;
   gap: 24px;
-  color: #cbd5e1;
+  color: var(--ll-border-default);
 }
 
 .meta-item {
@@ -227,48 +227,48 @@ onMounted(() => {
 
 .rich-content {
   line-height: 1.8;
-  color: #334155;
+  color: var(--ll-text-secondary);
   white-space: pre-wrap;
 }
 
 .honor-item {
   padding: 12px;
-  background: #fffbeb;
-  border-left: 4px solid #f59e0b;
-  border-radius: 4px;
-  color: #92400e;
+  background: var(--ll-warning-bg);
+  border-left: 4px solid var(--ll-warning);
+  border-radius: var(--ll-radius-xs);
+  color: var(--ll-warning);
 }
 
 .senior-card {
   padding: 16px;
   background: white;
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
+  border: 1px solid var(--ll-border-subtle);
+  border-radius: var(--ll-radius-md);
   margin-bottom: 12px;
   transition: all 0.3s;
 }
 
 .senior-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  border-color: var(--ll-brand-500);
+  box-shadow: var(--ll-shadow-sm);
 }
 
 .senior-info strong {
   display: block;
   font-size: 16px;
-  color: #1e293b;
+  color: var(--ll-text-primary);
 }
 
 .senior-major {
   font-size: 12px;
-  color: #64748b;
+  color: var(--ll-text-secondary);
   margin: 4px 0 8px 0;
   display: block;
 }
 
 .senior-achievement {
   font-size: 14px;
-  color: #334155;
+  color: var(--ll-text-secondary);
   margin: 0;
 }
 
@@ -279,11 +279,11 @@ onMounted(() => {
 }
 
 .skill-tag {
-  border-radius: 6px;
+  border-radius: var(--ll-radius-sm);
 }
 
 .empty-text {
-  color: #94a3b8;
+  color: var(--ll-text-tertiary);
   font-size: 14px;
 }
 

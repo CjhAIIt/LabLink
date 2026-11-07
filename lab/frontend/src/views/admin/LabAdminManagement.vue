@@ -230,20 +230,20 @@ onMounted(() => {
 
 .admin-info {
   font-size: 12px;
-  color: #666;
+  color: var(--ll-text-secondary);
 }
 
 .no-admin {
-  color: #999;
+  color: var(--ll-text-tertiary);
   font-style: italic;
 }
 
 .current-admin {
-  color: #409eff;
+  color: var(--ll-brand-600);
   margin-top: 10px;
   padding: 8px;
-  background-color: #f0f9ff;
-  border-radius: 4px;
+  background-color: var(--ll-info-bg);
+  border-radius: var(--ll-radius-xs);
 }
 
 .assign-content {
@@ -254,14 +254,14 @@ onMounted(() => {
 
 .lab-info {
   padding: 15px;
-  background-color: #f9f9f9;
-  border-radius: 4px;
+  background-color: var(--ll-bg-muted);
+  border-radius: var(--ll-radius-xs);
 }
 
 .lab-info h4 {
   margin-top: 0;
   margin-bottom: 10px;
-  color: #333;
+  color: var(--ll-text-primary);
 }
 
 .lab-info p {
@@ -271,7 +271,7 @@ onMounted(() => {
 .student-selection h4 {
   margin-top: 0;
   margin-bottom: 15px;
-  color: #333;
+  color: var(--ll-text-primary);
 }
 
 .dialog-footer {

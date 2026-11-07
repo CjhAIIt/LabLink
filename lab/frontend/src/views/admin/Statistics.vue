@@ -118,17 +118,17 @@
                     <!-- 模拟折线 -->
                     <polyline
                       fill="none"
-                      stroke="#0ea5e9"
+                      stroke="var(--ll-brand-400)"
                       stroke-width="3"
                       points="50,150 150,100 250,120 350,60 450,80 550,40"
                     />
                     <!-- 模拟数据点 -->
-                    <circle cx="50" cy="150" r="4" fill="#0ea5e9" />
-                    <circle cx="150" cy="100" r="4" fill="#0ea5e9" />
-                    <circle cx="250" cy="120" r="4" fill="#0ea5e9" />
-                    <circle cx="350" cy="60" r="4" fill="#0ea5e9" />
-                    <circle cx="450" cy="80" r="4" fill="#0ea5e9" />
-                    <circle cx="550" cy="40" r="4" fill="#0ea5e9" />
+                    <circle cx="50" cy="150" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="150" cy="100" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="250" cy="120" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="350" cy="60" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="450" cy="80" r="4" fill="var(--ll-brand-400)" />
+                    <circle cx="550" cy="40" r="4" fill="var(--ll-brand-400)" />
                   </svg>
                   <div class="chart-x-axis">
                     <span v-for="m in lastSixMonths" :key="m">{{ m }}</span>
@@ -222,7 +222,7 @@ watch(activeTab, (newTab) => {
   })
 })
 
-const vizColors = ['#0ea5e9', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6']
+const vizColors = ['var(--ll-brand-400)', 'var(--ll-success)', 'var(--ll-warning)', 'var(--ll-danger)', '#8b5cf6']
 
 const scopeType = computed(() => {
   if (overview.value.scopeType) return overview.value.scopeType
@@ -326,9 +326,9 @@ const getMainPercentage = (data) => {
 }
 
 const getBarColor = (item, key) => {
-  if (key === 'recruitConversionRanking') return 'linear-gradient(90deg, #3b82f6, #0ea5e9)'
+  if (key === 'recruitConversionRanking') return 'linear-gradient(90deg, var(--ll-brand-500), var(--ll-brand-400))'
   if (key === 'activityRanking') return 'linear-gradient(90deg, #8b5cf6, #d946ef)'
-  return 'linear-gradient(90deg, #0f766e, #10b981)'
+  return 'linear-gradient(90deg, var(--ll-brand-600), var(--ll-success))'
 }
 
 const loadStatistics = async () => {
@@ -372,15 +372,15 @@ onMounted(() => {
 
 <style scoped>
 .stats-page {
-  background-color: #f8fafc;
+  background-color: var(--ll-bg-muted);
 }
 
 .stats-hero {
-  background: linear-gradient(135deg, #0f172a 0%, #0369a1 100%);
+  background: linear-gradient(135deg, var(--ll-text-primary) 0%, var(--ll-info) 100%);
   color: white;
   padding: 40px 60px;
   margin: 0 0 24px 0;
-  border-radius: 24px;
+  border-radius: var(--ll-radius-lg);
 }
 
 .hero-content {
@@ -398,7 +398,7 @@ onMounted(() => {
 }
 
 .hero-subtitle {
-  color: #bae6fd;
+  color: var(--ll-brand-100);
   font-size: 15px;
 }
 
@@ -411,7 +411,7 @@ onMounted(() => {
   padding: 8px 16px;
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 99px;
+  border-radius: var(--ll-radius-full);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -428,8 +428,8 @@ onMounted(() => {
 .metric-card {
   background: white;
   padding: 20px;
-  border-radius: 16px;
-  border: 1px solid #e2e8f0;
+  border-radius: var(--ll-radius-md);
+  border: 1px solid var(--ll-border-subtle);
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -439,7 +439,7 @@ onMounted(() => {
 
 .metric-card:hover {
   transform: translateY(-2px);
-  border-color: #3b82f6;
+  border-color: var(--ll-brand-500);
 }
 
 .metric-info {
@@ -449,21 +449,21 @@ onMounted(() => {
 
 .metric-label {
   font-size: 13px;
-  color: #64748b;
+  color: var(--ll-text-secondary);
   margin-bottom: 4px;
 }
 
 .metric-value {
   font-size: 24px;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .metric-icon {
   width: 44px;
   height: 44px;
-  border-radius: 12px;
-  background: #f1f5f9;
-  color: #3b82f6;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-bg-subtle);
+  color: var(--ll-brand-500);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -474,7 +474,7 @@ onMounted(() => {
   position: absolute;
   top: 12px;
   right: 12px;
-  color: #cbd5e1;
+  color: var(--ll-border-default);
   cursor: help;
   font-size: 14px;
 }
@@ -500,7 +500,7 @@ onMounted(() => {
 }
 
 .chart-card {
-  border-radius: 16px;
+  border-radius: var(--ll-radius-md);
 }
 
 .title-with-dot {
@@ -514,8 +514,8 @@ onMounted(() => {
   content: '';
   width: 4px;
   height: 16px;
-  background: #3b82f6;
-  border-radius: 2px;
+  background: var(--ll-brand-500);
+  border-radius: var(--ll-radius-xs);
 }
 
 .viz-container {
@@ -538,12 +538,12 @@ onMounted(() => {
 .pie-val {
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--ll-text-primary);
 }
 
 .pie-lab {
   font-size: 12px;
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .viz-legend {
@@ -565,13 +565,13 @@ onMounted(() => {
 }
 
 .legend-item .name {
-  color: #475569;
+  color: var(--ll-text-secondary);
   flex: 1;
 }
 
 .legend-item .val {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--ll-text-primary);
 }
 
 .modern-bars {
@@ -593,15 +593,15 @@ onMounted(() => {
 
 .bar-track {
   height: 8px;
-  background: #f1f5f9;
-  border-radius: 4px;
+  background: var(--ll-bg-subtle);
+  border-radius: var(--ll-radius-xs);
   overflow: hidden;
 }
 
 .bar-fill {
   display: block;
   height: 100%;
-  border-radius: 4px;
+  border-radius: var(--ll-radius-xs);
 }
 
 .line-chart-sim {
@@ -616,7 +616,7 @@ onMounted(() => {
   flex-direction: column;
   justify-content: space-between;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--ll-text-tertiary);
 }
 
 .chart-main {
@@ -634,7 +634,7 @@ onMounted(() => {
   display: flex;
   justify-content: space-around;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--ll-text-tertiary);
   margin-top: 8px;
 }
 
@@ -653,7 +653,7 @@ onMounted(() => {
 .trend-stat label {
   display: block;
   font-size: 13px;
-  color: #64748b;
+  color: var(--ll-text-secondary);
   margin-bottom: 4px;
 }
 
@@ -662,7 +662,7 @@ onMounted(() => {
 }
 
 .trend-stat .up {
-  color: #10b981;
+  color: var(--ll-success);
 }
 
 @media (max-width: 1200px) {

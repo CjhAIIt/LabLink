@@ -549,7 +549,7 @@ onMounted(async () => {
   border: 1px solid rgba(14, 116, 144, 0.18);
   background:
     radial-gradient(circle at right top, rgba(34, 211, 238, 0.16), transparent 35%),
-    linear-gradient(135deg, #f0fdfa, #eff6ff);
+    linear-gradient(135deg, var(--ll-brand-50), var(--ll-brand-50));
 }
 
 .hero-content {
@@ -561,7 +561,7 @@ onMounted(async () => {
 
 .hero-eyebrow {
   margin: 0 0 8px;
-  color: #0f766e;
+  color: var(--ll-brand-600);
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.08em;
@@ -570,13 +570,13 @@ onMounted(async () => {
 .hero-copy h2 {
   margin: 0;
   font-size: 30px;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .hero-desc {
   margin: 12px 0;
   max-width: 720px;
-  color: #475569;
+  color: var(--ll-text-secondary);
   line-height: 1.7;
 }
 
@@ -584,7 +584,7 @@ onMounted(async () => {
   display: flex;
   gap: 16px;
   flex-wrap: wrap;
-  color: #334155;
+  color: var(--ll-text-secondary);
   font-size: 14px;
 }
 
@@ -597,21 +597,21 @@ onMounted(async () => {
 
 .stat-card {
   padding: 16px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.88);
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-chrome);
   border: 1px solid rgba(148, 163, 184, 0.2);
 }
 
 .stat-label {
   font-size: 13px;
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .stat-value {
   margin-top: 6px;
   font-size: 26px;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .member-list {
@@ -623,7 +623,7 @@ onMounted(async () => {
 }
 
 .member-label {
-  color: #0f172a;
+  color: var(--ll-text-primary);
   font-weight: 600;
 }
 
@@ -662,7 +662,7 @@ onMounted(async () => {
 
 .hint-text {
   margin-left: 12px;
-  color: #d97706;
+  color: var(--ll-warning);
   font-size: 13px;
 }
 

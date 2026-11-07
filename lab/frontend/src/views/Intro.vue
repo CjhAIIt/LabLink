@@ -1,22 +1,39 @@
 <template>
   <div class="portal-page">
-    <div class="bg-grid"></div>
-    <div class="ambient-glow"></div>
-
-    <header class="hero">
-      <div class="hero-content">
-        <BrandLogo size="lg" title="LabLink" subtitle="高校实验室综合管理平台" />
-        <h1>实验室发现与学院治理</h1>
-        <p>从学院主数据到实验室档案，一站式浏览实验室与学院信息。登录后进入考勤、设备、成员、公告等管理与协同。</p>
-        <div class="hero-actions">
-          <router-link class="primary-btn" to="/login">登录进入平台</router-link>
-          <router-link class="ghost-btn" to="/register">学生注册</router-link>
-          <router-link class="ghost-btn" to="/teacher-register">教师注册</router-link>
-        </div>
-      </div>
+    <header class="portal-nav">
+      <BrandLogo size="sm" title="LabLink" subtitle="高校实验室综合管理平台" />
+      <nav class="portal-nav-links">
+        <ThemeToggle />
+        <router-link to="/register">学生注册</router-link>
+        <router-link to="/teacher-register">教师注册</router-link>
+        <router-link class="nav-cta" to="/login">登录</router-link>
+      </nav>
     </header>
 
     <main class="main-content">
+      <section class="hero">
+        <div class="hero-content">
+          <span class="hero-eyebrow">面向学校、学院与实验室的一体化平台</span>
+          <h1>实验室发现与学院治理</h1>
+          <p>
+            从学院主数据到实验室档案，一站式浏览实验室与学院信息。登录后进入考勤、设备、成员、公告等管理与协同。
+          </p>
+          <div class="hero-actions">
+            <router-link class="primary-btn" to="/login">登录进入平台</router-link>
+            <router-link class="ghost-btn" to="/register">学生注册</router-link>
+            <router-link class="ghost-btn" to="/teacher-register">教师注册</router-link>
+          </div>
+        </div>
+
+        <div class="hero-features">
+          <div v-for="item in platformFeatures" :key="item.title" class="feature-card">
+            <span class="feature-icon"><el-icon :size="18"><component :is="item.icon" /></el-icon></span>
+            <strong>{{ item.title }}</strong>
+            <p>{{ item.text }}</p>
+          </div>
+        </div>
+      </section>
+
       <section class="panel">
         <div class="panel-header">
           <div>
@@ -78,11 +95,10 @@
 
         <div v-loading="loading" class="labs-grid">
           <button
-            v-for="(lab, index) in labs"
+            v-for="lab in labs"
             :key="lab.id"
             class="lab-card"
             type="button"
-            :style="{ transitionDelay: `${index * 0.06}s` }"
             @click="openLabDetail(lab)"
           >
             <div class="lab-header">
@@ -114,16 +130,24 @@
         </div>
       </section>
     </main>
-
   </div>
 </template>
 
 <script setup>
+import { DocumentChecked, OfficeBuilding, TrendCharts, UserFilled } from '@element-plus/icons-vue'
 import BrandLogo from '@/components/BrandLogo.vue'
+import ThemeToggle from '@/components/ThemeToggle.vue'
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getCollegeOptions } from '@/api/colleges'
 import { getLabPage, getLabStats } from '@/api/lab'
+
+const platformFeatures = [
+  { title: '多角色协同', text: '学校、学院、实验室、教师与学生分层治理，权限按角色下发。', icon: UserFilled },
+  { title: '实验室档案', text: '实验室基础信息、招新计划与成员状态集中沉淀，随时可查。', icon: OfficeBuilding },
+  { title: '审批闭环', text: '教师注册、实验室创建与成员申请全部走审批流程，状态可追踪。', icon: DocumentChecked },
+  { title: '运营数据', text: '考勤、资料空间与公告统一汇总，支持综合检索与统计分析。', icon: TrendCharts }
+]
 
 const router = useRouter()
 const colleges = ref([])
@@ -245,382 +269,478 @@ onBeforeUnmount(() => {
 
 <style scoped>
 .portal-page {
-  --bg: #f8fafc;
-  --panel: #ffffff;
-  --line: #e2e8f0;
-  --text: #0f172a;
-  --muted: #64748b;
-  --brand: #0ea5e9;
-  --brand-2: #2563eb;
-  --shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1);
-  --radius: 20px;
   min-height: 100vh;
-  background-color: var(--bg);
-  color: var(--text);
-  position: relative;
-  overflow-x: hidden;
-  padding-bottom: 80px;
+  background: var(--ll-bg-body);
+  color: var(--ll-text-primary);
 }
 
-.bg-grid {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  opacity: 0.6;
-  z-index: 0;
-  background-image:
-    linear-gradient(#e2e8f0 1px, transparent 1px),
-    linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
-  background-size: 40px 40px;
-  mask-image: linear-gradient(to bottom, rgba(0, 0, 0, 1), rgba(0, 0, 0, 0));
+/* ---------- 顶部导航 ---------- */
+.portal-nav {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ll-space-4);
+  height: 64px;
+  padding: 0 var(--ll-space-8);
+  background: var(--ll-bg-chrome);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--ll-border-subtle);
+  position: sticky;
+  top: 0;
+  z-index: var(--ll-z-sticky);
 }
 
-.ambient-glow {
-  position: fixed;
-  inset: 0;
-  pointer-events: none;
-  z-index: 0;
-  background:
-    radial-gradient(circle at 20% 30%, rgba(14, 165, 233, 0.12) 0%, transparent 45%),
-    radial-gradient(circle at 80% 60%, rgba(37, 99, 235, 0.12) 0%, transparent 45%);
+.portal-nav-links {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-4);
+  font-size: var(--ll-text-sm);
 }
 
-.hero {
-  padding: 72px 24px 40px;
-  text-align: center;
-  position: relative;
-  z-index: 1;
+.portal-nav-links a {
+  color: var(--ll-text-secondary);
+  transition: color var(--ll-transition-fast);
 }
 
-.hero-content {
-  max-width: 900px;
+.portal-nav-links a:hover {
+  color: var(--ll-text-primary);
+}
+
+.portal-nav-links .nav-cta {
+  padding: 6px 16px;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-brand-600);
+  color: var(--ll-on-brand);
+  font-weight: 500;
+}
+
+.portal-nav-links .nav-cta:hover {
+  background: var(--ll-brand-700);
+  color: var(--ll-on-brand);
+}
+
+/* ---------- 主内容 ---------- */
+.main-content {
+  max-width: 1360px;
   margin: 0 auto;
+  padding: var(--ll-space-6) var(--ll-space-8) var(--ll-space-12);
+  display: flex;
+  flex-direction: column;
+  gap: var(--ll-space-8);
+}
+
+/* ---------- 首屏 ---------- */
+.hero {
+  display: grid;
+  gap: var(--ll-space-6);
+  padding: var(--ll-space-6) 0 var(--ll-space-2);
+}
+
+.hero-eyebrow {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: var(--ll-radius-full);
+  background: var(--ll-brand-50);
+  color: var(--ll-brand-700);
+  font-size: var(--ll-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 
 .hero h1 {
-  margin: 22px 0 12px;
-  font-size: clamp(34px, 4vw, 54px);
-  line-height: 1.05;
-  letter-spacing: -1px;
+  margin-top: var(--ll-space-3);
+  font-size: 36px;
+  font-weight: 600;
+  line-height: 1.3;
 }
 
 .hero p {
-  margin: 0 auto;
-  max-width: 720px;
-  color: var(--muted);
+  margin-top: var(--ll-space-3);
+  max-width: 640px;
+  font-size: var(--ll-text-base);
   line-height: 1.7;
-  font-size: 16px;
+  color: var(--ll-text-secondary);
 }
 
 .hero-actions {
   display: flex;
-  justify-content: center;
-  gap: 14px;
   flex-wrap: wrap;
-  margin-top: 26px;
+  gap: var(--ll-space-3);
+  margin-top: var(--ll-space-4);
 }
 
 .primary-btn,
-.ghost-btn,
-.ghost-link {
+.ghost-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  text-decoration: none;
-  font-weight: 700;
-  transition: transform 0.2s ease, border-color 0.2s ease;
+  height: 40px;
+  padding: 0 var(--ll-space-6);
+  border-radius: var(--ll-radius-md);
+  font-size: var(--ll-text-base);
+  font-weight: 500;
+  transition: background-color var(--ll-transition-fast), border-color var(--ll-transition-fast),
+    color var(--ll-transition-fast), box-shadow var(--ll-transition-fast);
 }
 
 .primary-btn {
-  color: #fff;
-  background: linear-gradient(135deg, var(--brand-2), var(--brand));
+  background: var(--ll-brand-600);
+  color: var(--ll-on-brand);
+  box-shadow: var(--ll-shadow-sm);
 }
 
-.ghost-btn,
-.ghost-link {
-  border: 1px solid var(--line);
-  color: var(--text);
-  background: #fff;
+.primary-btn:hover {
+  background: var(--ll-brand-700);
+  color: var(--ll-on-brand);
 }
 
-.primary-btn:hover,
-.ghost-btn:hover,
-.ghost-link:hover {
-  transform: translateY(-2px);
-  border-color: rgba(14, 165, 233, 0.5);
+.ghost-btn {
+  border: 1px solid var(--ll-border-default);
+  color: var(--ll-text-primary);
+  background: var(--ll-bg-surface);
 }
 
-.main-content {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 0 24px;
-  position: relative;
-  z-index: 1;
+.ghost-btn:hover {
+  border-color: var(--ll-brand-300);
+  color: var(--ll-brand-700);
+  background: var(--ll-brand-50);
 }
 
+/* ---------- 特性网格 ---------- */
+.hero-features {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
+  border-top: 1px solid var(--ll-border-subtle);
+  border-bottom: 1px solid var(--ll-border-subtle);
+}
+
+.feature-card {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-content: center;
+  align-items: center;
+  column-gap: var(--ll-space-3);
+  row-gap: 2px;
+  min-height: 76px;
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border-right: 1px solid var(--ll-border-subtle);
+}
+
+.feature-card:last-child {
+  border-right: 0;
+}
+
+.feature-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  grid-row: span 2;
+  border-radius: var(--ll-radius-sm);
+  background: var(--ll-brand-50);
+  color: var(--ll-brand-600);
+  margin-bottom: var(--ll-space-1);
+}
+
+.feature-card strong {
+  font-size: var(--ll-text-base);
+  font-weight: 600;
+}
+
+.feature-card p {
+  font-size: var(--ll-text-sm);
+  line-height: 1.45;
+  color: var(--ll-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ---------- 筛选面板 ---------- */
 .panel {
-  background: rgba(255, 255, 255, 0.92);
-  border: 1px solid rgba(148, 163, 184, 0.18);
-  border-radius: var(--radius);
-  box-shadow: var(--shadow);
-  padding: 24px;
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  border-radius: var(--ll-radius-md);
+  box-shadow: none;
+  padding: var(--ll-space-5) var(--ll-space-6);
 }
 
 .panel-header {
   display: flex;
+  align-items: flex-start;
   justify-content: space-between;
-  align-items: flex-end;
-  gap: 16px;
+  gap: var(--ll-space-4);
   flex-wrap: wrap;
-  margin-bottom: 18px;
 }
 
 .panel-eyebrow {
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 0.16em;
+  font-size: var(--ll-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: #0f766e;
-  margin-bottom: 6px;
+  color: var(--ll-text-tertiary);
 }
 
 .panel-title {
-  font-size: 18px;
-  font-weight: 800;
+  margin-top: 4px;
+  font-size: var(--ll-text-xl);
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
 .panel-stats {
   display: flex;
-  gap: 14px;
-}
-
-.stat {
-  background: #fff;
-  border: 1px solid var(--line);
-  border-radius: 16px;
-  padding: 10px 14px;
-  min-width: 110px;
+  gap: var(--ll-space-6);
 }
 
 .stat-label {
-  font-size: 12px;
-  color: var(--muted);
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
 }
 
 .stat-value {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--text);
+  margin-top: 2px;
+  font-size: var(--ll-text-2xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ll-text-primary);
 }
 
 .filters {
   display: flex;
-  gap: 12px;
   flex-wrap: wrap;
-  align-items: center;
-  margin-bottom: 16px;
+  gap: var(--ll-space-3);
+  margin-top: var(--ll-space-5);
 }
 
 .filter-item {
-  min-width: 220px;
-  flex: 1;
+  width: 220px;
 }
 
 .college-strip {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: var(--ll-space-2);
+  margin-top: var(--ll-space-5);
+  padding-top: var(--ll-space-5);
+  border-top: 1px solid var(--ll-border-subtle);
 }
 
 .college-pill {
-  border: 1px solid var(--line);
-  background: #fff;
-  color: var(--text);
-  padding: 8px 12px;
-  border-radius: 999px;
-  font-weight: 700;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  cursor: pointer;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: var(--ll-radius-full);
+  border: 1px solid var(--ll-border-subtle);
+  background: var(--ll-bg-surface);
+  color: var(--ll-text-secondary);
+  font-size: var(--ll-text-sm);
+  transition: all var(--ll-transition-fast);
+}
+
+.college-pill:hover {
+  border-color: var(--ll-brand-300);
+  color: var(--ll-brand-700);
 }
 
 .college-pill.active {
-  border-color: rgba(14, 165, 233, 0.55);
-  background: rgba(14, 165, 233, 0.08);
-  color: #075985;
+  background: var(--ll-brand-600);
+  border-color: var(--ll-brand-600);
+  color: var(--ll-on-brand);
 }
 
 .pill-meta {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  height: 20px;
-  min-width: 24px;
-  padding: 0 8px;
-  border-radius: 999px;
-  background: rgba(2, 132, 199, 0.12);
-  color: #075985;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--ll-text-xs);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
 }
 
+/* ---------- 实验室列表 ---------- */
 .labs-section {
-  margin-top: 24px;
+  display: grid;
+  gap: var(--ll-space-4);
 }
 
 .section-title-row {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  justify-content: space-between;
+  gap: var(--ll-space-4);
   flex-wrap: wrap;
-  gap: 14px;
-  margin: 8px 0 16px;
 }
 
 .section-title {
   display: flex;
   align-items: baseline;
-  gap: 10px;
+  gap: var(--ll-space-3);
 }
 
 .section-tag {
-  display: inline-flex;
-  padding: 4px 10px;
-  border-radius: 999px;
-  background: rgba(14, 165, 233, 0.1);
-  color: #075985;
-  font-size: 12px;
-  font-weight: 800;
+  font-size: var(--ll-text-lg);
+  font-weight: 600;
 }
 
 .section-hint {
-  color: var(--muted);
-  font-weight: 700;
+  font-size: var(--ll-text-sm);
+  color: var(--ll-text-tertiary);
+}
+
+.ghost-link {
+  font-size: var(--ll-text-sm);
+  color: var(--ll-text-secondary);
+}
+
+.ghost-link:hover {
+  color: var(--ll-text-brand);
 }
 
 .labs-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 18px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--ll-space-3);
 }
 
 .lab-card {
+  display: grid;
+  gap: var(--ll-space-3);
+  align-content: start;
   text-align: left;
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: var(--shadow);
-  padding: 18px 18px 16px;
-  cursor: pointer;
-  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+  padding: var(--ll-space-5);
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: none;
+  transition: border-color var(--ll-transition-base), background-color var(--ll-transition-base),
+    transform var(--ll-transition-base);
 }
 
 .lab-card:hover {
-  transform: translateY(-6px);
-  border-color: rgba(14, 165, 233, 0.55);
-  box-shadow: 0 20px 40px -10px rgba(14, 165, 233, 0.16);
+  border-color: var(--ll-brand-200);
+  background: var(--ll-gray-25);
+  transform: translateY(-1px);
 }
 
 .lab-header {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: var(--ll-space-3);
 }
 
 .lab-name {
-  font-size: 18px;
-  font-weight: 800;
-  color: var(--text);
+  font-size: var(--ll-text-lg);
+  font-weight: 600;
+  color: var(--ll-text-primary);
 }
 
 .lab-meta {
-  font-size: 12px;
-  font-weight: 800;
-  color: #0f766e;
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 .lab-desc {
-  color: var(--muted);
+  font-size: var(--ll-text-sm);
   line-height: 1.65;
-  font-size: 14px;
-  min-height: 46px;
+  color: var(--ll-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .lab-badges {
   display: flex;
-  gap: 8px;
   flex-wrap: wrap;
-  margin-top: 12px;
+  gap: 6px;
 }
 
 .badge {
-  display: inline-flex;
-  padding: 5px 10px;
-  border-radius: 999px;
-  background: #f1f5f9;
-  border: 1px solid rgba(148, 163, 184, 0.28);
-  color: #334155;
-  font-size: 12px;
-  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: var(--ll-radius-xs);
+  background: var(--ll-gray-100);
+  color: var(--ll-text-secondary);
+  font-size: var(--ll-text-xs);
 }
 
 .lab-footer {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-top: 14px;
-  color: var(--muted);
-  font-weight: 700;
-  font-size: 13px;
+  justify-content: space-between;
+  padding-top: var(--ll-space-3);
+  border-top: 1px solid var(--ll-border-subtle);
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
 }
 
 .lab-action {
-  color: #0284c7;
-  font-weight: 800;
+  color: var(--ll-text-brand);
+  font-weight: 500;
 }
 
 .pagination-row {
   display: flex;
-  justify-content: flex-end;
-  margin-top: 18px;
+  justify-content: center;
+  margin-top: var(--ll-space-4);
 }
 
-.lab-detail {
-  display: grid;
-  gap: 12px;
-}
-
-.detail-row {
-  display: grid;
-  grid-template-columns: 120px 1fr;
-  gap: 12px;
-  align-items: baseline;
-}
-
-.detail-label {
-  color: var(--muted);
-  font-weight: 800;
-  font-size: 13px;
-}
-
-.detail-value {
-  color: var(--text);
-  line-height: 1.7;
-}
-
-@media (max-width: 680px) {
-  .filter-item {
-    min-width: 100%;
+@media (max-width: 768px) {
+  .portal-nav {
+    padding: 0 var(--ll-space-4);
   }
 
-  .detail-row {
+  .portal-nav-links {
+    gap: var(--ll-space-3);
+  }
+
+  .main-content {
+    padding: var(--ll-space-4) var(--ll-space-4) var(--ll-space-10);
+    gap: var(--ll-space-6);
+  }
+
+  .hero h1 {
+    font-size: 26px;
+  }
+
+  .hero p {
+    font-size: var(--ll-text-base);
+  }
+
+  .hero-actions .primary-btn,
+  .hero-actions .ghost-btn {
+    flex: 1 1 100%;
+  }
+
+  .filter-item {
+    width: 100%;
+  }
+
+  .hero-features {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .feature-card:nth-child(2) {
+    border-right: 0;
+  }
+
+  .feature-card:nth-child(n + 3) {
+    border-top: 1px solid var(--ll-border-subtle);
+  }
+
+  .labs-grid {
     grid-template-columns: 1fr;
+  }
+
+  .panel {
+    padding: var(--ll-space-4);
   }
 }
 </style>

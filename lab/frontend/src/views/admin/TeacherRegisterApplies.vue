@@ -223,11 +223,11 @@ onMounted(() => {
 }
 
 .audit-cell small {
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .done-text {
-  color: #64748b;
+  color: var(--ll-text-secondary);
   font-size: 13px;
 }
 </style>

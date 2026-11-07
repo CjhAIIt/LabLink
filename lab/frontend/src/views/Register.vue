@@ -1,182 +1,147 @@
 <template>
-  <div class="auth-page">
-    <div class="auth-shell">
-      <section class="auth-hero">
-        <BrandLogo
-          class="brand"
-          size="lg"
-          title="LabLink"
-          subtitle="高校实验室管理平台 · 学生注册"
+  <AuthLayout
+    title="学生注册"
+    subtitle="请使用学号、邮箱验证码和本人真实信息完成注册"
+    width="520px"
+    :features="features"
+  >
+    <el-form
+      ref="registerFormRef"
+      :model="registerForm"
+      :rules="registerRules"
+      label-position="top"
+      size="large"
+    >
+      <el-form-item label="学号" prop="studentId">
+        <el-input
+          v-model="registerForm.studentId"
+          :prefix-icon="Postcard"
+          maxlength="20"
+          placeholder="请输入纯数字学号"
+          @input="sanitizeStudentId"
         />
+      </el-form-item>
 
-        <div class="hero-card">
-          <h2>学生注册后可直接进入实验室信息管理场景</h2>
-          <p>
-            注册完成后，学生可以浏览实验室、查看招新计划、提交入组申请、跟踪审核结果，
-            并使用个人中心维护个人信息和简历材料。
-          </p>
-          <div class="hero-grid">
-            <div class="hero-item">
-              <span class="hero-label">注册对象</span>
-              <strong>在校学生</strong>
-            </div>
-            <div class="hero-item">
-              <span class="hero-label">所属学院</span>
-              <strong>注册时必须选择，便于学院维度统计与管理</strong>
-            </div>
-            <div class="hero-item">
-              <span class="hero-label">教师入口</span>
-              <strong>教师请使用独立注册入口并走审批流程</strong>
-            </div>
-          </div>
-        </div>
+      <el-form-item label="密码" prop="password">
+        <el-input
+          v-model="registerForm.password"
+          :prefix-icon="Lock"
+          type="password"
+          placeholder="请输入密码"
+          show-password
+        />
+      </el-form-item>
 
-        <div class="hero-footer">
-          <router-link class="ghost-link" to="/teacher-register">前往教师注册</router-link>
-        </div>
-      </section>
+      <el-form-item label="确认密码" prop="confirmPassword">
+        <el-input
+          v-model="registerForm.confirmPassword"
+          :prefix-icon="Lock"
+          type="password"
+          placeholder="请再次输入密码"
+          show-password
+        />
+      </el-form-item>
 
-      <section class="auth-panel">
-        <el-card class="auth-card" shadow="never">
-          <template #header>
-            <div class="card-header">
-              <div>
-                <h2>学生注册</h2>
-                <p>请使用学号、邮箱验证码和本人真实信息完成注册</p>
-              </div>
-            </div>
-          </template>
+      <el-form-item label="真实姓名" prop="realName">
+        <el-input
+          v-model="registerForm.realName"
+          :prefix-icon="UserFilled"
+          placeholder="请输入真实姓名"
+        />
+      </el-form-item>
 
-          <el-form
-            ref="registerFormRef"
-            :model="registerForm"
-            :rules="registerRules"
-            label-position="top"
-            size="large"
+      <el-form-item label="所属学院" prop="college">
+        <el-select
+          v-model="registerForm.college"
+          placeholder="请选择所属学院"
+          style="width: 100%"
+          filterable
+          :loading="collegeLoading"
+        >
+          <el-option
+            v-for="college in collegeOptions"
+            :key="college.id"
+            :label="college.collegeName"
+            :value="college.collegeName"
+          />
+        </el-select>
+      </el-form-item>
+
+      <el-form-item label="邮箱" prop="email">
+        <el-input
+          v-model="registerForm.email"
+          :prefix-icon="Message"
+          placeholder="请输入常用邮箱"
+        />
+      </el-form-item>
+
+      <el-form-item label="邮箱验证码" prop="emailCode">
+        <div class="code-row">
+          <el-input
+            v-model="registerForm.emailCode"
+            maxlength="6"
+            placeholder="请输入 6 位验证码"
+            @input="sanitizeEmailCode"
+          />
+          <el-button
+            type="primary"
+            plain
+            :loading="codeLoading"
+            :disabled="codeCountdown > 0"
+            @click="sendEmailCode"
           >
-            <el-form-item label="学号" prop="studentId">
-              <el-input
-                v-model="registerForm.studentId"
-                :prefix-icon="Postcard"
-                maxlength="20"
-                placeholder="请输入纯数字学号"
-                @input="sanitizeStudentId"
-              />
-            </el-form-item>
+            {{ codeCountdown > 0 ? `${codeCountdown}s 后重发` : '发送验证码' }}
+          </el-button>
+        </div>
+      </el-form-item>
 
-            <el-form-item label="密码" prop="password">
-              <el-input
-                v-model="registerForm.password"
-                :prefix-icon="Lock"
-                type="password"
-                placeholder="请输入密码"
-                show-password
-              />
-            </el-form-item>
+      <el-form-item label="专业" prop="major">
+        <el-select v-model="registerForm.major" placeholder="请选择专业" style="width: 100%" filterable>
+          <el-option v-for="major in majorOptions" :key="major" :label="major" :value="major" />
+        </el-select>
+      </el-form-item>
 
-            <el-form-item label="确认密码" prop="confirmPassword">
-              <el-input
-                v-model="registerForm.confirmPassword"
-                :prefix-icon="Lock"
-                type="password"
-                placeholder="请再次输入密码"
-                show-password
-              />
-            </el-form-item>
+      <el-form-item label="年级" prop="grade">
+        <el-select v-model="registerForm.grade" placeholder="请选择年级" style="width: 100%">
+          <el-option v-for="year in yearOptions" :key="year" :label="`${year}级`" :value="`${year}级`" />
+        </el-select>
+      </el-form-item>
 
-            <el-form-item label="真实姓名" prop="realName">
-              <el-input
-                v-model="registerForm.realName"
-                :prefix-icon="UserFilled"
-                placeholder="请输入真实姓名"
-              />
-            </el-form-item>
+      <el-form-item class="form-actions">
+        <el-button type="primary" :loading="loading" class="submit-button" @click="submitForm">
+          立即注册
+        </el-button>
+      </el-form-item>
 
-            <el-form-item label="所属学院" prop="college">
-              <el-select
-                v-model="registerForm.college"
-                placeholder="请选择所属学院"
-                style="width: 100%"
-                filterable
-                :loading="collegeLoading"
-              >
-                <el-option
-                  v-for="college in collegeOptions"
-                  :key="college.id"
-                  :label="college.collegeName"
-                  :value="college.collegeName"
-                />
-              </el-select>
-            </el-form-item>
+      <el-form-item>
+        <div class="login-link">
+          <router-link to="/login">返回登录</router-link>
+          <span class="divider">|</span>
+          <router-link to="/teacher-register">教师注册</router-link>
+        </div>
+      </el-form-item>
+    </el-form>
 
-            <el-form-item label="邮箱" prop="email">
-              <el-input
-                v-model="registerForm.email"
-                :prefix-icon="Message"
-                placeholder="请输入常用邮箱"
-              />
-            </el-form-item>
-
-            <el-form-item label="邮箱验证码" prop="emailCode">
-              <div class="code-row">
-                <el-input
-                  v-model="registerForm.emailCode"
-                  maxlength="6"
-                  placeholder="请输入 6 位验证码"
-                  @input="sanitizeEmailCode"
-                />
-                <el-button
-                  type="primary"
-                  plain
-                  :loading="codeLoading"
-                  :disabled="codeCountdown > 0"
-                  @click="sendEmailCode"
-                >
-                  {{ codeCountdown > 0 ? `${codeCountdown}s 后重发` : '发送验证码' }}
-                </el-button>
-              </div>
-            </el-form-item>
-
-            <el-form-item label="专业" prop="major">
-              <el-select v-model="registerForm.major" placeholder="请选择专业" style="width: 100%" filterable>
-                <el-option v-for="major in majorOptions" :key="major" :label="major" :value="major" />
-              </el-select>
-            </el-form-item>
-
-            <el-form-item label="年级" prop="grade">
-              <el-select v-model="registerForm.grade" placeholder="请选择年级" style="width: 100%">
-                <el-option v-for="year in yearOptions" :key="year" :label="`${year}级`" :value="`${year}级`" />
-              </el-select>
-            </el-form-item>
-
-            <el-form-item class="form-actions">
-              <el-button type="primary" :loading="loading" style="width: 100%" @click="submitForm">
-                立即注册
-              </el-button>
-            </el-form-item>
-
-            <el-form-item>
-              <div class="login-link">
-                <router-link to="/login">返回登录</router-link>
-                <span class="divider">|</span>
-                <router-link to="/teacher-register">教师注册</router-link>
-              </div>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </section>
-    </div>
-  </div>
+    <template #footer>
+      <router-link to="/teacher-register">前往教师注册</router-link>
+    </template>
+  </AuthLayout>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import AuthLayout from '@/layouts/AuthLayout.vue'
 import { ElMessage } from 'element-plus'
 import { Lock, Message, Postcard, UserFilled } from '@element-plus/icons-vue'
 import { register, sendRegisterCode } from '@/api/auth'
 import { getCollegeOptions } from '@/api/colleges'
-import BrandLogo from '@/components/BrandLogo.vue'
+
+const features = [
+  { label: '注册对象', text: '在校学生，注册后即可浏览实验室并提交入组申请' },
+  { label: '所属学院', text: '注册时必须选择，便于学院维度统计与管理' },
+  { label: '教师入口', text: '教师请使用独立注册入口并走审批流程' }
+]
 
 const router = useRouter()
 const loading = ref(false)
@@ -410,173 +375,41 @@ onBeforeUnmount(() => {
 </script>
 
 <style scoped>
-.auth-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding: 32px 16px;
-  background: radial-gradient(circle at top right, #e8f0ff 0%, #f6f7fb 45%, #f2f8ff 100%);
-}
-
-.auth-shell {
-  width: min(1120px, 100%);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 28px;
-  align-items: start;
-}
-
-.auth-hero {
-  position: sticky;
-  top: 32px;
-  padding: 32px;
-  border-radius: 24px;
-  color: #0f1b36;
-  background: linear-gradient(145deg, rgba(255, 255, 255, 0.95), rgba(240, 249, 255, 0.95));
-  box-shadow: 0 24px 60px rgba(15, 23, 42, 0.1);
-  overflow: hidden;
-}
-
-.auth-hero::before {
-  content: '';
-  position: absolute;
-  width: 220px;
-  height: 220px;
-  left: -80px;
-  top: -80px;
-  background: radial-gradient(circle, rgba(14, 165, 233, 0.25), transparent 70%);
-}
-
-.brand {
-  margin-bottom: 24px;
-}
-
-.hero-card {
-  background: rgba(255, 255, 255, 0.72);
-  border-radius: 18px;
-  padding: 22px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-}
-
-.hero-card h2 {
-  margin: 0 0 8px;
-  font-size: 20px;
-}
-
-.hero-card p {
-  margin: 0 0 16px;
-  color: #475569;
-  line-height: 1.6;
-}
-
-.hero-grid {
-  display: grid;
-  gap: 12px;
-}
-
-.hero-item {
-  padding: 12px 14px;
-  border-radius: 12px;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-}
-
-.hero-label {
-  display: block;
-  font-size: 12px;
-  color: #64748b;
-  margin-bottom: 4px;
-}
-
-.hero-footer {
-  margin-top: 18px;
-}
-
-.ghost-link {
-  color: #0f766e;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.ghost-link:hover {
-  text-decoration: underline;
-}
-
-.auth-panel {
-  display: flex;
-  align-items: flex-start;
-}
-
-.auth-card {
-  width: 100%;
-  border-radius: 20px;
-  border: 1px solid rgba(148, 163, 184, 0.2);
-  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.08);
-}
-
-.card-header h2 {
-  margin: 0 0 6px;
-  color: #0f172a;
-}
-
-.card-header p {
-  margin: 0;
-  color: #64748b;
-  font-size: 14px;
-}
-
 .code-row {
+  display: flex;
+  gap: var(--ll-space-2);
   width: 100%;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 12px;
+}
+
+.code-row .el-input {
+  flex: 1;
+}
+
+.code-row .el-button {
+  flex-shrink: 0;
 }
 
 .form-actions {
-  margin-top: 6px;
+  margin-bottom: var(--ll-space-2);
+  margin-top: var(--ll-space-2);
+}
+
+.submit-button {
+  width: 100%;
+  height: 38px;
+  font-size: var(--ll-text-base);
+  font-weight: 500;
 }
 
 .login-link {
-  text-align: center;
-  font-size: 14px;
-  color: #64748b;
   display: flex;
-  align-items: center;
   justify-content: center;
-  gap: 12px;
+  align-items: center;
+  gap: var(--ll-space-2);
+  font-size: var(--ll-text-sm);
 }
 
-.login-link a {
-  color: #0f766e;
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.login-link a:hover {
-  text-decoration: underline;
-}
-
-.divider {
-  color: #cbd5e1;
-}
-
-@media (max-width: 768px) {
-  .auth-hero {
-    padding: 24px;
-  }
-
-  .auth-panel {
-    padding-bottom: 12px;
-  }
-
-  .code-row {
-    grid-template-columns: 1fr;
-  }
-
-  .login-link {
-    flex-direction: column;
-    gap: 6px;
-  }
+.login-link .divider {
+  color: var(--ll-border-default);
 }
 </style>

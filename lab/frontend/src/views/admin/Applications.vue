@@ -208,7 +208,7 @@ onMounted(() => {
 
 <style scoped>
 .muted-text {
-  color: #94a3b8;
+  color: var(--ll-text-tertiary);
 }
 
 .pagination-row {

@@ -117,16 +117,16 @@ onMounted(() => {
   justify-content: space-between;
   gap: 12px;
   padding: 12px 14px;
-  border-radius: 14px;
+  border-radius: var(--ll-radius-md);
   background: rgba(248, 250, 252, 0.88);
 }
 
 .detail-item span {
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .description-block {
   line-height: 1.8;
-  color: #475569;
+  color: var(--ll-text-secondary);
 }
 </style>

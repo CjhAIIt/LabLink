@@ -300,7 +300,7 @@ onMounted(() => {
 }
 
 .audit-cell small {
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 @media (max-width: 768px) {

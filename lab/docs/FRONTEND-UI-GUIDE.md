@@ -4,7 +4,49 @@
 
 ## 1. 视觉基线
 
-### 1.1 品牌
+### 1.1 设计令牌
+
+所有视觉取值集中在 `src/assets/css/tokens.css`，由 `global.css` 的 `@import` 引入。
+**页面里不写裸十六进制色值**，一律用 `var(--ll-*)`；确需新色先加令牌再用。
+
+| 令牌组 | 说明 |
+| --- | --- |
+| `--ll-brand-50` … `--ll-brand-700` | 主色阶，主色为 `--ll-brand-600`（#4f46e5） |
+| `--ll-logo-from` / `--ll-logo-mid` / `--ll-logo-to` | 品牌标识色块的三段蓝青渐变 |
+| `--ll-code-bg` / `--ll-code-fg` | 代码编辑区底色与前景色 |
+| `--ll-gray-0` … `--ll-gray-900` | 中性色阶 |
+| `--ll-bg-body` / `--ll-bg-surface` / `--ll-bg-subtle` / `--ll-bg-hover` | 语义背景 |
+| `--ll-text-primary` / `secondary` / `tertiary` / `disabled` / `inverse` | 语义文字 |
+| `--ll-border-subtle` / `default` / `strong` / `brand` | 语义描边 |
+| `--ll-radius-xs` … `--ll-radius-full` | 圆角，小 4 / 中 8 / 卡片 12 / 大 16 |
+| `--ll-shadow-xs` … `--ll-shadow-lg` | 阴影，很浅；仅浮层可用 `md` 以上 |
+| `--ll-space-1` … `--ll-space-12` | 4px 基准间距 |
+| `--ll-text-xs` … `--ll-text-3xl` | 字号 |
+| `--ll-sidebar-width` / `--ll-topbar-height` / `--ll-control-height` | 布局尺寸 |
+| `--ll-transition-fast` / `--ll-transition-base` | 动效时长 |
+
+分层原则：**用 1px 描边而不是阴影做分隔**，阴影只留给浮层（下拉、弹窗、抽屉）。
+圆角上限 16px。数字（指标值、表格数值）统一 `font-variant-numeric: tabular-nums`。
+
+当前全库 `.vue` 文件的裸色值与超大圆角均已清零，新增代码请沿用令牌，不要再写十六进制色值。
+
+### 1.2 暗色主题
+
+主题通过覆盖语义令牌实现，页面代码不需要感知主题。
+
+- 开关：`composables/useTheme.js` 的 `useTheme()`，状态持久化在 `localStorage.lab_theme`
+- 切换按钮：`components/ThemeToggle.vue`，已接入桌面顶栏、移动端顶栏、公开页与平台介绍页
+- 应用方式：`<html data-theme="dark">`，`index.html` 里的内联脚本在首帧渲染前套用，避免暗色用户看到白闪
+- 首次访问未设置过主题时跟随系统 `prefers-color-scheme`
+
+暗色下有两类颜色不能跟随反转，单独用令牌固定：
+
+| 令牌 | 用途 |
+| --- | --- |
+| `--ll-on-brand` | 品牌色实心背景上的文字，两套主题下都是浅色 |
+| `--ll-bg-chrome` | 吸顶导航等半透明 chrome 层的底色 |
+
+### 1.3 品牌
 
 平台统一品牌标识为 **LabLink**，对应中文副标题“高校实验室管理平台”。
 
@@ -12,22 +54,21 @@
 - 标识色块文字固定为 `Link`，主色为品牌蓝 `#2563eb`（深色态 `#1d4ed8`）
 - 品牌在侧边栏、登录页、注册页、平台介绍页中的标题必须来自 `BrandLogo` 的 `title` / `subtitle` 属性，不要在页面里重复硬编码全称
 
-### 1.2 颜色
+### 1.4 颜色
 
 | 用途 | 色值 |
 | --- | --- |
-| 主色 | `#2563eb` / `#1d4ed8` |
-| 学生端主色 | `#2563eb` |
-| 教师端主色 | `#7c3aed` |
-| 页面底色 | `#f8fafc`，渐变至 `#f1f5f9` |
-| 卡片底色 | `#ffffff` |
-| 主文字 | `#0f172a` |
-| 次文字 | `#64748b` |
-| 分隔线 | `#e2e8f0` |
+| 主色 | `--ll-brand-600` / `#4f46e5` |
+| 页面底色 | `--ll-bg-body`，`#f7f8fa` |
+| 卡片底色 | `--ll-bg-surface`，`#ffffff` |
+| 主文字 | `--ll-text-primary`，`#171a23` |
+| 次文字 | `--ll-text-secondary`，`#646b7d` |
+| 分隔线 | `--ll-border-subtle`，`#e8eaee` |
 
-页面级渐变统一使用 `linear-gradient`，圆角统一 20px 以上（移动端 20px，桌面端 16px 居多），阴影使用低透明度蓝灰色如 `rgba(148, 163, 184, 0.18)`。
+页面级渐变只允许出现在 `.page-hero--brand`（工作台首页的强调头部），
+其余位置一律使用扁平卡片。
 
-### 1.3 字体与滚动条
+### 1.5 字体与滚动条
 
 - 基础字号 14px，`body` 已开启 `-webkit-font-smoothing: antialiased`
 - 滚动条统一 8px，轨道 `#f1f1f1`，滑块 `#c1c1c1`
@@ -57,15 +98,18 @@
 
 | 类名 | 用途 |
 | --- | --- |
-| `.page-shell` | 页面根容器，纵向 flex + gap |
-| `.page-hero` | 顶部横幅区，深色渐变背景，大圆角 |
-| `.page-hero h1` / `.hero-subtitle` / `.eyebrow` | 横幅内的标题、副标题、眉标 |
-| `.metric-grid` / `.metric-card` | 指标卡网格与单卡。桌面按容器宽度自适应（`auto-fit` + `minmax(180px, 1fr)`），768px 以下固定为 1 列 |
+| `.page-shell` | 页面根容器，纵向 grid + gap |
+| `.page-hero` | 页面头部，**扁平**：白底 + 1px 描边，标题 / 说明 / 右侧操作区 |
+| `.page-hero--brand` | 强调型头部，仅工作台首页使用（品牌深色渐变） |
+| `.page-hero h1` / `.hero-subtitle` / `.eyebrow` | 头部内的标题、副标题、眉标 |
+| `.metric-grid` / `.metric-card` | 指标卡网格与单卡。桌面按容器宽度自适应（`auto-fit` + `minmax(200px, 1fr)`），768px 以下固定为 1 列 |
 | `.metric-label` / `.metric-value` / `.metric-tip` | 指标卡的标签、数值、补充说明 |
 | `.content-grid.two-column` | 双栏内容区 |
-| `.panel-card` / `.toolbar-card` | 内容卡片、工具条卡片 |
+| `.panel-card` / `.toolbar-card` | 内容卡片、筛选工具条卡片 |
 | `.toolbar-main` / `.toolbar-actions` / `.toolbar-form` | 工具条内部的标题区、操作区、筛选表单区 |
 | `.panel-header` | 卡片头部，标题 + 操作按钮 |
+| `.section-title` | 区块标题，左侧带品牌色竖条 |
+| `.icon-chip` | 图标底片，36px 方块 |
 | `.empty-panel` / `.rank-list` / `.rank-item` | 空状态与排行榜 |
 
 ### 3.3 表格与表单容器
@@ -97,29 +141,63 @@ Element Plus 的 `el-table` 在窄屏下横向溢出，可读性差。平台采�
 
 ```
 src/
-├─ layouts/          布局外壳
-│  ├─ AdminLayout.vue          管理端（侧边栏 + 顶栏）
-│  ├─ StudentLayout.vue        学生端（侧边栏 + 顶栏）
-│  ├─ TeacherLayout.vue        教师端（侧边栏 + 顶栏）
-│  ├─ MobileStudentLayout.vue  移动端学生端（顶栏 + 底部标签栏）
-│  └─ MobileTeacherLayout.vue  移动端教师端（顶栏 + 底部标签栏）
-├─ views/            页面
+├─ layouts/
+│  ├─ AppShell.vue            桌面端共用外壳（侧边栏 + 顶栏 + 内容区）
+│  ├─ AuthLayout.vue          公开页共用外壳（品牌 + 卡片 + 能力说明）
+│  ├─ MobileShell.vue         移动端共用外壳（顶栏 + 底部标签栏）
+│  ├─ AdminLayout.vue         管理端：只提供菜单数据与业务逻辑
+│  ├─ StudentLayout.vue       学生端：同上
+│  ├─ TeacherLayout.vue       教师端：同上
+│  ├─ MobileStudentLayout.vue 移动端学生端：只提供标签栏数据
+│  └─ MobileTeacherLayout.vue 移动端教师端：同上
+├─ views/
 │  ├─ admin/  student/  teacher/   桌面端页面
 │  └─ mobile/                        移动端页面
 │     ├─ Notices.vue  Profile.vue
 │     ├─ student/  Applications.vue Dashboard.vue LabDetail.vue Labs.vue
 │     └─ teacher/  CreateApplies.vue Dashboard.vue
+├─ assets/css/
+│  ├─ tokens.css              设计令牌层
+│  ├─ global.css              桌面端页面基元与 Element Plus 覆盖
+│  └─ mobile.css              移动端页面基元
 ├─ components/       跨页面复用组件
 ├─ api/              按业务域拆分的接口封装
 └─ utils/            请求封装、鉴权、门户角色、文件地址处理
 ```
 
-桌面端三套布局共用同一套结构：左侧 `aside.sidebar` + 右侧 `div.main-shell`（内含 `header.topbar` 与 `div.content`）。新增角色端时复制 `StudentLayout.vue` 并替换菜单项，不要另起结构。
+### 5.1 三个共用外壳
+
+**`AppShell.vue`（桌面端）** —— 管理端 / 学生端 / 教师端共用，通过 props 注入：
+
+| prop | 说明 |
+| --- | --- |
+| `roleLabel` | 顶栏左侧角色标签 |
+| `menuGroups` | 导航分组 `[{ label, items: [{ path, label, icon, children? }] }]` |
+| `userName` / `userMeta` / `userInitial` | 用户信息 |
+
+新增角色端时只需复制一份 Layout 并提供 `menuGroups`，不要再复制外壳样式。
+
+两种折叠状态是分开的，不要混用：
+
+- **桌面端收成图标栏**：`isRail`，宽度 64px，`el-menu` 的 `collapse` 生效
+- **移动端抽屉**：`isDrawerOpen`，侧边栏浮出并配遮罩层
+
+**`AuthLayout.vue`（公开页）** —— 登录 / 注册 / 教师注册共用。props：`title`、`subtitle`、`features`、`width`；
+表单放默认插槽，底部链接放 `footer` 插槽。
+
+**`MobileShell.vue`（移动端）** —— 学生端 / 教师端共用。props：`tabItems`、`userInitial`、`rootPath`；
+标签栏列数由 `tabItems.length` 决定，新增标签无需改样式。
+
+### 5.2 页面骨架约定
+
+桌面端页面根元素用 `.page-shell`，内容区外层由 `AppShell` 提供最大宽度与内边距；
+移动端页面根元素用 `.m-page`，类名集中在 `mobile.css`。
+**移动端页面不要写 `<style scoped>`**，统一在 `mobile.css` 中维护，避免各处样式漂移。
 
 ## 6. 交互约定
 
 - 所有 `button` 统一 `cursor: pointer`，禁用态 `cursor: not-allowed`
-- 可点击元素必须提供 hover 反馈与 `:focus-visible` 轮廓，不要移除浏览器默认焦点环
+- 可点击元素必须提供 hover 反馈；`global.css` 已提供全局 `:focus-visible` 轮廓，不要移除浏览器默认焦点环
 - 移动端按钮最小点击区域不小于 44px，主要操作按钮在窄屏下占满整行
 - 顶部标题在窄屏下必须截断而非换行，使用 `white-space: nowrap; overflow: hidden; text-overflow: ellipsis`
 - 移动端底部标签栏必须预留 `env(safe-area-inset-bottom)`，内容区预留等高的底部内边距，避免被标签栏遮挡
@@ -193,11 +271,14 @@ const StudentLabs = () => import('@/views/student/Labs.vue')
 
 ## 10. 新增页面检查清单
 
-- [ ] 根元素使用 `.page-shell`，横幅使用 `.page-hero`，内容区使用 `.panel-card`
+- [ ] 根元素使用 `.page-shell`，头部使用 `.page-hero`（工作台首页用 `.page-hero--brand`），内容区使用 `.panel-card`
 - [ ] 表格或筛选表单在 768px 以下可用（卡片列表或横向滚动）
 - [ ] 弹窗宽度使用 `min(420px, 92vw)` 一类的相对值
 - [ ] 监听 `resize` 的组件在 `onBeforeUnmount` 中移除监听
 - [ ] 移动端需要该页面时，同步在 `src/views/mobile/` 下提供对应实现，并在 `src/router/index.js` 注册 `/m/*` 路由
+- [ ] 移动端页面**没有** `<style scoped>`，样式统一写在 `assets/css/mobile.css`
 - [ ] 路由中该页面使用动态 `import()` 声明，未改成静态导入
 - [ ] 新引用的编程式 Element Plus 组件已补充到 `src/assets/css/element-plus-programmatic.js`
+- [ ] 页面样式里没有裸十六进制色值与超过 16px 的圆角，一律用 `var(--ll-*)`
+- [ ] 新增导航项时同步维护 `menuGroups` 的分组标题；新增移动端标签时标签栏列数自动跟随
 - [ ] `npm run build` 与 `npx eslint . --ext .vue,.js` 均无报错

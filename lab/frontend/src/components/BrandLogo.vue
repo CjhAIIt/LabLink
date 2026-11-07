@@ -51,10 +51,10 @@ const sizeClass = computed(() => `size-${props.size}`)
 .brand-mark {
   position: relative;
   flex-shrink: 0;
-  border-radius: 20px;
+  border-radius: var(--ll-radius-lg);
   background:
     radial-gradient(circle at 22% 18%, rgba(191, 219, 254, 0.42), transparent 30%),
-    linear-gradient(135deg, #1d4ed8, #38bdf8 58%, #22d3ee);
+    linear-gradient(135deg, var(--ll-logo-from), var(--ll-logo-mid) 58%, var(--ll-logo-to));
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.22),
     0 14px 30px rgba(29, 78, 216, 0.18);
@@ -85,7 +85,7 @@ const sizeClass = computed(() => `size-${props.size}`)
   width: 100%;
   height: 100%;
   place-items: center;
-  color: #f8fafc;
+  color: var(--ll-on-brand);
   font-weight: 900;
   letter-spacing: 0.08em;
   text-shadow: 0 4px 18px rgba(8, 15, 35, 0.28);
@@ -113,15 +113,15 @@ const sizeClass = computed(() => `size-${props.size}`)
 }
 
 .tone-dark .brand-title {
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .tone-dark .brand-subtitle {
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 
 .tone-light .brand-title {
-  color: #f8fafc;
+  color: var(--ll-text-primary);
 }
 
 .tone-light .brand-subtitle {
@@ -131,7 +131,7 @@ const sizeClass = computed(() => `size-${props.size}`)
 .size-sm .brand-mark {
   width: 46px;
   height: 46px;
-  border-radius: 16px;
+  border-radius: var(--ll-radius-md);
 }
 
 .size-sm .brand-mark-text {
@@ -170,7 +170,7 @@ const sizeClass = computed(() => `size-${props.size}`)
 .size-lg .brand-mark {
   width: 62px;
   height: 62px;
-  border-radius: 22px;
+  border-radius: var(--ll-radius-lg);
 }
 
 .size-lg .brand-mark-text {

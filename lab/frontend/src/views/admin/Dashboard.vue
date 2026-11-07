@@ -1,6 +1,6 @@
 <template>
   <div class="page-shell">
-    <section class="page-hero admin-hero">
+    <section class="page-hero page-hero--brand">
       <div>
         <p class="eyebrow">管理工作台</p>
         <h1>{{ dashboardTitle }}</h1>
@@ -397,34 +397,34 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.admin-hero {
-  background:
-    linear-gradient(135deg, rgba(15, 23, 42, 0.92), rgba(15, 118, 110, 0.86)),
-    radial-gradient(circle at top right, rgba(125, 211, 252, 0.26), transparent 28%);
-}
 
 .hero-side {
-  display: grid;
-  gap: 10px;
-  justify-items: end;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--ll-space-2);
 }
 
 .hero-button {
   border-color: rgba(255, 255, 255, 0.28);
-  color: #f8fafc;
+  color: var(--ll-bg-muted);
   background: rgba(255, 255, 255, 0.1);
 }
 
 .hero-chip {
-  padding: 10px 14px;
-  border-radius: 999px;
-  color: #ecfeff;
+  padding: 6px 14px;
+  border-radius: var(--ll-radius-full);
+  color: var(--ll-on-brand);
   background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  font-size: var(--ll-text-sm);
+  white-space: nowrap;
 }
 
 .hero-chip.muted {
-  color: rgba(236, 254, 255, 0.9);
+  background: rgba(255, 255, 255, 0.08);
+  opacity: 0.86;
 }
 
 .pending-panel :deep(.el-card__body) {
@@ -441,7 +441,7 @@ onMounted(() => {
   display: grid;
   gap: 10px;
   padding: 18px 20px;
-  border-radius: 20px;
+  border-radius: var(--ll-radius-lg);
   background: linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(240, 249, 255, 0.9));
   border: 1px solid rgba(148, 163, 184, 0.16);
 }
@@ -454,36 +454,42 @@ onMounted(() => {
 }
 
 .pending-label {
-  color: #0f172a;
+  color: var(--ll-text-primary);
   font-weight: 600;
 }
 
 .pending-value {
-  color: #0f766e;
+  color: var(--ll-brand-600);
   font-size: 28px;
 }
 
 .pending-card p {
-  color: #64748b;
+  color: var(--ll-text-secondary);
   line-height: 1.6;
 }
 
 .notice-list {
   display: grid;
-  gap: 14px;
 }
 
 .notice-item {
   display: grid;
-  gap: 8px;
-  padding: 14px 16px;
-  border-radius: 18px;
-  background: linear-gradient(135deg, rgba(248, 250, 252, 0.92), rgba(240, 249, 255, 0.92));
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  gap: 6px;
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border-bottom: 1px solid var(--ll-border-subtle);
+  transition: background-color var(--ll-transition-fast);
+}
+
+.notice-item:last-child {
+  border-bottom: none;
+}
+
+.notice-item:hover {
+  background: var(--ll-bg-muted);
 }
 
 .notice-item p,
 .notice-item span {
-  color: #64748b;
+  color: var(--ll-text-secondary);
 }
 </style>

@@ -143,10 +143,10 @@ onMounted(() => {
 
 .job-card {
   border: 1px solid rgba(14, 165, 233, 0.14);
-  border-radius: 24px;
+  border-radius: var(--ll-radius-lg);
   background:
     radial-gradient(circle at top right, rgba(34, 197, 94, 0.08), transparent 24%),
-    linear-gradient(180deg, #ffffff, #f8fbff);
+    linear-gradient(180deg, var(--ll-bg-surface), var(--ll-bg-surface));
 }
 
 .card-top {
@@ -161,33 +161,33 @@ onMounted(() => {
   font-size: 12px;
   letter-spacing: 0.14em;
   font-weight: 700;
-  color: #0284c7;
+  color: var(--ll-info);
 }
 
 .job-card h3 {
   margin: 0;
   font-size: 26px;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .salary {
   margin-top: 18px;
   font-size: 22px;
   font-weight: 800;
-  color: #0f766e;
+  color: var(--ll-brand-600);
 }
 
 .subtitle,
 .summary,
 .scene {
   line-height: 1.8;
-  color: #475569;
+  color: var(--ll-text-secondary);
 }
 
 .subtitle {
   margin: 14px 0 0;
   font-weight: 700;
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .summary,
@@ -206,7 +206,7 @@ onMounted(() => {
   margin-top: 18px;
   display: grid;
   gap: 10px;
-  color: #334155;
+  color: var(--ll-text-secondary);
   font-weight: 600;
 }
 
@@ -219,8 +219,8 @@ onMounted(() => {
 
 .resource-item {
   padding: 14px;
-  border-radius: 16px;
-  background: #f8fafc;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-bg-muted);
   border: 1px solid rgba(148, 163, 184, 0.16);
 }
 
@@ -230,12 +230,12 @@ onMounted(() => {
 }
 
 .resource-item strong {
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .resource-item span {
   margin-top: 8px;
-  color: #64748b;
+  color: var(--ll-text-secondary);
   line-height: 1.7;
 }
 

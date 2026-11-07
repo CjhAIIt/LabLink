@@ -253,8 +253,8 @@ onMounted(() => {
 .overview-card {
   background:
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 25%),
-    linear-gradient(135deg, #082f49, #155e75);
-  color: #f8fafc;
+    linear-gradient(135deg, var(--ll-text-primary), var(--ll-info));
+  color: var(--ll-bg-muted);
 }
 
 .eyebrow,
@@ -290,7 +290,7 @@ onMounted(() => {
 
 .metric-item {
   padding: 16px;
-  border-radius: 18px;
+  border-radius: var(--ll-radius-lg);
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.12);
 }
@@ -326,8 +326,8 @@ onMounted(() => {
 .resource-group,
 .stage-card {
   padding: 18px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, #ffffff, #f8fbff);
+  border-radius: var(--ll-radius-lg);
+  background: linear-gradient(180deg, var(--ll-bg-surface), var(--ll-bg-surface));
 }
 
 .resource-group {
@@ -336,14 +336,14 @@ onMounted(() => {
 
 .resource-group strong,
 .stage-card h3 {
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .resource-group span {
   display: block;
   margin-top: 10px;
   line-height: 1.8;
-  color: #475569;
+  color: var(--ll-text-secondary);
 }
 
 .stage-head {
@@ -354,23 +354,23 @@ onMounted(() => {
 }
 
 .phase {
-  color: #0284c7;
+  color: var(--ll-info);
 }
 
 .stage-card h3 {
-  color: #0f172a;
+  color: var(--ll-text-primary);
 }
 
 .meta-line {
   margin-top: 14px;
   font-weight: 700;
-  color: #0f766e;
+  color: var(--ll-brand-600);
 }
 
 .stage-desc {
   margin: 10px 0 0;
   line-height: 1.8;
-  color: #475569;
+  color: var(--ll-text-secondary);
 }
 
 .focus-row {
@@ -383,8 +383,8 @@ onMounted(() => {
 .resource-box {
   margin-top: 16px;
   padding: 14px 16px;
-  border-radius: 16px;
-  background: #eff6ff;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-brand-50);
   border: 1px solid rgba(14, 165, 233, 0.16);
 }
 
@@ -396,19 +396,19 @@ onMounted(() => {
 
 .resource-box span {
   font-size: 13px;
-  color: #0369a1;
+  color: var(--ll-info);
 }
 
 .resource-box a {
   margin-top: 8px;
-  color: #0f172a;
+  color: var(--ll-text-primary);
   text-decoration: none;
   font-weight: 700;
 }
 
 .resource-box small {
   margin-top: 10px;
-  color: #64748b;
+  color: var(--ll-text-secondary);
   line-height: 1.7;
 }
 
