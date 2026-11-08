@@ -13,16 +13,25 @@
 }
 
 /* ---------- 首屏横幅 ---------- */
+/* 首屏横幅默认纵向堆叠：编号、标题、简介、标签、操作各占一行 */
 .m-shell .hero {
   display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--ll-space-3);
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--ll-space-2);
   padding: var(--ll-space-4);
   border-radius: var(--ll-radius-lg);
   background: linear-gradient(135deg, var(--ll-brand-600) 0%, var(--ll-brand-700) 100%);
   box-shadow: var(--ll-shadow-sm);
   color: var(--ll-on-brand);
+}
+
+/* 工作台首屏：标题在左、刷新按钮在右 */
+.m-shell .hero--top {
+  flex-direction: row;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ll-space-3);
 }
 
 .m-shell .hero-text {
@@ -40,7 +49,9 @@
   margin-top: 4px;
   font-size: var(--ll-text-xl);
   font-weight: 600;
+  line-height: 1.35;
   letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
 }
 
 .m-shell .hero-sub {
@@ -48,6 +59,10 @@
   font-size: var(--ll-text-sm);
   line-height: 1.55;
   opacity: 0.85;
+}
+
+.m-shell .hero-actions {
+  margin-top: var(--ll-space-2);
 }
 
 .m-shell .hero-refresh {
@@ -302,9 +317,22 @@
 }
 
 .m-shell .title {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
   font-size: var(--ll-text-base);
   font-weight: 600;
   color: var(--ll-text-primary);
+}
+
+.m-shell .title strong {
+  overflow-wrap: anywhere;
+}
+
+.m-shell .title span {
+  font-size: var(--ll-text-xs);
+  font-weight: 400;
+  color: var(--ll-text-tertiary);
 }
 
 .m-shell .time {
@@ -611,13 +639,18 @@
   gap: 4px;
 }
 
+/* 区块内的标签与取值：标签弱化，取值正常字重 */
+.m-shell .section label,
 .m-shell .section-label {
   font-size: var(--ll-text-xs);
   color: var(--ll-text-tertiary);
 }
 
+.m-shell .section p,
 .m-shell .section-value {
+  margin: 0;
   font-size: var(--ll-text-sm);
+  line-height: 1.6;
   color: var(--ll-text-primary);
 }
 

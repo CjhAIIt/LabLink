@@ -34,9 +34,9 @@
 
       <el-empty v-if="!loading && applies.length === 0" description="暂无申请记录" :image-size="80" />
 
-      <div class="load-more">
+      <div v-if="hasMore || applies.length" class="load-more">
         <el-button v-if="hasMore" plain :loading="loadingMore" @click="fetchMore">加载更多</el-button>
-        <span v-else-if="applies.length" class="no-more">已到底</span>
+        <span v-else class="no-more">已到底</span>
       </div>
     </section>
   </div>

@@ -20,9 +20,9 @@
 
       <el-empty v-if="!loading && notices.length === 0" description="暂无公告" :image-size="80" />
 
-      <div class="load-more">
+      <div v-if="hasMore || notices.length" class="load-more">
         <el-button v-if="hasMore" plain :loading="loadingMore" @click="fetchMore">加载更多</el-button>
-        <span v-else-if="notices.length" class="no-more">已到底</span>
+        <span v-else class="no-more">已到底</span>
       </div>
     </section>
 

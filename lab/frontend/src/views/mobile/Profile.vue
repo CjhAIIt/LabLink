@@ -22,7 +22,15 @@
       </div>
       <div class="row">
         <span class="label">学院</span>
-        <span class="value">{{ userStore.userInfo?.collegeName || '-' }}</span>
+        <span class="value">{{ userStore.userInfo?.college || '-' }}</span>
+      </div>
+      <div v-if="userStore.userInfo?.major" class="row">
+        <span class="label">专业</span>
+        <span class="value">{{ userStore.userInfo.major }}</span>
+      </div>
+      <div v-if="userStore.userInfo?.email" class="row">
+        <span class="label">邮箱</span>
+        <span class="value">{{ userStore.userInfo.email }}</span>
       </div>
       <div class="row">
         <span class="label">实验室</span>
