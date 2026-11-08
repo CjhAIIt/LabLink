@@ -51,6 +51,12 @@ bash scripts/cloud-preflight.sh .env.cloud
 
 - 白名单为具体域名时使用 `allowedOrigins` + `allowCredentials(true)`
 - 白名单包含 `*` 时改用 `allowedOriginPatterns` 并**关闭** `allowCredentials`，避免出现「任意来源 + 携带凭据」的组合
+- **非生产环境额外放行回环地址的任意端口**（`http://localhost:[*]`、`http://127.0.0.1:[*]`）。
+  浏览器对同源 POST 同样会带上 `Origin` 头，开发代理把该头原样转发到后端后就会命中白名单校验，
+  开发服务器端口一旦不是 3000/4173/5173 就会返回 `403 Invalid CORS request`，
+  登录、发布公告这类写操作会全部失败。生产环境（`APP_SECURITY_ENVIRONMENT=production`）不做任何放宽。
+
+对应的单元测试见 `src/test/java/com/lab/recruitment/config/CorsConfigurationSourceTest.java`。
 
 ### 3.2 端口
 
