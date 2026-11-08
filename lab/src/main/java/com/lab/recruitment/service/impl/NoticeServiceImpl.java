@@ -32,13 +32,20 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
                                                    Long collegeId, Long labId, String keyword, User currentUser) {
         Long scopedLabId = labId;
         Long scopedCollegeId = collegeId;
-        if (!currentUserAccessor.isSuperAdmin(currentUser) && currentUserAccessor.isLabScopedManager(currentUser)) {
+        boolean superAdmin = currentUserAccessor.isSuperAdmin(currentUser);
+        if (!superAdmin && currentUserAccessor.isLabScopedManager(currentUser)) {
             scopedLabId = currentUserAccessor.resolveLabScope(currentUser, labId);
             Lab currentLab = labService.getById(scopedLabId);
             scopedCollegeId = currentLab == null ? collegeId : currentLab.getCollegeId();
         }
-        return baseMapper.selectNoticePage(new Page<>(pageNum, pageSize), normalizeScope(publishScope),
-                scopedCollegeId, scopedLabId, trimToNull(keyword));
+        // publishScope 只在显式指定时作为过滤条件；不指定时按「我能看到的范围」返回
+        // （全校 + 我所属学院 + 我所属实验室），与最新公告列表口径保持一致。
+        String requestedScope = trimToNull(publishScope);
+        if (requestedScope != null) {
+            normalizeScope(requestedScope);
+        }
+        return baseMapper.selectNoticePage(new Page<>(pageNum, pageSize), requestedScope,
+                scopedCollegeId, scopedLabId, trimToNull(keyword), !superAdmin);
     }
 
     @Override
@@ -53,7 +60,8 @@ public class NoticeServiceImpl extends ServiceImpl<NoticeMapper, Notice> impleme
             }
         }
         if (currentUser != null && currentUserAccessor.isSuperAdmin(currentUser)) {
-            return baseMapper.selectNoticePage(new Page<>(1, limit), null, null, null, null).getRecords();
+            // 学校管理员可见全部范围的公告
+            return baseMapper.selectNoticePage(new Page<>(1, limit), null, null, null, null, false).getRecords();
         }
         return baseMapper.selectLatestNotices(Math.max(limit, 1), collegeId, labId);
     }

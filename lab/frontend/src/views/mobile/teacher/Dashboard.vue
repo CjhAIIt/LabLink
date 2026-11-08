@@ -1,6 +1,6 @@
 <template>
   <div class="m-page">
-    <section class="hero">
+    <section class="hero hero--top">
       <div class="hero-text">
         <p class="hero-eyebrow">教师端</p>
         <h1 class="hero-title">你好，{{ userStore.realName || '老师' }}</h1>

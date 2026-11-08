@@ -64,7 +64,15 @@ const route = useRoute()
 const router = useRouter()
 
 const title = computed(() => route.meta.title || '')
-const canGoBack = computed(() => props.rootPath && route.path !== props.rootPath)
+
+/**
+ * 底部标签栏上的页面是入口，返回按钮没有意义；
+ * 只有从列表进入的详情页才展示返回。
+ */
+const canGoBack = computed(() => {
+  const isTabPage = props.tabItems.some((item) => item.path === route.path)
+  return !isTabPage
+})
 
 const isActive = (path) => route.path === path || (path !== props.rootPath && route.path.startsWith(path))
 </script>
