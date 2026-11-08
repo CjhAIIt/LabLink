@@ -31,12 +31,12 @@
 
     <el-card shadow="never" class="panel-card">
       <el-table v-loading="loading" :data="records" stripe>
-        <el-table-column prop="teacherNo" label="工号" min-width="120" />
-        <el-table-column prop="realName" label="姓名" min-width="120" />
-        <el-table-column prop="collegeName" label="所属学院" min-width="160" />
-        <el-table-column prop="title" label="职称" min-width="120" />
-        <el-table-column prop="phone" label="手机号" min-width="140" />
-        <el-table-column prop="email" label="邮箱" min-width="220" />
+        <el-table-column prop="teacherNo" label="工号" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="realName" label="姓名" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="collegeName" label="所属学院" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="title" label="职称" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="phone" label="手机号" min-width="140" show-overflow-tooltip />
+        <el-table-column prop="email" label="邮箱" min-width="220" show-overflow-tooltip />
         <el-table-column label="流程状态" min-width="120">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>

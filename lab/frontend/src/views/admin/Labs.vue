@@ -30,10 +30,10 @@
 
     <el-card shadow="never" class="panel-card">
       <el-table v-loading="loading" :data="labs" stripe>
-        <el-table-column prop="labName" label="实验室" min-width="180" />
-        <el-table-column prop="labCode" label="编码" min-width="120" />
-        <el-table-column prop="teacherName" label="指导教师" min-width="120" />
-        <el-table-column prop="location" label="地点" min-width="140" />
+        <el-table-column prop="labName" label="实验室" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="labCode" label="编码" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="teacherName" label="指导教师" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="location" label="地点" min-width="140" show-overflow-tooltip />
         <el-table-column prop="recruitNum" label="计划容量" min-width="100" />
         <el-table-column prop="currentNum" label="当前成员" min-width="100" />
         <el-table-column prop="status" label="状态" min-width="100">

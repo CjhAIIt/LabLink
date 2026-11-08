@@ -54,11 +54,11 @@
       </div>
 
       <el-table v-loading="loading" :data="students" stripe>
-        <el-table-column prop="realName" label="姓名" width="110" />
-        <el-table-column prop="studentId" label="学号" width="140" />
-        <el-table-column prop="major" label="专业" width="180" />
-        <el-table-column prop="email" label="邮箱" min-width="200" />
-        <el-table-column prop="username" label="用户名" width="140" />
+        <el-table-column prop="realName" label="姓名" width="110" show-overflow-tooltip />
+        <el-table-column prop="studentId" label="学号" width="140" show-overflow-tooltip />
+        <el-table-column prop="major" label="专业" width="180" show-overflow-tooltip />
+        <el-table-column prop="email" label="邮箱" min-width="200" show-overflow-tooltip />
+        <el-table-column prop="username" label="用户名" width="140" show-overflow-tooltip />
         <el-table-column label="申请统计" min-width="190">
           <template #default="{ row }">
             <div class="application-stats">
@@ -163,7 +163,7 @@
     >
       <div v-if="selectedStudent" class="student-applications">
         <el-table v-loading="applicationsLoading" :data="studentApplications" stripe>
-          <el-table-column prop="labName" label="实验室名称" min-width="150" />
+          <el-table-column prop="labName" label="实验室名称" min-width="150" show-overflow-tooltip />
           <el-table-column prop="reason" label="申请理由" min-width="220" show-overflow-tooltip />
           <el-table-column label="状态" width="120">
             <template #default="{ row }">

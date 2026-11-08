@@ -47,9 +47,9 @@
             stripe 
             style="width: 100%; margin-top: 20px;"
           >
-            <el-table-column prop="studentId" label="学号" width="120" />
-            <el-table-column prop="realName" label="姓名" width="120" />
-            <el-table-column prop="major" label="专业" />
+            <el-table-column prop="studentId" label="学号" width="120" show-overflow-tooltip />
+            <el-table-column prop="realName" label="姓名" width="120" show-overflow-tooltip />
+            <el-table-column prop="major" label="专业" show-overflow-tooltip />
             <el-table-column prop="grade" label="年级" width="100" />
             <el-table-column label="操作" width="120" fixed="right">
               <template #default="scope">

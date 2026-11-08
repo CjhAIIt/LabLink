@@ -36,8 +36,8 @@
           <el-empty description="暂无实验室创建申请记录" />
         </div>
         <el-table v-else :data="applications" stripe>
-          <el-table-column prop="labName" label="实验室名称" min-width="180" />
-          <el-table-column prop="collegeName" label="所属学院" min-width="140" />
+          <el-table-column prop="labName" label="实验室名称" min-width="180" show-overflow-tooltip />
+          <el-table-column prop="collegeName" label="所属学院" min-width="140" show-overflow-tooltip />
           <el-table-column label="流程状态" min-width="120">
             <template #default="{ row }">
               <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>

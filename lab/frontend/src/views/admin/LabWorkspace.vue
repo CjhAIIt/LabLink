@@ -88,9 +88,9 @@
             </div>
 
             <el-table :data="attendanceRows" border stripe>
-              <el-table-column prop="realName" label="姓名" min-width="110" />
-              <el-table-column prop="studentId" label="学号" min-width="120" />
-              <el-table-column prop="major" label="专业" min-width="160" />
+              <el-table-column prop="realName" label="姓名" min-width="110" show-overflow-tooltip />
+              <el-table-column prop="studentId" label="学号" min-width="120" show-overflow-tooltip />
+              <el-table-column prop="major" label="专业" min-width="160" show-overflow-tooltip />
               <el-table-column label="考勤状态" min-width="160">
                 <template #default="{ row }">
                   <template v-if="workspaceEditable">
@@ -178,8 +178,8 @@
 
               <el-table v-loading="fileLoading" :data="files" stripe>
                 <el-table-column prop="fileName" label="文件名" min-width="220" show-overflow-tooltip />
-                <el-table-column prop="folderName" label="目录" min-width="120" />
-                <el-table-column prop="uploadUserName" label="上传人" min-width="110" />
+                <el-table-column prop="folderName" label="目录" min-width="120" show-overflow-tooltip />
+                <el-table-column prop="uploadUserName" label="上传人" min-width="110" show-overflow-tooltip />
                 <el-table-column label="大小" min-width="100">
                   <template #default="{ row }">{{ formatFileSize(row.fileSize) }}</template>
                 </el-table-column>
@@ -241,9 +241,9 @@
             </template>
 
             <el-table :data="exitApplications" border stripe>
-              <el-table-column prop="realName" label="姓名" min-width="110" />
-              <el-table-column prop="studentId" label="学号" min-width="120" />
-              <el-table-column prop="major" label="专业" min-width="150" />
+              <el-table-column prop="realName" label="姓名" min-width="110" show-overflow-tooltip />
+              <el-table-column prop="studentId" label="学号" min-width="120" show-overflow-tooltip />
+              <el-table-column prop="major" label="专业" min-width="150" show-overflow-tooltip />
               <el-table-column prop="reason" label="退组原因" min-width="220" show-overflow-tooltip />
               <el-table-column label="状态" min-width="100">
                 <template #default="{ row }">

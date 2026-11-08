@@ -67,10 +67,10 @@
             @selection-change="handleSelectionChange"
           >
             <el-table-column type="selection" width="55" />
-            <el-table-column prop="realName" label="姓名" />
-            <el-table-column prop="username" label="用户名" />
-            <el-table-column prop="email" label="邮箱" />
-            <el-table-column prop="phone" label="电话" />
+            <el-table-column prop="realName" label="姓名" show-overflow-tooltip />
+            <el-table-column prop="username" label="用户名" show-overflow-tooltip />
+            <el-table-column prop="email" label="邮箱" show-overflow-tooltip />
+            <el-table-column prop="phone" label="电话" show-overflow-tooltip />
           </el-table>
         </div>
       </div>

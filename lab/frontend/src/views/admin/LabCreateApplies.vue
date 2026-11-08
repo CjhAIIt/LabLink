@@ -37,9 +37,9 @@
     <el-card shadow="never" class="panel-card">
       <el-table v-loading="loading" :data="records" stripe>
         <el-table-column v-if="isSuperAdmin" prop="applicantName" label="申请人" min-width="120" />
-        <el-table-column prop="collegeName" label="所属学院" min-width="150" />
-        <el-table-column prop="labName" label="实验室名称" min-width="180" />
-        <el-table-column prop="teacherName" label="指导教师" min-width="120" />
+        <el-table-column prop="collegeName" label="所属学院" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="labName" label="实验室名称" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="teacherName" label="指导教师" min-width="120" show-overflow-tooltip />
         <el-table-column prop="researchDirection" label="研究方向" min-width="200" show-overflow-tooltip />
         <el-table-column label="流程状态" min-width="120">
           <template #default="{ row }">

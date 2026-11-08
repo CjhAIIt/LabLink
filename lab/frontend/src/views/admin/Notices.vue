@@ -31,12 +31,12 @@
 
     <el-card shadow="never" class="panel-card">
       <el-table v-loading="loading" :data="notices" stripe>
-        <el-table-column prop="title" label="公告标题" min-width="180" />
+        <el-table-column prop="title" label="公告标题" min-width="180" show-overflow-tooltip />
         <el-table-column prop="publishScope" label="范围" min-width="100">
           <template #default="{ row }">{{ scopeLabel(row.publishScope) }}</template>
         </el-table-column>
-        <el-table-column prop="collegeName" label="学院" min-width="160" />
-        <el-table-column prop="labName" label="实验室" min-width="160" />
+        <el-table-column prop="collegeName" label="学院" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="labName" label="实验室" min-width="160" show-overflow-tooltip />
         <el-table-column prop="publisherName" label="发布人" min-width="120" />
         <el-table-column prop="content" label="内容摘要" min-width="260" show-overflow-tooltip />
         <el-table-column label="发布时间" min-width="170">

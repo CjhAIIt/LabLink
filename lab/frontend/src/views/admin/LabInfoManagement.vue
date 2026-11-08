@@ -69,8 +69,8 @@
           </div>
 
           <el-table :data="graduates" border stripe>
-            <el-table-column prop="name" label="姓名" width="120" />
-            <el-table-column prop="major" label="专业" width="150" />
+            <el-table-column prop="name" label="姓名" width="120" show-overflow-tooltip />
+            <el-table-column prop="major" label="专业" width="150" show-overflow-tooltip />
             <el-table-column prop="graduationYear" label="毕业年份" width="110" />
             <el-table-column prop="company" label="就业单位" min-width="180" />
             <el-table-column prop="position" label="职位" width="150" />
