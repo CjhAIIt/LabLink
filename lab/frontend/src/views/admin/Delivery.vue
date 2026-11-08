@@ -54,9 +54,9 @@
       </div>
 
       <el-table v-loading="loading" :data="deliveries" stripe>
-        <el-table-column prop="labName" label="实验室" min-width="160" />
-        <el-table-column prop="studentName" label="学生姓名" width="120" />
-        <el-table-column prop="studentId" label="学号" width="140" />
+        <el-table-column prop="labName" label="实验室" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="studentName" label="学生姓名" width="120" show-overflow-tooltip />
+        <el-table-column prop="studentId" label="学号" width="140" show-overflow-tooltip />
         <el-table-column prop="reason" label="投递内容" min-width="220" show-overflow-tooltip />
         <el-table-column label="状态" width="120">
           <template #default="{ row }">

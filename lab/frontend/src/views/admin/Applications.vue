@@ -32,11 +32,11 @@
 
     <el-card shadow="never" class="panel-card">
       <el-table v-loading="loading" :data="applications" stripe>
-        <el-table-column prop="studentName" label="学生" min-width="120" />
-        <el-table-column prop="studentId" label="学号" min-width="120" />
+        <el-table-column prop="studentName" label="学生" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="studentId" label="学号" min-width="120" show-overflow-tooltip />
         <el-table-column prop="grade" label="班级" min-width="140" />
-        <el-table-column prop="labName" label="实验室" min-width="150" />
-        <el-table-column prop="planTitle" label="招新计划" min-width="180" />
+        <el-table-column prop="labName" label="实验室" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="planTitle" label="招新计划" min-width="180" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" min-width="120">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>

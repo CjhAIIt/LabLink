@@ -75,8 +75,8 @@
       </template>
 
       <el-table :data="myApplies" stripe>
-        <el-table-column prop="labName" label="实验室" min-width="150" />
-        <el-table-column prop="planTitle" label="招新计划" min-width="180" />
+        <el-table-column prop="labName" label="实验室" min-width="150" show-overflow-tooltip />
+        <el-table-column prop="planTitle" label="招新计划" min-width="180" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" min-width="120">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>
@@ -172,8 +172,7 @@ onMounted(() => {
   display: grid;
 }
 
-.plan-item,
-.notice-item {
+.plan-item {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -181,6 +180,44 @@ onMounted(() => {
   padding: var(--ll-space-3) var(--ll-space-4);
   border-bottom: 1px solid var(--ll-border-subtle);
   transition: background-color var(--ll-transition-fast);
+}
+
+/* 公告：标题与时间一行，正文独占一行，避免标题被挤成多行 */
+.notice-item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: 4px var(--ll-space-4);
+  padding: var(--ll-space-3) var(--ll-space-4);
+  border-bottom: 1px solid var(--ll-border-subtle);
+  transition: background-color var(--ll-transition-fast);
+}
+
+.notice-item strong {
+  min-width: 0;
+  font-weight: 600;
+  color: var(--ll-text-primary);
+}
+
+.notice-item span {
+  grid-column: 2;
+  grid-row: 1;
+  white-space: nowrap;
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+  font-variant-numeric: tabular-nums;
+}
+
+.notice-item p {
+  grid-column: 1 / -1;
+  font-size: var(--ll-text-sm);
+  line-height: 1.6;
+  color: var(--ll-text-secondary);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .plan-item:last-child,

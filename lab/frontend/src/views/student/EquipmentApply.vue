@@ -18,7 +18,7 @@
       </div>
 
       <el-table :data="equipmentList" border stripe>
-        <el-table-column prop="name" label="设备名称" />
+        <el-table-column prop="name" label="设备名称" show-overflow-tooltip />
         <el-table-column prop="type" label="类型" width="120" />
         <el-table-column label="图片" width="100">
           <template #default="scope">

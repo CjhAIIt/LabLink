@@ -57,8 +57,8 @@
       </div>
 
       <el-table v-else v-loading="loading" :data="applies" stripe>
-        <el-table-column prop="labName" label="实验室" min-width="160" />
-        <el-table-column prop="planTitle" label="招新计划" min-width="180" />
+        <el-table-column prop="labName" label="实验室" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="planTitle" label="招新计划" min-width="180" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" min-width="120">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)">{{ statusLabel(row.status) }}</el-tag>

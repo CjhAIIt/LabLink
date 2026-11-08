@@ -55,8 +55,8 @@
         </template>
 
         <el-table :data="recentApplies" stripe>
-          <el-table-column prop="studentName" label="学生" min-width="120" />
-          <el-table-column prop="studentId" label="学号" min-width="120" />
+          <el-table-column prop="studentName" label="学生" min-width="120" show-overflow-tooltip />
+          <el-table-column prop="studentId" label="学号" min-width="120" show-overflow-tooltip />
           <el-table-column v-if="showLabColumn" prop="labName" label="实验室" min-width="150" />
           <el-table-column prop="status" label="状态" min-width="110">
             <template #default="{ row }">

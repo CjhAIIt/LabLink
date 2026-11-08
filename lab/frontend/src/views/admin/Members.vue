@@ -35,9 +35,9 @@
 
     <el-card shadow="never" class="panel-card">
       <el-table v-loading="loading" :data="members" stripe>
-        <el-table-column prop="realName" label="成员姓名" min-width="120" />
-        <el-table-column prop="studentId" label="学号" min-width="120" />
-        <el-table-column prop="major" label="专业" min-width="150" />
+        <el-table-column prop="realName" label="成员姓名" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="studentId" label="学号" min-width="120" show-overflow-tooltip />
+        <el-table-column prop="major" label="专业" min-width="150" show-overflow-tooltip />
         <el-table-column prop="memberRole" label="角色" min-width="110">
           <template #default="{ row }">
             <el-tag :type="row.memberRole === 'lab_leader' ? 'success' : 'info'">

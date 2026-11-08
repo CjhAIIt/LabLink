@@ -31,8 +31,8 @@
 
     <el-card shadow="never" class="panel-card">
       <el-table v-loading="loading" :data="plans" stripe>
-        <el-table-column prop="title" label="计划标题" min-width="180" />
-        <el-table-column prop="labName" label="实验室" min-width="150" />
+        <el-table-column prop="title" label="计划标题" min-width="180" show-overflow-tooltip />
+        <el-table-column prop="labName" label="实验室" min-width="150" show-overflow-tooltip />
         <el-table-column prop="quota" label="名额" min-width="90" />
         <el-table-column prop="status" label="状态" min-width="110">
           <template #default="{ row }">

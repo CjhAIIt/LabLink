@@ -104,7 +104,7 @@
       </div>
 
       <el-table v-else v-loading="loading" :data="deliveries" stripe>
-        <el-table-column prop="labName" label="实验室" min-width="160" />
+        <el-table-column prop="labName" label="实验室" min-width="160" show-overflow-tooltip />
         <el-table-column prop="reason" label="投递内容" min-width="220" show-overflow-tooltip />
         <el-table-column label="状态" width="120">
           <template #default="{ row }">

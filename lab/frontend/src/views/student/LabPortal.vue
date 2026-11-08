@@ -78,7 +78,7 @@
             </el-form>
 
             <el-table :data="equipmentList" border stripe>
-              <el-table-column prop="name" label="设备名称" min-width="180" />
+              <el-table-column prop="name" label="设备名称" min-width="180" show-overflow-tooltip />
               <el-table-column prop="type" label="类型" width="140" />
               <el-table-column prop="serialNumber" label="编号" width="180" />
               <el-table-column prop="description" label="说明" min-width="220" show-overflow-tooltip />
@@ -242,7 +242,7 @@
             </template>
 
             <el-table :data="exitApplications" border stripe>
-              <el-table-column prop="labName" label="实验室" min-width="180" />
+              <el-table-column prop="labName" label="实验室" min-width="180" show-overflow-tooltip />
               <el-table-column prop="reason" label="申请原因" min-width="220" show-overflow-tooltip />
               <el-table-column label="状态" width="120">
                 <template #default="{ row }">

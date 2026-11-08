@@ -37,9 +37,9 @@
 
     <el-card shadow="never" class="panel-card">
       <el-table v-loading="loading" :data="tasks" stripe>
-        <el-table-column prop="collegeName" label="学院" min-width="160" />
-        <el-table-column prop="semesterName" label="学期" min-width="160" />
-        <el-table-column prop="taskName" label="任务名称" min-width="200" />
+        <el-table-column prop="collegeName" label="学院" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="semesterName" label="学期" min-width="160" show-overflow-tooltip />
+        <el-table-column prop="taskName" label="任务名称" min-width="200" show-overflow-tooltip />
         <el-table-column label="执行周期" min-width="220">
           <template #default="{ row }">
             {{ row.startDate || '-' }} 至 {{ row.endDate || '-' }}

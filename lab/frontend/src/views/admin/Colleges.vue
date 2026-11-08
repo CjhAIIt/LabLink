@@ -31,7 +31,7 @@
     <el-card shadow="never" class="panel-card">
       <el-table v-loading="loading" :data="colleges" stripe>
         <el-table-column prop="collegeCode" label="学院编码" min-width="140" />
-        <el-table-column prop="collegeName" label="学院名称" min-width="180" />
+        <el-table-column prop="collegeName" label="学院名称" min-width="180" show-overflow-tooltip />
         <el-table-column prop="remark" label="备注" min-width="220" show-overflow-tooltip />
         <el-table-column prop="status" label="状态" min-width="100">
           <template #default="{ row }">

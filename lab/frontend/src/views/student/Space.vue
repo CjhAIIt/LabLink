@@ -58,8 +58,8 @@
 
           <el-table v-loading="loading" :data="files" stripe>
             <el-table-column prop="fileName" label="文件名" min-width="220" show-overflow-tooltip />
-            <el-table-column prop="folderName" label="目录" min-width="120" />
-            <el-table-column prop="uploadUserName" label="上传人" min-width="110" />
+            <el-table-column prop="folderName" label="目录" min-width="120" show-overflow-tooltip />
+            <el-table-column prop="uploadUserName" label="上传人" min-width="110" show-overflow-tooltip />
             <el-table-column label="大小" min-width="100">
               <template #default="{ row }">{{ formatFileSize(row.fileSize) }}</template>
             </el-table-column>
