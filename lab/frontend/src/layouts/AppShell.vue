@@ -45,14 +45,18 @@
               <component :is="isMobile ? Expand : isRail ? Expand : Fold" />
             </el-icon>
           </el-button>
-          <div class="topbar-heading">
+          <nav class="topbar-heading" aria-label="面包屑">
             <span class="topbar-role">{{ roleLabel }}</span>
+            <el-icon class="topbar-sep"><ArrowRight /></el-icon>
             <h2 class="topbar-title">{{ pageTitle }}</h2>
-          </div>
+          </nav>
         </div>
 
         <div class="topbar-actions">
           <ThemeToggle />
+          <button class="icon-btn" type="button" title="界面设置" @click="settingsVisible = true">
+            <el-icon :size="16"><Setting /></el-icon>
+          </button>
           <el-dropdown @command="$emit('command', $event)">
             <button class="user-chip" type="button">
               <el-avatar :size="30">{{ userInitial }}</el-avatar>
@@ -72,21 +76,29 @@
         </div>
       </header>
 
+      <TagsView v-if="showTagsView" />
+
       <main class="content">
         <div class="content-inner">
           <router-view />
         </div>
       </main>
     </div>
+
+    <ThemeSettings v-model="settingsVisible" />
   </div>
 </template>
 
 <script setup>
-import { ArrowDown, Expand, Fold } from '@element-plus/icons-vue'
+import { ArrowDown, ArrowRight, Expand, Fold, Setting } from '@element-plus/icons-vue'
+import { storeToRefs } from 'pinia'
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import BrandLogo from '@/components/BrandLogo.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
+import TagsView from '@/layouts/components/TagsView.vue'
+import ThemeSettings from '@/layouts/components/ThemeSettings.vue'
+import { useSettingsStore } from '@/stores/settings'
 
 defineProps({
   /** 顶栏左侧的角色标签，例如「管理端」 */
@@ -104,12 +116,16 @@ defineProps({
 defineEmits(['command'])
 
 const route = useRoute()
+const settingsStore = useSettingsStore()
+const { sidebarCollapsed, showTagsView } = storeToRefs(settingsStore)
 
 const isMobile = ref(typeof window !== 'undefined' ? window.innerWidth <= 960 : false)
-/** 桌面端收成图标栏 */
-const isRail = ref(false)
+/** 桌面端收成图标栏，与设置面板中的「收起侧边栏」联动 */
+const isRail = computed(() => sidebarCollapsed.value && !isMobile.value)
 /** 移动端抽屉是否展开 */
 const isDrawerOpen = ref(false)
+/** 界面设置抽屉 */
+const settingsVisible = ref(false)
 
 const activePath = computed(() => route.fullPath)
 const pageTitle = computed(() => route.meta.title || '工作台')
@@ -121,7 +137,6 @@ const updateViewport = () => {
   }
   isMobile.value = mobile
   if (mobile) {
-    isRail.value = false
     isDrawerOpen.value = false
   }
 }
@@ -131,7 +146,7 @@ const toggleSidebar = () => {
     isDrawerOpen.value = !isDrawerOpen.value
     return
   }
-  isRail.value = !isRail.value
+  settingsStore.setSidebarCollapsed(!sidebarCollapsed.value)
 }
 
 const closeDrawer = () => {
@@ -149,6 +164,7 @@ watch(
 
 onMounted(() => {
   updateViewport()
+  settingsStore.applyToDocument()
   window.addEventListener('resize', updateViewport)
 })
 
@@ -251,8 +267,8 @@ onBeforeUnmount(() => {
 }
 
 .sidebar-menu :deep(.el-menu-item.is-active) {
-  background: var(--ll-brand-50);
-  color: var(--ll-text-brand);
+  background: var(--ll-bg-selected);
+  color: var(--ll-accent-600);
   font-weight: 600;
 }
 
@@ -329,6 +345,32 @@ onBeforeUnmount(() => {
   font-size: var(--ll-text-xs);
   color: var(--ll-text-tertiary);
   white-space: nowrap;
+}
+
+.topbar-sep {
+  font-size: 11px;
+  color: var(--ll-text-disabled);
+}
+
+.icon-btn {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 1px solid var(--ll-border-subtle);
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-bg-surface);
+  color: var(--ll-text-secondary);
+  transition: color var(--ll-transition-fast), background-color var(--ll-transition-fast),
+    border-color var(--ll-transition-fast);
+}
+
+.icon-btn:hover {
+  color: var(--ll-text-primary);
+  border-color: var(--ll-border-default);
+  background: var(--ll-bg-muted);
 }
 
 .topbar-title {

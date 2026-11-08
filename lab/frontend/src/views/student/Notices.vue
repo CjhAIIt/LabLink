@@ -122,8 +122,8 @@ onMounted(() => {
 .notice-card {
   padding: 18px 20px;
   border-radius: var(--ll-radius-lg);
-  background: linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(236, 254, 255, 0.88));
-  border: 1px solid rgba(148, 163, 184, 0.18);
+  background: linear-gradient(135deg, var(--ll-bg-subtle), var(--ll-bg-surface));
+  border: 1px solid var(--ll-border-subtle);
 }
 
 .notice-card-head {

@@ -4,6 +4,9 @@
 
 ## 1. 视觉基线
 
+视觉基线参考 Linear、shadcn/ui 与 Vercel Geist：中性色用 Zinc 阶，主色克制为石墨色，
+只用淡彩语义色标注状态，避免霓虹感与厚重拟物。
+
 ### 1.1 设计令牌
 
 所有视觉取值集中在 `src/assets/css/tokens.css`，由 `global.css` 的 `@import` 引入。
@@ -11,22 +14,28 @@
 
 | 令牌组 | 说明 |
 | --- | --- |
-| `--ll-brand-50` … `--ll-brand-700` | 主色阶，主色为 `--ll-brand-600`（#4f46e5） |
-| `--ll-logo-from` / `--ll-logo-mid` / `--ll-logo-to` | 品牌标识色块的三段蓝青渐变 |
-| `--ll-code-bg` / `--ll-code-fg` | 代码编辑区底色与前景色 |
-| `--ll-gray-0` … `--ll-gray-900` | 中性色阶 |
-| `--ll-bg-body` / `--ll-bg-surface` / `--ll-bg-subtle` / `--ll-bg-hover` | 语义背景 |
-| `--ll-text-primary` / `secondary` / `tertiary` / `disabled` / `inverse` | 语义文字 |
+| `--ll-zinc-0` … `--ll-zinc-900` | 中性色阶。浅色 `#ffffff / #f4f4f5 / #e4e4e7`，暗色整体翻转为 `#09090b / #18181b / #27272a` |
+| `--ll-gray-0` … `--ll-gray-900` | 历史灰阶别名，逐项指向 Zinc，**新增代码不要再用** |
+| `--ll-brand-50` … `--ll-brand-700` | 主色阶。浅色主题下 `600 = #18181b`（石墨），暗色主题下整阶反相成浅色 |
+| `--ll-accent-50` … `--ll-accent-700` | 强调色阶（靛蓝），用于选中态、链接与图表；`--ll-accent-600` 会被界面设置里的主色覆盖 |
+| `--ll-hero-from` / `--ll-hero-to` / `--ll-on-hero` | 深色区块（英雄区、标识块）底色。**不随主题反相**，浅色暗色下都是深色石墨，保证底上的文字始终可读 |
+| `--ll-logo-from` / `--ll-logo-mid` / `--ll-logo-to` / `--ll-on-logo` | 品牌标识色块的三段渐变与块上文字 |
+| `--ll-success` / `--ll-running` / `--ll-warning` / `--ll-danger` / `--ll-info` | 语义色，浅色下为深字浅底，暗色下为亮字深底，各自带 `-bg` `-border` |
+| `--ll-chart-1` … `--ll-chart-6` | 图表辅助色 |
+| `--ll-bg-body` / `--ll-bg-surface` / `--ll-bg-subtle` / `--ll-bg-hover` / `--ll-bg-selected` | 语义背景，`--ll-bg-selected` 由 `color-mix` 跟随强调色 |
+| `--ll-text-primary` / `secondary` / `tertiary` / `disabled` / `inverse` / `brand` / `link` | 语义文字 |
+| `--ll-on-brand` | **实心品牌底上的文字**。品牌阶在暗色下反相为浅色，所以此令牌在暗色下是深色 `#09090b` |
 | `--ll-border-subtle` / `default` / `strong` / `brand` | 语义描边 |
-| `--ll-radius-xs` … `--ll-radius-full` | 圆角，小 4 / 中 8 / 卡片 12 / 大 16 |
+| `--ll-radius-xs` … `--ll-radius-full` | 圆角，小 3 / 中 5 / 卡片 7 / 大 10 / 超大 14 |
 | `--ll-shadow-xs` … `--ll-shadow-lg` | 阴影，很浅；仅浮层可用 `md` 以上 |
 | `--ll-space-1` … `--ll-space-12` | 4px 基准间距 |
-| `--ll-text-xs` … `--ll-text-3xl` | 字号 |
-| `--ll-sidebar-width` / `--ll-topbar-height` / `--ll-control-height` | 布局尺寸 |
+| `--ll-text-xs` … `--ll-text-3xl` | 字号，基础 13px |
+| `--ll-font-sans` / `--ll-font-mono` | 无衬线 UI 字体与等宽字体。**设备编号、CAS 号、条码、批次号、数值指标一律用 `--ll-font-mono`** |
+| `--ll-sidebar-width` / `--ll-topbar-height` / `--ll-control-height` / `--ll-row-height` | 布局尺寸，表格行高 34px |
 | `--ll-transition-fast` / `--ll-transition-base` | 动效时长 |
 
 分层原则：**用 1px 描边而不是阴影做分隔**，阴影只留给浮层（下拉、弹窗、抽屉）。
-圆角上限 16px。数字（指标值、表格数值）统一 `font-variant-numeric: tabular-nums`。
+圆角上限 14px。数字（指标值、表格数值）统一 `font-variant-numeric: tabular-nums`。
 
 当前全库 `.vue` 文件的裸色值与超大圆角均已清零，新增代码请沿用令牌，不要再写十六进制色值。
 
@@ -34,45 +43,73 @@
 
 主题通过覆盖语义令牌实现，页面代码不需要感知主题。
 
-- 开关：`composables/useTheme.js` 的 `useTheme()`，状态持久化在 `localStorage.lab_theme`
-- 切换按钮：`components/ThemeToggle.vue`，已接入桌面顶栏、移动端顶栏、公开页与平台介绍页
+- 开关：`stores/settings.js` 的 `useSettingsStore()`，状态持久化在 `localStorage.lab_settings`
+- 切换入口：`components/ThemeToggle.vue`（顶栏一键切换）与 `layouts/components/ThemeSettings.vue`（设置抽屉，三选一）
 - 应用方式：`<html data-theme="dark">`，`index.html` 里的内联脚本在首帧渲染前套用，避免暗色用户看到白闪
-- 首次访问未设置过主题时跟随系统 `prefers-color-scheme`
+- 未设置过主题时跟随系统 `prefers-color-scheme`
 
-暗色下有两类颜色不能跟随反转，单独用令牌固定：
+暗色下有三类颜色不能简单跟随反转，各用独立令牌收口：
 
 | 令牌 | 用途 |
 | --- | --- |
-| `--ll-on-brand` | 品牌色实心背景上的文字，两套主题下都是浅色 |
+| `--ll-on-brand` | 实心品牌底上的文字。品牌阶在暗色下反相成浅色，所以此令牌在暗色下是深色 `#09090b` |
+| `--ll-hero-from` / `--ll-hero-to` / `--ll-on-hero` | 深色区块底色与底上的文字，**两套主题下都保持深色**，避免英雄区在暗色下变成白底白字 |
 | `--ll-bg-chrome` | 吸顶导航等半透明 chrome 层的底色 |
+
+**新增页面时不要写死浅色背景**（例如 `rgba(248, 250, 252, 0.92)`），
+一律用 `--ll-bg-surface` / `--ll-bg-subtle` / `--ll-bg-muted`，否则暗色主题下会出现白底浅字。
+
+Element Plus 在暗色下的主色是浅色石墨，其「主色实心底」默认配白字，对比度不足，
+`global.css` 中用 `[data-theme='dark'] .el-button--primary:not(.is-plain):not(.is-link):not(.is-text)`
+把这类实心按钮的文字改为深色。新增自定义主色时同理。
 
 ### 1.3 品牌
 
 平台统一品牌标识为 **LabLink**，对应中文副标题“高校实验室管理平台”。
 
 - 品牌标识组件：`src/components/BrandLogo.vue`
-- 标识色块文字固定为 `Link`，主色为品牌蓝 `#2563eb`（深色态 `#1d4ed8`）
+- 标识色块文字固定为 `Link`，底色为深色石墨渐变，块上文字固定 `--ll-on-logo`
 - 品牌在侧边栏、登录页、注册页、平台介绍页中的标题必须来自 `BrandLogo` 的 `title` / `subtitle` 属性，不要在页面里重复硬编码全称
 
 ### 1.4 颜色
 
 | 用途 | 色值 |
 | --- | --- |
-| 主色 | `--ll-brand-600` / `#4f46e5` |
-| 页面底色 | `--ll-bg-body`，`#f7f8fa` |
-| 卡片底色 | `--ll-bg-surface`，`#ffffff` |
-| 主文字 | `--ll-text-primary`，`#171a23` |
-| 次文字 | `--ll-text-secondary`，`#646b7d` |
-| 分隔线 | `--ll-border-subtle`，`#e8eaee` |
+| 主色 | `--ll-brand-600`，浅色 `#18181b`，暗色 `#fafafa` |
+| 强调色 | `--ll-accent-600`，浅色 `#4f46e5`，暗色 `#a5b4fc` |
+| 页面底色 | `--ll-bg-body`，浅色 `#f4f4f5`，暗色 `#09090b` |
+| 卡片底色 | `--ll-bg-surface`，浅色 `#ffffff`，暗色 `#18181b` |
+| 主文字 | `--ll-text-primary`，浅色 `#09090b`，暗色 `#fafafa` |
+| 次文字 | `--ll-text-secondary`，浅色 `#3f3f46`，暗色 `#a1a1aa` |
+| 分隔线 | `--ll-border-subtle`，浅色 `#e4e4e7`，暗色 `#27272a` |
 
-页面级渐变只允许出现在 `.page-hero--brand`（工作台首页的强调头部），
-其余位置一律使用扁平卡片。
+页面级渐变只允许出现在 `.page-hero--brand`（工作台首页的强调头部）、
+移动端 `.hero` 横幅与深色区块，其余位置一律使用扁平卡片。
 
 ### 1.5 字体与滚动条
 
-- 基础字号 14px，`body` 已开启 `-webkit-font-smoothing: antialiased`
+- 基础字号 13px，`body` 已开启 `-webkit-font-smoothing: antialiased`
+- 标识与数值（设备编号、学号、批次号、指标值）使用 `--ll-font-mono`
 - 滚动条统一 8px，轨道 `#f1f1f1`，滑块 `#c1c1c1`
 - 移动端已加 `-webkit-tap-highlight-color: transparent`，避免点击出现系统高亮方块
+
+### 1.6 界面设置
+
+顶栏的齿轮按钮打开「界面设置」抽屉（`layouts/components/ThemeSettings.vue`），
+统一收口主题模式、界面密度、主色调与导航形态，状态全部持久化在 `localStorage.lab_settings`。
+
+| 设置项 | 取值 | 落地方式 |
+| --- | --- | --- |
+| 主题模式 | 浅色 / 深色 / 跟随系统 | `<html data-theme="dark">`，`auto` 时读 `prefers-color-scheme` |
+| 界面密度 | 默认 / 紧凑 | `<html data-density="compact">` + `global.css` 中的 `[data-density='compact']` 块，收紧表格行高、控件高度与留白 |
+| 主色调 | 石墨 / 靛蓝 / 青碧 / 石板 / 自定义取色 | 覆盖 `--ll-accent-600`、`--ll-accent-700` 与 `--el-color-primary` |
+| 收起侧边栏 | 开 / 关 | 桌面端侧边栏收成 64px 图标栏 |
+| 显示页签栏 | 开 / 关 | 顶栏下方显示多页签导航 |
+
+主色调预设**明暗成对**：`THEME_PRESETS` 里每项都有 `colors.primary`（浅色）与
+`darkPrimary` / `darkPrimaryStrong`（暗色）。暗色下必须换成亮色版本，
+否则强调色会压暗到几乎看不见。自定义取色只有一个色值，
+暗色下由 `mixWithWhite()` 自动混白提亮，无需用户手填两次。
 
 ## 2. 响应式断点
 
@@ -82,7 +119,7 @@
 | --- | --- | --- |
 | `960px` | 侧边栏抽屉化 | `AdminLayout` / `StudentLayout` / `TeacherLayout` 的侧边栏变为遮罩式抽屉，默认折叠 |
 | `900px` | 内容区收敛 | `.content-grid.two-column` 变为单列，`.page-hero` 改为纵向排布 |
-| `768px` | 移动端形态 | `isMobilePortal()` 返回 `true`，路由分流到 `/m/student`、`/m/teacher`；同时全局样式收紧字号、间距与表格 |
+| `768px` | 移动端形态 | `isMobilePortal()` 返回 `true`，路由分流到 `/m/student`、`/m/teacher`、`/m/admin`；同时全局样式收紧字号、间距与表格 |
 
 `960px` 只影响桌面布局的侧边栏表现，`768px` 才决定是否切换到移动端页面体系。768px 到 960px 之间仍然使用桌面页面，只是侧边栏收起为抽屉。
 
@@ -146,18 +183,23 @@ Element Plus 的 `el-table` 在窄屏下横向溢出，可读性差。平台采�
 ```
 src/
 ├─ layouts/
-│  ├─ AppShell.vue            桌面端共用外壳（侧边栏 + 顶栏 + 内容区）
+│  ├─ AppShell.vue            桌面端共用外壳（侧边栏 + 顶栏 + 面包屑 + 页签栏 + 内容区）
 │  ├─ AuthLayout.vue          公开页共用外壳（品牌 + 卡片 + 能力说明）
 │  ├─ MobileShell.vue         移动端共用外壳（顶栏 + 底部标签栏）
 │  ├─ AdminLayout.vue         管理端：只提供菜单数据与业务逻辑
 │  ├─ StudentLayout.vue       学生端：同上
 │  ├─ TeacherLayout.vue       教师端：同上
 │  ├─ MobileStudentLayout.vue 移动端学生端：只提供标签栏数据
-│  └─ MobileTeacherLayout.vue 移动端教师端：同上
+│  ├─ MobileTeacherLayout.vue 移动端教师端：同上
+│  ├─ MobileAdminLayout.vue   移动端管理端：只提供标签栏数据
+│  └─ components/
+│     ├─ TagsView.vue         多页签导航，由 composables/useTagsView.js 驱动
+│     └─ ThemeSettings.vue    界面设置抽屉（主题 / 密度 / 主色 / 侧边栏 / 页签）
 ├─ views/
 │  ├─ admin/  student/  teacher/   桌面端页面
 │  └─ mobile/                        移动端页面
 │     ├─ Notices.vue  Profile.vue
+│     ├─ admin/      Dashboard.vue Approvals.vue Labs.vue Notices.vue
 │     ├─ student/  Applications.vue Dashboard.vue LabDetail.vue Labs.vue
 │     └─ teacher/  CreateApplies.vue Dashboard.vue
 ├─ assets/css/
@@ -165,6 +207,8 @@ src/
 │  ├─ global.css              桌面端页面基元与 Element Plus 覆盖
 │  └─ mobile.css              移动端页面基元
 ├─ components/       跨页面复用组件
+├─ stores/           Pinia 状态：settings.js（界面设置）、user.js 等
+├─ composables/      useTheme.js、useTagsView.js 等组合式逻辑
 ├─ api/              按业务域拆分的接口封装
 └─ utils/            请求封装、鉴权、门户角色、文件地址处理
 ```
@@ -181,15 +225,17 @@ src/
 
 新增角色端时只需复制一份 Layout 并提供 `menuGroups`，不要再复制外壳样式。
 
-两种折叠状态是分开的，不要混用：
+外壳自带四块内容，顶栏与侧边栏的形态由「界面设置」统一驱动：
 
-- **桌面端收成图标栏**：`isRail`，宽度 64px，`el-menu` 的 `collapse` 生效
-- **移动端抽屉**：`isDrawerOpen`，侧边栏浮出并配遮罩层
+- **面包屑**：顶栏左侧「角色 › 页面标题」，让用户始终知道自己在哪一层
+- **页签栏**：`TagsView`，记录访问过的页面，最多保留 12 个，可在设置里关闭
+- **侧边栏折叠**：`isRail`（桌面端收成 64px 图标栏）与 `isDrawerOpen`（移动端抽屉）是两种状态，不要混用
+- **界面设置入口**：顶栏齿轮按钮，打开 `ThemeSettings` 抽屉
 
 **`AuthLayout.vue`（公开页）** —— 登录 / 注册 / 教师注册共用。props：`title`、`subtitle`、`features`、`width`；
 表单放默认插槽，底部链接放 `footer` 插槽。
 
-**`MobileShell.vue`（移动端）** —— 学生端 / 教师端共用。props：`tabItems`、`userInitial`、`rootPath`；
+**`MobileShell.vue`（移动端）** —— 学生端 / 教师端 / 管理端共用。props：`tabItems`、`userInitial`、`rootPath`；
 标签栏列数由 `tabItems.length` 决定，新增标签无需改样式。
 
 ### 5.2 页面骨架约定
@@ -197,6 +243,15 @@ src/
 桌面端页面根元素用 `.page-shell`，内容区外层由 `AppShell` 提供最大宽度与内边距；
 移动端页面根元素用 `.m-page`，类名集中在 `mobile.css`。
 **移动端页面不要写 `<style scoped>`**，统一在 `mobile.css` 中维护，避免各处样式漂移。
+
+`mobile.css` 的规则都挂在 `.m-shell` 下，靠类名语义区分用途。
+`.hero` 是首页的**深色横幅**，`.card` 是**普通白卡**，两者不能叠在同一个元素上——
+`mobile.css` 里 `.card` 写在 `.hero` 之后会覆盖它的背景与布局，导致横幅变成白卡、
+标题文字沿用横幅的浅色而看不见。个人信息页头部就踩过这个坑，
+现在单独使用 `.profile-hero`。
+
+新增移动端页面时，同名的语义类只复用一次：
+横幅用 `.hero`、普通卡片用 `.card`、属性行用 `.row`，需要变体就另起一个类名。
 
 ## 6. 交互约定
 
@@ -292,6 +347,7 @@ npm run test:watch    # 监听模式
 | `src/utils/portal.test.js` | 门户角色判定与落地页选择 |
 | `src/utils/request.test.js` | 响应拦截器，重点是会话失效时清空会话并跳登录页 |
 | `src/composables/useTheme.test.js` | 主题持久化、切换与系统偏好兜底 |
+| `src/stores/settings.test.js` | 界面设置：主题模式、密度、主色预设、自定义主色、侧边栏与页签开关的持久化与落地，含「暗色下强调色换成亮色版本」 |
 
 新增业务逻辑时优先把纯逻辑抽成独立模块再写单测（`routeResolution.js` 就是这么做的），
 这样不必为了测试而加载整个应用。
@@ -299,13 +355,17 @@ npm run test:watch    # 监听模式
 ## 11. 新增页面检查清单
 
 - [ ] 根元素使用 `.page-shell`，头部使用 `.page-hero`（工作台首页用 `.page-hero--brand`），内容区使用 `.panel-card`
+- [ ] 深色区块用 `--ll-hero-from` / `--ll-hero-to` / `--ll-on-hero`，实心品牌底上的文字用 `--ll-on-brand`
+- [ ] 页面样式里没有裸十六进制色值与超过 14px 的圆角，一律用 `var(--ll-*)`
+- [ ] 没有硬编码的浅色背景（如 `rgba(248,250,252,.92)`），否则暗色主题下会变成白底浅字
+- [ ] 标识与数值（设备编号、学号、批次号、指标值）使用 `--ll-font-mono`
 - [ ] 表格或筛选表单在 768px 以下可用（卡片列表或横向滚动）
 - [ ] 弹窗宽度使用 `min(420px, 92vw)` 一类的相对值
 - [ ] 监听 `resize` 的组件在 `onBeforeUnmount` 中移除监听
 - [ ] 移动端需要该页面时，同步在 `src/views/mobile/` 下提供对应实现，并在 `src/router/index.js` 注册 `/m/*` 路由
 - [ ] 移动端页面**没有** `<style scoped>`，样式统一写在 `assets/css/mobile.css`
+- [ ] 移动端页面的语义类名没有与 `mobile.css` 里的通用类冲突（`.hero` 是深色横幅、`.card` 是白卡）
 - [ ] 路由中该页面使用动态 `import()` 声明，未改成静态导入
 - [ ] 新引用的编程式 Element Plus 组件已补充到 `src/assets/css/element-plus-programmatic.js`
-- [ ] 页面样式里没有裸十六进制色值与超过 16px 的圆角，一律用 `var(--ll-*)`
 - [ ] 新增导航项时同步维护 `menuGroups` 的分组标题；新增移动端标签时标签栏列数自动跟随
-- [ ] `npm run build` 与 `npx eslint . --ext .vue,.js` 均无报错
+- [ ] `npm run build`、`npx eslint . --ext .vue,.js` 与 `npm run test` 均无报错

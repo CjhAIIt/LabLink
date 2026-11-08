@@ -150,7 +150,7 @@ onMounted(() => {
 .hero-note-card {
   padding: 16px 18px;
   border-radius: var(--ll-radius-lg);
-  color: var(--ll-success-bg);
+  color: var(--ll-on-hero);
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.22);
   display: grid;

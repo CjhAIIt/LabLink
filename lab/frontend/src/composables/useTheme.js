@@ -1,56 +1,37 @@
-import { computed, ref, watch } from 'vue'
+import { computed } from 'vue'
+import { storeToRefs } from 'pinia'
+import { useSettingsStore, THEME_MODES } from '@/stores/settings'
 
-const STORAGE_KEY = 'lab_theme'
-const THEMES = ['light', 'dark']
-
-const currentTheme = ref(readStoredTheme())
-
-function readStoredTheme() {
-  if (typeof window === 'undefined') {
-    return 'light'
-  }
-  try {
-    const stored = localStorage.getItem(STORAGE_KEY)
-    if (stored && THEMES.includes(stored)) {
-      return stored
-    }
-  } catch (error) {
-    // localStorage 不可用时退回系统偏好
-  }
-  return window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ? 'dark' : 'light'
-}
-
-function applyTheme(theme) {
-  if (typeof document === 'undefined') {
-    return
-  }
-  if (theme === 'dark') {
-    document.documentElement.setAttribute('data-theme', 'dark')
-  } else {
-    document.documentElement.removeAttribute('data-theme')
-  }
-}
-
+/**
+ * 主题相关的对外接口。
+ *
+ * 实际的设置状态统一放在 settings store，这里只做转发，
+ * 避免主题与设置面板出现两套状态。
+ */
 export function useTheme() {
-  const isDark = computed(() => currentTheme.value === 'dark')
+  const settingsStore = useSettingsStore()
+  const { themeMode } = storeToRefs(settingsStore)
 
-  const setTheme = (theme) => {
-    if (!THEMES.includes(theme)) {
-      return
+  const isDark = computed(() => {
+    if (themeMode.value === THEME_MODES.DARK) {
+      return true
     }
-    currentTheme.value = theme
-    try {
-      localStorage.setItem(STORAGE_KEY, theme)
-    } catch (error) {
-      // 忽略存储失败，主题仍然在当前会话生效
+    if (themeMode.value === THEME_MODES.LIGHT) {
+      return false
     }
+    if (typeof window === 'undefined') {
+      return false
+    }
+    return Boolean(window.matchMedia?.('(prefers-color-scheme: dark)')?.matches)
+  })
+
+  const setTheme = (mode) => {
+    settingsStore.setThemeMode(mode)
   }
 
   const toggleTheme = () => {
-    setTheme(isDark.value ? 'light' : 'dark')
+    setTheme(isDark.value ? THEME_MODES.LIGHT : THEME_MODES.DARK)
   }
 
-  watch(currentTheme, applyTheme, { immediate: true })
-
-  return { currentTheme, isDark, setTheme, toggleTheme }
+  return { themeMode, isDark, setTheme, toggleTheme }
 }

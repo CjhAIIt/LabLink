@@ -48,26 +48,32 @@
 ### 设计语言（已落地为令牌，务必复用而不是另起一套）
 
 ```css
---ll-brand-600: #4f46e5;   /* 主色，靛蓝 */
---ll-gray-50 … --ll-gray-900;   /* 中性色阶 */
+--ll-brand-600: #18181b;   /* 主色，石墨；暗色下反相为 #fafafa */
+--ll-accent-600: #4f46e5;   /* 强调色，靛蓝；暗色下为 #a5b4fc */
+--ll-zinc-50 … --ll-zinc-900;   /* 中性色阶，Zinc */
 --ll-bg-surface: #ffffff;   /* 卡片底色 */
---ll-bg-body: #f7f8fa;      /* 页面底色 */
+--ll-bg-body: #f4f4f5;      /* 页面底色 */
 --ll-text-primary / secondary / tertiary;
---ll-border-subtle: #e8eaee;   /* 1px 描边，优先于阴影做分隔 */
---ll-radius-sm 6px / md 8px / lg 12px / xl 16px;
+--ll-border-subtle: #e4e4e7;   /* 1px 描边，优先于阴影做分隔 */
+--ll-hero-from / --ll-hero-to / --ll-on-hero;  /* 深色区块底色，不随主题反相 */
+--ll-radius-sm 5px / md 7px / lg 10px / xl 14px;
 --ll-shadow-xs / sm / md / lg;  /* 极浅，多层 */
 --ll-space-1 … --ll-space-12;  /* 4px 基准间距 */
+--ll-font-mono;   /* 标识与数值用等宽字体 */
 --ll-sidebar-width: 236px;  --ll-topbar-height: 56px;
 ```
 
 必须遵守：
 
 1. **页面里不出现裸十六进制色值**，一律用 `var(--ll-*)`。确需新色先加令牌再用。
-2. **圆角不超过 16px**，卡片 12px、控件 8px、小元素 6px。
+2. **圆角不超过 14px**，卡片 10px、控件 7px、小元素 5px。
 3. **分层靠 1px 描边**，阴影只在浮层（下拉、弹窗、抽屉）使用。
-4. **信息密度优先**：正文 14px、行高 1.5715、表格行高约 42px、控件高 32px。
-5. 数字（指标卡数值、表格数值）使用 `font-variant-numeric: tabular-nums`。
+4. **信息密度优先**：正文 13px、表格行高 34px、控件高 32px，另提供一档「紧凑」密度。
+5. 数字（指标卡数值、表格数值）使用 `font-variant-numeric: tabular-nums`；
+   设备编号、学号、批次号等标识使用 `--ll-font-mono`。
 6. 动效只用 `--ll-transition-fast`（120ms）与 `--ll-transition-base`（200ms）。
+7. 深色区块（英雄区、标识块）用 `--ll-hero-*` 令牌，实心品牌底上的文字用 `--ll-on-brand`，
+   **不要写死浅色背景**，否则暗色主题下会出现白底浅字。
 
 ### 改造范围（按优先级执行）
 
@@ -109,7 +115,7 @@
 
 - 顶部改用 `.page-hero--brand`，删掉原先各自为政的 `linear-gradient` +
   `radial-gradient` 叠色（现在这三种深色渐变是最"土"的部分），
-  统一为 `--ll-brand-600 → --ll-brand-700` 的单一方向渐变。
+  统一为 `--ll-hero-from → --ll-hero-to` 的单一方向渐变。
 - 指标卡区用 `.metric-grid` + `.metric-card`；
   数值统一 28px / 600 字重 / 等宽数字。
 - 内容区用 `.content-grid.two-column` + `.panel-card`，
@@ -164,16 +170,19 @@
 - `vite.config.mjs` 是 ESM（`unplugin-vue-components` 是 ESM-only 包），不要改回 `.js`。
 - 不要把 `manualChunks` 里的 `element-plus` 整包固定进去，会破坏按需引入。
 - 保持 `960px`（侧边栏抽屉）与 `768px`（移动端形态）两个断点语义不变。
-- 保留移动端与桌面端两套路由树的分流逻辑不变。
+- 保留移动端与桌面端两套路由树的分流逻辑不变；
+  **新增移动端页面树时**，同样在 `src/router/index.js` 注册 `/m/*` 路由，
+  并在 `src/router/routeResolution.js` 里配好与桌面端的互斥关系。
 
 ### 验收标准
 
 1. `cd lab/frontend && npm run build` 通过，无报错。
 2. `npx eslint . --ext .vue,.js,.jsx,.cjs,.mjs --ignore-path .gitignore` 无输出。
 3. 页面中不再出现裸十六进制颜色（`grep -rn "#[0-9a-fA-F]\{6\}" src/` 的结果需逐条确认是令牌定义或确有必要的图片/图表色）。
-4. 圆角最大值不超过 16px；除浮层外无 `box-shadow` 超过 `--ll-shadow-sm`。
+4. 圆角最大值不超过 14px；除浮层外无 `box-shadow` 超过 `--ll-shadow-sm`。
 5. 1440px 与 1024px 桌面视口、390px 手机视口下，
-   管理端 / 学生端 / 教师端 / 登录页 / 平台介绍页均无横向滚动条、无元素重叠、无文字截断异常。
+   管理端 / 学生端 / 教师端 / 登录页 / 平台介绍页均无横向滚动条、无元素重叠、无文字截断异常；
+   **浅色与暗色两套主题都要过一遍**。
 6. `el-table`、`el-dialog`、`el-drawer`、`el-select`、`el-date-picker`、`el-pagination`
    在按需引入后样式完整（尤其下拉面板与日期面板）。
 7. 键盘可达：所有可点击元素有 `:focus-visible` 轮廓。
@@ -200,6 +209,7 @@
 | 列表 / 表单 / 详情页 | 已完成 | 全库 `.vue` 的 241 处裸色值与 58 处超大圆角令牌化，含尚未接入路由的预留页面 |
 | 移动端 | 已完成 | 8 个页面移除 scoped 样式统一走 `mobile.css`，指标网格两列，规则挂在 `.m-shell` 下避免与桌面端通用类名冲突 |
 | 令牌层 | 已完成 | `tokens.css` 覆盖色阶、圆角、阴影、间距、字号、布局尺寸、动效、品牌标识与代码编辑区 |
+| 第三轮：管理端模板参考 | 已完成 | 参考 `vue3-element-admin` / `vue-pure-admin` 落地界面设置抽屉、页签栏、面包屑、主色预设与密度档位；新增移动端管理端页面树 `/m/admin/*` |
 
 验收标准核对：
 
@@ -220,9 +230,41 @@
 
 - `tokens.css` 增加 `[data-theme='dark']` 令牌块，覆盖中性色、语义色、阴影与品牌标识渐变
 - `global.css` 增加 Element Plus 暗色变量覆盖与组件级修正，表格、弹窗、下拉、分页、标签页等无需改动即可跟随
-- 新增 `--ll-on-brand`（品牌色实心背景上的文字，两套主题都保持浅色）与 `--ll-bg-chrome`（吸顶栏半透明底色）两个不随主题反转的令牌
 - 新增 `composables/useTheme.js` 与 `components/ThemeToggle.vue`，切换入口接入桌面顶栏、移动端顶栏、公开页与平台介绍页
 - `index.html` 内联脚本在首帧渲染前套用主题，避免暗色用户看到白闪；首次访问跟随系统 `prefers-color-scheme`
+
+暗色令牌有三类不能简单反转，2026-11 第三轮统一收口（详见 `FRONTEND-UI-GUIDE.md` §1.2）：
+
+| 令牌 | 语义 |
+| --- | --- |
+| `--ll-on-brand` | **实心品牌底上的文字**。品牌阶在暗色下反相成浅色，所以此令牌在暗色下是深色 `#09090b` |
+| `--ll-hero-from` / `--ll-hero-to` / `--ll-on-hero` | 深色区块底色与底上的文字，两套主题下都保持深色石墨 |
+| `--ll-bg-chrome` | 吸顶栏半透明底色 |
+
+### 第三轮：参考管理端模板的重构
+
+参考 `youlaitech/vue3-element-admin` 与 `pure-admin/vue-pure-admin` 两个开源模板，
+在现有 Vue 3 + Element Plus 栈上落地它们的招牌能力，**不引入第二套前端框架**：
+
+| 参考模板的能力 | LabLink 的落地 |
+| --- | --- |
+| 设置抽屉（主题模式 / 布局 / 尺寸 / 页签开关） | `stores/settings.js` + `layouts/components/ThemeSettings.vue`，统一收口主题模式、界面密度、主色调、侧边栏折叠与页签栏 |
+| 页签视图（tags view） | `layouts/components/TagsView.vue` + `composables/useTagsView.js`，最多保留 12 个页签 |
+| 面包屑导航 | `AppShell.vue` 顶栏左侧「角色 › 页面标题」 |
+| 主题色预设 | `THEME_PRESETS` 四套色板（石墨 / 靛蓝 / 青碧 / 石板）+ 自定义取色，明暗成对取值 |
+| 紧凑 / 默认密度档位 | `[data-density='compact']` 收紧表格行高、控件高度与页面留白 |
+
+这一轮同时修掉了上一轮遗留的暗色缺陷：
+
+- `--ll-logo-*` 只在暗色块里定义，浅色主题下标识块渐变整体失效 → 补齐 `:root` 定义
+- `--ll-gray-*` 灰阶在令牌重写时整体丢失，27 处引用悬空 → 补回指向 Zinc 的兼容别名
+- 品牌阶在暗色下反相后，深色区块（英雄区、标识块）变成白底白字 → 拆出 `--ll-hero-*` 令牌
+- 主色预设把单色值写死成内联样式，暗色下强调色压暗 → 预设改为明暗成对，自定义色自动混白提亮
+- Element Plus 暗色下主色实心底配白字对比度不足 → 定向覆盖实心按钮、单选、复选的文字色
+- 移动端个人信息页把 `.hero`（深色横幅）与 `.card`（白卡）叠在同一元素上，姓名浅色压白底 → 拆出 `.profile-hero`
+
+新增移动端管理端页面树 `/m/admin/*`（首页 / 审批 / 实验室 / 公告 / 我的），
+与桌面端 `/admin/*` 互斥，由 `utils/routeResolution.js` 统一解析。
 
 ---
 

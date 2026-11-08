@@ -522,8 +522,8 @@ onBeforeUnmount(() => {
 }
 
 .offer-notice-card {
-  border: 1px solid rgba(245, 158, 11, 0.28);
-  background: linear-gradient(135deg, rgba(255, 251, 235, 1), rgba(255, 247, 237, 1));
+  border: 1px solid var(--ll-warning-border);
+  background: var(--ll-warning-bg);
 }
 
 .offer-notice-header,
@@ -553,8 +553,8 @@ onBeforeUnmount(() => {
   gap: 16px;
   padding: 14px 16px;
   border-radius: var(--ll-radius-md);
-  background: rgba(255, 255, 255, 0.78);
-  border: 1px solid rgba(251, 191, 36, 0.18);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-warning-border);
 }
 
 .offer-main {

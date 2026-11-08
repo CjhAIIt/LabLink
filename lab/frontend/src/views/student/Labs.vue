@@ -361,7 +361,7 @@ onMounted(() => {
 .college-card {
   border: 1px solid rgba(148, 163, 184, 0.22);
   border-radius: var(--ll-radius-lg);
-  background: linear-gradient(135deg, rgba(248, 250, 252, 0.98), rgba(236, 254, 255, 0.92));
+  background: linear-gradient(135deg, var(--ll-bg-subtle), var(--ll-bg-surface));
   padding: 20px 22px;
   display: grid;
   gap: 8px;

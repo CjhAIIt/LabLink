@@ -49,9 +49,14 @@ describe('resolvePortalHome', () => {
     expect(resolvePortalHome('teacher')).toBe('/m/teacher/dashboard')
   })
 
-  it('管理员不受视口宽度影响', () => {
-    window.innerWidth = 390
+  it('管理员在桌面视口进入桌面工作台', () => {
+    window.innerWidth = 1440
     expect(resolvePortalHome('admin')).toBe('/admin/dashboard')
+  })
+
+  it('管理员在移动视口进入移动端工作台', () => {
+    window.innerWidth = 390
+    expect(resolvePortalHome('admin')).toBe('/m/admin/dashboard')
   })
 
   it('可以直接传入用户信息对象', () => {

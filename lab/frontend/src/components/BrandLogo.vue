@@ -85,7 +85,7 @@ const sizeClass = computed(() => `size-${props.size}`)
   width: 100%;
   height: 100%;
   place-items: center;
-  color: var(--ll-on-brand);
+  color: var(--ll-on-logo);
   font-weight: 900;
   letter-spacing: 0.08em;
   text-shadow: 0 4px 18px rgba(8, 15, 35, 0.28);

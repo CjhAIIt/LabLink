@@ -118,7 +118,7 @@ onMounted(() => {
   gap: 12px;
   padding: 12px 14px;
   border-radius: var(--ll-radius-md);
-  background: rgba(248, 250, 252, 0.88);
+  background: var(--ll-bg-surface);
 }
 
 .detail-item span {

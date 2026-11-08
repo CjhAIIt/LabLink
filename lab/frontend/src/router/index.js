@@ -47,6 +47,11 @@ const MobileStudentLabDetail = () => import('@/views/mobile/student/LabDetail.vu
 const MobileStudentLabs = () => import('@/views/mobile/student/Labs.vue')
 const MobileTeacherCreateApplies = () => import('@/views/mobile/teacher/CreateApplies.vue')
 const MobileTeacherDashboard = () => import('@/views/mobile/teacher/Dashboard.vue')
+const MobileAdminLayout = () => import('@/layouts/MobileAdminLayout.vue')
+const MobileAdminDashboard = () => import('@/views/mobile/admin/Dashboard.vue')
+const MobileAdminApprovals = () => import('@/views/mobile/admin/Approvals.vue')
+const MobileAdminLabs = () => import('@/views/mobile/admin/Labs.vue')
+const MobileAdminNotices = () => import('@/views/mobile/admin/Notices.vue')
 
 const PLATFORM_TITLE = 'LabLink'
 
@@ -161,6 +166,19 @@ const routes = [
       { path: 'create-applies', component: MobileTeacherCreateApplies, meta: { title: '创建申请' } },
       { path: 'notices', component: MobileNotices, meta: { title: '公告中心' } },
       { path: 'profile', component: MobileProfile, meta: { title: '我的' } }
+    ]
+  },
+  {
+    path: '/m/admin',
+    component: MobileAdminLayout,
+    meta: { requiresAuth: true, role: 'admin' },
+    children: [
+      { path: '', redirect: '/m/admin/dashboard' },
+      { path: 'dashboard', component: MobileAdminDashboard, meta: { title: '管理工作台' } },
+      { path: 'approvals', component: MobileAdminApprovals, meta: { title: '审批中心' } },
+      { path: 'labs', component: MobileAdminLabs, meta: { title: '实验室管理' } },
+      { path: 'notices', component: MobileAdminNotices, meta: { title: '公告管理' } },
+      { path: 'profile', component: MobileProfile, meta: { title: '个人信息' } }
     ]
   },
   {

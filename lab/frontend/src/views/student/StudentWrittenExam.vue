@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="exam-page">
     <header class="topbar">
       <div class="topbar-group">
@@ -543,7 +543,7 @@ onMounted(() => { questionListVisible.value = window.innerWidth > 1280; initiali
 .exam-page { display: flex; flex-direction: column; gap: 14px; min-height: calc(100vh - 120px); }
 .topbar, .panel { border: 1px solid rgba(148,163,184,.16); border-radius: var(--ll-radius-lg); }
 .topbar, .topbar-group, .status-row, .question-meta, .question-foot, .option-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
-.topbar { justify-content: space-between; padding: 14px 18px; background: rgba(255,255,255,.94); }
+.topbar { justify-content: space-between; padding: 14px 18px; background: var(--ll-bg-surface); }
 .title-block { display: grid; gap: 4px; }
 .title-block strong { color: var(--ll-text-primary); font-size: 18px; }
 .title-block span, .status-card span, .eyebrow { color: var(--ll-text-secondary); font-size: 13px; }
@@ -551,8 +551,8 @@ onMounted(() => { questionListVisible.value = window.innerWidth > 1280; initiali
 .status-card strong { display: block; margin-top: 6px; color: var(--ll-text-primary); }
 .workspace { flex: 1; min-height: 0; display: grid; grid-template-columns: 320px minmax(340px,.95fr) minmax(420px,1.05fr); gap: 14px; }
 .workspace.collapsed { grid-template-columns: 0 minmax(420px,1fr) minmax(460px,1.05fr); }
-.sidebar, .detail-panel { background: rgba(255,255,255,.96); }
-.answer-panel { background: var(--ll-text-primary); color: var(--ll-border-subtle); }
+.sidebar, .detail-panel { background: var(--ll-bg-surface); }
+.answer-panel { background: var(--ll-hero-from); color: var(--ll-on-hero); }
 .panel { min-height: 0; overflow: hidden; display: flex; flex-direction: column; }
 .sidebar { transition: opacity .2s ease, transform .2s ease; }
 .workspace.collapsed .sidebar { opacity: 0; pointer-events: none; transform: translateX(-24px); }

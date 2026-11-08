@@ -9,6 +9,9 @@
       </div>
       <div class="m-topbar-actions">
         <ThemeToggle />
+        <button class="m-icon-btn" type="button" title="界面设置" @click="settingsVisible = true">
+          <el-icon :size="16"><Setting /></el-icon>
+        </button>
         <el-dropdown placement="bottom-end" @command="$emit('command', $event)">
           <button class="m-user-btn" type="button">
             <el-avatar :size="30">{{ userInitial }}</el-avatar>
@@ -40,13 +43,16 @@
         <span class="m-tab-label">{{ item.label }}</span>
       </button>
     </nav>
+
+    <ThemeSettings v-model="settingsVisible" />
   </div>
 </template>
 
 <script setup>
-import { ArrowLeft } from '@element-plus/icons-vue'
-import { computed } from 'vue'
+import { ArrowLeft, Setting } from '@element-plus/icons-vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import ThemeSettings from '@/layouts/components/ThemeSettings.vue'
 import ThemeToggle from '@/components/ThemeToggle.vue'
 
 const props = defineProps({
@@ -64,6 +70,8 @@ const route = useRoute()
 const router = useRouter()
 
 const title = computed(() => route.meta.title || '')
+/** 界面设置抽屉 */
+const settingsVisible = ref(false)
 
 /**
  * 底部标签栏上的页面是入口，返回按钮没有意义；

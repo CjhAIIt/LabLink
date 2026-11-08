@@ -1,6 +1,6 @@
 <template>
   <div class="m-page">
-    <section class="card hero">
+    <section class="profile-hero">
       <div class="hero-left">
         <el-avatar :size="54">{{ userInitial }}</el-avatar>
         <div class="hero-text">
@@ -80,6 +80,7 @@ const roleLabel = computed(() => {
 
 const resolveHome = () => {
   const role = userStore.userPortalRole
+  if (role === 'admin') return '/m/admin/dashboard'
   if (role === 'teacher') return '/m/teacher/dashboard'
   return '/m/student/dashboard'
 }

@@ -408,14 +408,14 @@ onMounted(() => {
 
 .hero-button {
   border-color: rgba(255, 255, 255, 0.28);
-  color: var(--ll-bg-muted);
+  color: var(--ll-on-hero);
   background: rgba(255, 255, 255, 0.1);
 }
 
 .hero-chip {
   padding: 6px 14px;
   border-radius: var(--ll-radius-full);
-  color: var(--ll-on-brand);
+  color: var(--ll-on-hero);
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.2);
   font-size: var(--ll-text-sm);
@@ -442,8 +442,8 @@ onMounted(() => {
   gap: 10px;
   padding: 18px 20px;
   border-radius: var(--ll-radius-lg);
-  background: linear-gradient(135deg, rgba(248, 250, 252, 0.96), rgba(240, 249, 255, 0.9));
-  border: 1px solid rgba(148, 163, 184, 0.16);
+  background: linear-gradient(135deg, var(--ll-bg-subtle), var(--ll-bg-surface));
+  border: 1px solid var(--ll-border-subtle);
 }
 
 .pending-main {
@@ -466,6 +466,17 @@ onMounted(() => {
 .pending-card p {
   color: var(--ll-text-secondary);
   line-height: 1.6;
+}
+
+/* 「立即处理」用次级按钮形态，Element 的 link 变体在暗色下会继承主色文字导致看不清 */
+.pending-card .el-button {
+  justify-self: stretch;
+  --el-button-bg-color: var(--ll-bg-surface);
+  --el-button-border-color: var(--ll-border-default);
+  --el-button-text-color: var(--ll-text-primary);
+  --el-button-hover-bg-color: var(--ll-bg-muted);
+  --el-button-hover-border-color: var(--ll-border-strong);
+  --el-button-hover-text-color: var(--ll-text-primary);
 }
 
 .notice-list {
