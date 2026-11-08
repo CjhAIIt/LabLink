@@ -4,6 +4,29 @@ import Components from 'unplugin-vue-components/vite'
 import { ElementPlusResolver } from 'unplugin-vue-components/resolvers'
 import { fileURLToPath, URL } from 'node:url'
 
+/**
+ * 开发态抹掉转发请求的 Origin 头。
+ *
+ * 浏览器对同源 POST 也会带上 Origin 头（例如登录、发布公告），
+ * 开发代理把该头原样转发到后端后，后端会按跨域来源白名单校验，
+ * 开发服务器端口一旦不是 3000/4173/5173 就会被拦成
+ * `403 Invalid CORS request`，写操作全部失败。
+ *
+ * 这里在开发代理之前把该头去掉，后端就按普通同源请求处理。
+ * 插件中间件在 Vite 内部中间件（含代理）之前安装，因此顺序是确定的。
+ */
+const stripOriginHeaderPlugin = () => ({
+  name: 'lab-strip-origin-header',
+  configureServer(server) {
+    server.middlewares.use((req, res, next) => {
+      if (req.url && (req.url.startsWith('/api') || req.url.startsWith('/uploads'))) {
+        delete req.headers.origin
+      }
+      next()
+    })
+  }
+})
+
 export default defineConfig({
   plugins: [
     vue(),
@@ -13,7 +36,8 @@ export default defineConfig({
       resolvers: [ElementPlusResolver()],
       dts: false,
       include: [/\.vue$/, /\.vue\?vue/, /\.vue\?v=/, /\.[jt]sx?$/]
-    })
+    }),
+    stripOriginHeaderPlugin()
   ],
   resolve: {
     alias: {

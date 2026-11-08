@@ -67,6 +67,27 @@ public class AppSecurityProperties {
         return allowedOrigins;
     }
 
+    /**
+     * 解析跨域来源匹配规则。
+     *
+     * <p>与 {@link #resolveAllowedOrigins()} 的区别在于这里允许使用通配：
+     * {@code http://localhost:[*]} 会匹配 localhost 的任意端口。</p>
+     *
+     * <p>本地开发时前端开发服务器的端口不固定（5173 被占用就会顺延），
+     * 而浏览器对同源 POST 也会带上 {@code Origin} 头，
+     * 开发代理把该头原样转发到后端后就会命中白名单校验并返回
+     * {@code Invalid CORS request}，登录这类写操作全部失败。
+     * 因此非生产环境额外放行回环地址的任意端口，生产环境不做任何放宽。</p>
+     */
+    public List<String> resolveAllowedOriginPatterns() {
+        List<String> patterns = new ArrayList<>(resolveAllowedOrigins());
+        if (!isProduction()) {
+            patterns.add("http://localhost:[*]");
+            patterns.add("http://127.0.0.1:[*]");
+        }
+        return patterns;
+    }
+
     public RateLimitProperties getRateLimit() {
         return rateLimit;
     }

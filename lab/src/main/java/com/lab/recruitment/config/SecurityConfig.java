@@ -154,6 +154,13 @@ public class SecurityConfig {
         } else {
             configuration.setAllowedOrigins(origins);
             configuration.setAllowCredentials(true);
+
+            // 非生产环境额外放行回环地址的任意端口：开发服务器端口不固定，
+            // 浏览器又会对写操作带上 Origin 头，不放行的话登录等写操作会被
+            // CORS 校验拦成 403 Invalid CORS request。生产环境不做任何放宽。
+            if (!securityProperties.isProduction()) {
+                configuration.setAllowedOriginPatterns(securityProperties.resolveAllowedOriginPatterns());
+            }
         }
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
