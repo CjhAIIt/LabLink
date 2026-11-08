@@ -320,7 +320,7 @@ onMounted(async () => {
 .hero-chip {
   padding: 10px 14px;
   border-radius: var(--ll-radius-full);
-  color: var(--ll-bg-muted);
+  color: var(--ll-on-hero);
   background: rgba(255, 255, 255, 0.16);
   border: 1px solid rgba(255, 255, 255, 0.18);
 }
@@ -356,7 +356,7 @@ onMounted(async () => {
   gap: 6px;
   padding: 14px 16px;
   border-radius: var(--ll-radius-lg);
-  background: linear-gradient(135deg, rgba(248, 250, 252, 0.92), rgba(240, 249, 255, 0.92));
+  background: linear-gradient(135deg, var(--ll-bg-subtle), var(--ll-bg-surface));
   border: 1px solid rgba(148, 163, 184, 0.18);
 }
 

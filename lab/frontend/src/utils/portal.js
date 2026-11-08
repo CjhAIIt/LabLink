@@ -42,7 +42,7 @@ export function resolvePortalHome(userInfoOrRole) {
     typeof userInfoOrRole === 'string' ? userInfoOrRole : resolvePortalRole(userInfoOrRole)
 
   if (portalRole === 'admin') {
-    return '/admin/dashboard'
+    return isMobilePortal() ? '/m/admin/dashboard' : '/admin/dashboard'
   }
   if (portalRole === 'teacher') {
     return isMobilePortal() ? '/m/teacher/dashboard' : '/teacher/dashboard'

@@ -21,9 +21,9 @@
   gap: var(--ll-space-2);
   padding: var(--ll-space-4);
   border-radius: var(--ll-radius-lg);
-  background: linear-gradient(135deg, var(--ll-brand-600) 0%, var(--ll-brand-700) 100%);
+  background: linear-gradient(135deg, var(--ll-hero-from) 0%, var(--ll-hero-to) 100%);
   box-shadow: var(--ll-shadow-sm);
-  color: var(--ll-on-brand);
+  color: var(--ll-on-hero);
 }
 
 /* 工作台首屏：标题在左、刷新按钮在右 */
@@ -75,7 +75,7 @@
   border: none;
   border-radius: var(--ll-radius-md);
   background: rgba(255, 255, 255, 0.16);
-  color: var(--ll-on-brand);
+  color: var(--ll-on-hero);
 }
 
 .m-shell .hero-refresh:active {
@@ -154,8 +154,8 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--ll-radius-md);
-  background: var(--ll-brand-50);
-  color: var(--ll-brand-600);
+  background: var(--ll-bg-selected);
+  color: var(--ll-accent-600);
 }
 
 .m-shell .quick-icon.apps {
@@ -169,8 +169,8 @@
 }
 
 .m-shell .quick-icon.labs {
-  background: var(--ll-brand-50);
-  color: var(--ll-brand-600);
+  background: var(--ll-bg-selected);
+  color: var(--ll-accent-600);
 }
 
 .m-shell .quick-body {
@@ -314,6 +314,33 @@
   align-items: baseline;
   justify-content: space-between;
   gap: var(--ll-space-3);
+}
+
+/* ---------- 个人信息头部 ---------- */
+/* 单独一节样式，不能复用 .hero —— 那是首页的深色横幅 */
+.m-shell .profile-hero {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ll-space-3);
+  padding: var(--ll-space-4);
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: var(--ll-shadow-xs);
+}
+
+.m-shell .profile-hero .hero-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.m-shell .profile-hero .hero-text strong {
+  font-size: var(--ll-text-lg);
+  font-weight: 600;
+  color: var(--ll-text-primary);
 }
 
 .m-shell .title {
@@ -605,7 +632,7 @@
 
 .m-shell .hero-meta .meta-chip {
   background: rgba(255, 255, 255, 0.18);
-  color: var(--ll-on-brand);
+  color: var(--ll-on-hero);
 }
 
 .m-shell .tags {

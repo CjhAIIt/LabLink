@@ -170,8 +170,8 @@ onMounted(() => {
 }
 
 .detail-hero {
-  background: linear-gradient(135deg, var(--ll-text-primary) 0%, var(--ll-text-primary) 100%);
-  color: white;
+  background: linear-gradient(135deg, var(--ll-hero-from) 0%, var(--ll-hero-to) 100%);
+  color: var(--ll-on-hero);
   padding: 48px 60px;
   margin: -24px -24px 24px -24px;
 }
@@ -187,12 +187,13 @@ onMounted(() => {
 .hero-text h1 {
   font-size: 32px;
   margin: 12px 0;
-  color: white;
+  color: var(--ll-on-hero);
 }
 
 .hero-subtitle {
   font-size: 16px;
-  color: var(--ll-text-tertiary);
+  color: var(--ll-on-hero);
+  opacity: 0.84;
   max-width: 600px;
   margin-bottom: 20px;
 }
@@ -200,7 +201,8 @@ onMounted(() => {
 .hero-meta {
   display: flex;
   gap: 24px;
-  color: var(--ll-border-default);
+  color: var(--ll-on-hero);
+  opacity: 0.72;
 }
 
 .meta-item {

@@ -173,7 +173,7 @@ a:hover {
   --el-box-shadow-dark: var(--ll-shadow-lg);
   --el-color-primary: var(--ll-brand-500);
   --el-color-primary-light-3: var(--ll-brand-400);
-  --el-color-primary-light-5: var(--ll-brand-300);
+  --el-color-primary-light-5: var(--ll-brand-400);
   --el-color-primary-light-7: var(--ll-brand-200);
   --el-color-primary-light-8: var(--ll-brand-100);
   --el-color-primary-light-9: var(--ll-brand-50);
@@ -188,8 +188,8 @@ a:hover {
   --el-table-header-text-color: var(--ll-text-secondary);
   --el-table-bg-color: var(--ll-bg-surface);
   --el-table-tr-bg-color: var(--ll-bg-surface);
-  --el-table-row-hover-bg-color: var(--ll-brand-50);
-  --el-table-current-row-bg-color: var(--ll-brand-50);
+  --el-table-row-hover-bg-color: var(--ll-bg-selected);
+  --el-table-current-row-bg-color: var(--ll-bg-selected);
   --el-table-expanded-cell-bg-color: var(--ll-gray-50);
   --el-table-empty-bg-color: var(--ll-bg-surface);
   --el-table-filter-panel-bg-color: var(--ll-bg-surface);
@@ -205,7 +205,7 @@ a:hover {
   --el-pagination-bg-color: transparent;
   --el-pagination-button-bg-color: var(--ll-gray-100);
   --el-pagination-hover-color: var(--ll-text-brand);
-  --el-datepicker-inrange-bg-color: var(--ll-brand-50);
+  --el-datepicker-inrange-bg-color: var(--ll-bg-selected);
   --el-datepicker-off-text-color: var(--ll-text-disabled);
   --el-datepicker-text-color: var(--ll-text-primary);
   --el-datepicker-border-color: var(--ll-border-subtle);
@@ -215,6 +215,32 @@ a:hover {
   --el-radio-checked-text-color: var(--ll-on-brand);
   --el-switch-off-color: var(--ll-gray-300);
   --el-loading-spinner-size-large: 42px;
+}
+
+/**
+ * 暗色下的主色实心底
+ *
+ * 暗色主题把主色反相成浅色石墨，Element 默认给主色实心底配白字，
+ * 白字压浅底几乎看不清，这里统一改成深色文字。
+ * 只作用于实心按钮，plain / link / text 变体仍用主色本身作文字色。
+ */
+[data-theme='dark'] .el-button--primary:not(.is-plain):not(.is-link):not(.is-text) {
+  --el-button-text-color: var(--ll-on-brand);
+  --el-button-hover-text-color: var(--ll-on-brand);
+  --el-button-disabled-text-color: var(--ll-on-brand);
+}
+
+[data-theme='dark'] .el-radio-button.is-active .el-radio-button__inner,
+[data-theme='dark'] .el-checkbox-button.is-checked .el-checkbox-button__inner {
+  color: var(--ll-on-brand);
+}
+
+[data-theme='dark'] .el-checkbox__inner::after {
+  border-color: var(--ll-on-brand);
+}
+
+[data-theme='dark'] .el-radio__input.is-checked .el-radio__inner::after {
+  background-color: var(--ll-on-brand);
 }
 
 /* 暗色下需要跟随的组件级修正 */
@@ -367,7 +393,7 @@ a:hover {
   --el-table-border-color: var(--ll-border-subtle);
   --el-table-header-bg-color: var(--ll-gray-50);
   --el-table-header-text-color: var(--ll-text-secondary);
-  --el-table-row-hover-bg-color: var(--ll-brand-50);
+  --el-table-row-hover-bg-color: var(--ll-bg-selected);
   font-size: var(--ll-text-base);
 }
 
@@ -452,6 +478,45 @@ a:hover {
   font-weight: 600;
 }
 
+/**
+ * 紧凑密度
+ *
+ * 参考 admin 模板的密度优先原则：收紧表格行高、控件高度与卡片留白，
+ * 在同一屏内展示更多信息。
+ */
+[data-density='compact'] {
+  --ll-control-height: 28px;
+  --ll-row-height: 30px;
+}
+
+[data-density='compact'] .el-table .el-table__cell {
+  padding: 6px 0;
+}
+
+[data-density='compact'] .el-table th.el-table__cell {
+  font-size: var(--ll-text-xs);
+}
+
+[data-density='compact'] .el-form-item {
+  margin-bottom: var(--ll-space-3);
+}
+
+[data-density='compact'] .panel-card :where(.el-card__body) {
+  padding: var(--ll-space-4);
+}
+
+[data-density='compact'] .toolbar-card {
+  padding: var(--ll-space-4) var(--ll-space-5) 0;
+}
+
+[data-density='compact'] .metric-card {
+  padding: var(--ll-space-4);
+}
+
+[data-density='compact'] .metric-value {
+  font-size: var(--ll-text-2xl);
+}
+
 /* ---------- 页面骨架 ---------- */
 .page-shell {
   display: grid;
@@ -500,16 +565,16 @@ a:hover {
 
 /* 强调型头部：仅工作台等需要视觉重量的场景使用 */
 .page-hero--brand {
-  color: var(--ll-on-brand);
+  color: var(--ll-on-hero);
   border-color: transparent;
-  background: linear-gradient(110deg, var(--ll-brand-700), var(--ll-brand-600));
+  background: linear-gradient(110deg, var(--ll-hero-from), var(--ll-hero-to));
   box-shadow: none;
 }
 
 .page-hero--brand h1,
 .page-hero--brand .eyebrow,
 .page-hero--brand .hero-subtitle {
-  color: var(--ll-on-brand);
+  color: var(--ll-on-hero);
 }
 
 .page-hero--brand .eyebrow {
@@ -649,7 +714,7 @@ a:hover {
   width: 36px;
   height: 36px;
   border-radius: var(--ll-radius-md);
-  background: var(--ll-brand-50);
+  background: var(--ll-bg-selected);
   color: var(--ll-brand-600);
   flex-shrink: 0;
 }

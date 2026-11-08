@@ -6,17 +6,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>LabLink 高校实验室管理平台</title>
     <script>
-      // 在首帧渲染前套用主题，避免暗色用户看到一闪的白屏
+      // 在首帧渲染前套用主题与密度，避免暗色用户看到白闪
       (function () {
         try {
-          var stored = localStorage.getItem('lab_theme')
-          var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-          var theme = stored || (prefersDark ? 'dark' : 'light')
-          if (theme === 'dark') {
+          var raw = localStorage.getItem('lab_settings')
+          var s = raw ? JSON.parse(raw) : {}
+          var mode = s.themeMode || 'auto'
+          var dark =
+            mode === 'dark' ||
+            (mode === 'auto' && window.matchMedia('(prefers-color-scheme: dark)').matches)
+          if (dark) {
             document.documentElement.setAttribute('data-theme', 'dark')
           }
+          document.documentElement.setAttribute('data-density', s.density || 'default')
         } catch (error) {
-          /* localStorage 不可用时退回亮色 */
+          /* 存储不可用时退回亮色默认 */
         }
       })()
     </script>

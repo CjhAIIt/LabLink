@@ -253,8 +253,8 @@ onMounted(() => {
 .overview-card {
   background:
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 25%),
-    linear-gradient(135deg, var(--ll-text-primary), var(--ll-info));
-  color: var(--ll-bg-muted);
+    linear-gradient(135deg, var(--ll-hero-from), var(--ll-hero-to));
+  color: var(--ll-on-hero);
 }
 
 .eyebrow,

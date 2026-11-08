@@ -391,8 +391,8 @@ onMounted(() => {
 .hero-card {
   background:
     radial-gradient(circle at top right, rgba(14, 165, 233, 0.14), transparent 25%),
-    linear-gradient(135deg, var(--ll-text-primary), var(--ll-brand-600));
-  color: var(--ll-bg-muted);
+    linear-gradient(135deg, var(--ll-hero-from), var(--ll-hero-to));
+  color: var(--ll-on-hero);
 }
 
 .intro-copy {
@@ -507,7 +507,7 @@ onMounted(() => {
 .dimension-tag {
   border-color: rgba(14, 165, 233, 0.18);
   color: var(--ll-info);
-  background: rgba(240, 249, 255, 0.9);
+  background: var(--ll-info-bg);
 }
 
 .question-desc {

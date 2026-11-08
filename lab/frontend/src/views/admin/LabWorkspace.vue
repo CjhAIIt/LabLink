@@ -804,7 +804,7 @@ onMounted(async () => {
 .hero-chip {
   padding: 10px 14px;
   border-radius: var(--ll-radius-full);
-  color: var(--ll-brand-50);
+  color: var(--ll-on-hero);
   background: rgba(255, 255, 255, 0.14);
   border: 1px solid rgba(255, 255, 255, 0.2);
 }

@@ -1,81 +1,83 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { nextTick } from 'vue'
-
-const STORAGE_KEY = 'lab_theme'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { createPinia, setActivePinia } from 'pinia'
+import { THEME_MODES } from '@/stores/settings'
 
 /**
- * useTheme 内部用模块级 ref 保存主题状态（全局主题需要共享），
- * 因此每个用例都要重新加载模块，避免用例之间互相污染。
+ * 主题状态统一放在 settings store，useTheme 只做转发，
+ * 因此用例需要真实的 Pinia 实例。
  */
-async function loadUseTheme() {
-  vi.resetModules()
-  const module = await import('./useTheme')
-  return module.useTheme()
+function loadUseTheme() {
+  setActivePinia(createPinia())
+  return import('./useTheme')
 }
 
 beforeEach(() => {
   localStorage.clear()
   document.documentElement.removeAttribute('data-theme')
-})
-
-afterEach(() => {
+  document.documentElement.removeAttribute('data-density')
   vi.unstubAllGlobals()
 })
 
 describe('useTheme', () => {
-  it('默认跟随系统偏好', async () => {
+  it('auto 模式下跟随系统偏好', async () => {
     vi.stubGlobal('matchMedia', (query) => ({
       matches: query.includes('dark'),
       media: query
     }))
 
-    const { currentTheme } = await loadUseTheme()
-    expect(currentTheme.value).toBe('dark')
-  })
-
-  it('本地已保存的主题优先于系统偏好', async () => {
-    localStorage.setItem(STORAGE_KEY, 'light')
-    vi.stubGlobal('matchMedia', (query) => ({
-      matches: query.includes('dark'),
-      media: query
-    }))
-
-    const { currentTheme } = await loadUseTheme()
-    expect(currentTheme.value).toBe('light')
-  })
-
-  it('切换主题会写入本地存储并同步到根元素', async () => {
-    const { isDark, toggleTheme } = await loadUseTheme()
-    expect(isDark.value).toBe(false)
-
-    toggleTheme()
-    await nextTick()
+    const { useTheme } = await loadUseTheme()
+    const { isDark } = useTheme()
 
     expect(isDark.value).toBe(true)
-    expect(localStorage.getItem(STORAGE_KEY)).toBe('dark')
+  })
+
+  it('auto 模式下系统为亮色时判定为亮色', async () => {
+    vi.stubGlobal('matchMedia', (query) => ({
+      matches: false,
+      media: query
+    }))
+
+    const { useTheme } = await loadUseTheme()
+    const { isDark } = useTheme()
+
+    expect(isDark.value).toBe(false)
+  })
+
+  it('显式选择深色后不受系统偏好影响', async () => {
+    vi.stubGlobal('matchMedia', (query) => ({
+      matches: false,
+      media: query
+    }))
+
+    const { useTheme } = await loadUseTheme()
+    const { isDark, setTheme } = useTheme()
+
+    setTheme(THEME_MODES.DARK)
+
+    expect(isDark.value).toBe(true)
     expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
   })
 
-  it('切回亮色时移除根元素属性', async () => {
-    const { isDark, toggleTheme } = await loadUseTheme()
-    toggleTheme()
-    await nextTick()
-    expect(document.documentElement.getAttribute('data-theme')).toBe('dark')
+  it('显式选择亮色会移除根元素上的暗色标记', async () => {
+    const { useTheme } = await loadUseTheme()
+    const { isDark, setTheme } = useTheme()
 
-    toggleTheme()
-    await nextTick()
+    setTheme(THEME_MODES.DARK)
+    expect(document.documentElement.hasAttribute('data-theme')).toBe(true)
+
+    setTheme(THEME_MODES.LIGHT)
 
     expect(isDark.value).toBe(false)
-    expect(localStorage.getItem(STORAGE_KEY)).toBe('light')
     expect(document.documentElement.hasAttribute('data-theme')).toBe(false)
   })
 
-  it('setTheme 忽略非法取值', async () => {
-    const { currentTheme, setTheme } = await loadUseTheme()
+  it('切换主题会写入本地存储', async () => {
+    const { useTheme } = await loadUseTheme()
+    const { toggleTheme } = useTheme()
 
-    setTheme('rainbow')
+    toggleTheme()
 
-    expect(currentTheme.value).not.toBe('rainbow')
-    expect(localStorage.getItem(STORAGE_KEY)).toBeNull()
+    const stored = JSON.parse(localStorage.getItem('lab_settings') || '{}')
+    expect(stored.themeMode).toBe(THEME_MODES.DARK)
   })
 })

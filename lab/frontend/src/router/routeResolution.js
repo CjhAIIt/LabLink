@@ -47,11 +47,13 @@ export function resolvePortalTarget(path, { isMobile, hasRoute }) {
   const pairs = isMobile
     ? [
         ['/student', '/m/student'],
-        ['/teacher', '/m/teacher']
+        ['/teacher', '/m/teacher'],
+        ['/admin', '/m/admin']
       ]
     : [
         ['/m/student', '/student'],
-        ['/m/teacher', '/teacher']
+        ['/m/teacher', '/teacher'],
+        ['/m/admin', '/admin']
       ]
 
   for (const [fromPrefix, toPrefix] of pairs) {

@@ -48,19 +48,23 @@ Capacitor 的检测通过可选链访问 `window.Capacitor`，因此**未安装 
 if (portalRole === 'teacher') {
   return isMobilePortal() ? '/m/teacher/dashboard' : '/teacher/dashboard'
 }
+if (portalRole === 'admin') {
+  return isMobilePortal() ? '/m/admin/dashboard' : '/admin/dashboard'
+}
 return isMobilePortal() ? '/m/student/dashboard' : '/student/dashboard'
 ```
 
-管理员端没有移动端专属页面，桌面端布局在窄屏下会自动退化为抽屉式侧边栏，因此 `admin` 角色始终返回 `/admin/dashboard`。
+管理员端已有移动端专属页面 `/m/admin/*`，窄屏下不再退回桌面端布局。
 
 ## 3. 路由分流
 
-`src/router/index.js` 中新增两棵移动端路由树：
+`src/router/index.js` 中新增三棵移动端路由树：
 
 | 路径 | 布局 | 子路由 |
 | --- | --- | --- |
 | `/m/student` | `MobileStudentLayout` | `dashboard`、`labs`、`labs/:id`、`applications`、`notices`、`profile` |
 | `/m/teacher` | `MobileTeacherLayout` | `dashboard`、`create-applies`、`notices`、`profile` |
+| `/m/admin` | `MobileAdminLayout` | `dashboard`、`approvals`、`labs`、`notices`、`profile` |
 
 全局前置守卫在鉴权检查之前做路径互斥重定向，保证同一页面在两种形态间始终只有一个可达地址：
 
@@ -86,19 +90,24 @@ if (studentTarget) {
   next({ path: studentTarget, query: to.query, hash: to.hash })
   return
 }
+const adminTarget = resolveCounterpartPath(to.path, '/admin', '/m/admin')
+if (adminTarget) {
+  next({ path: adminTarget, query: to.query, hash: to.hash })
+  return
+}
 ```
 
 要点：
 
 - 重定向保留 `query` 与 `hash`，带参数的深链接不会丢参
-- 移动端路径前缀是 `/m/...`，不会与 `/student`、`/teacher` 前缀互相误伤
-- **只有存在对应路由时才改写路径**。没有移动端实现的页面（例如 `/student/attendance`、`/student/space`、`/teacher/workspace`）不做改写，直接用桌面端页面渲染，避免命中兜底路由后被踢回登录页、丢失深链接
+- 移动端路径前缀是 `/m/...`，不会与 `/student`、`/teacher`、`/admin` 前缀互相误伤
+- **只有存在对应路由时才改写路径**。没有移动端实现的页面（例如 `/student/attendance`、`/student/space`、`/teacher/workspace`、`/admin/lab-admin`）不做改写，直接用桌面端页面渲染，避免命中兜底路由后被踢回登录页、丢失深链接
 - 守卫在每次导航时重新计算，浏览器窗口缩放跨越 768px 后，下一次导航即切换形态
 - 重定向发生在鉴权之前，未登录用户访问 `/student/dashboard` 时先切到 `/m/student/dashboard`，再由鉴权逻辑送回登录页
 
 ## 4. 移动端布局外壳
 
-`MobileStudentLayout.vue` 与 `MobileTeacherLayout.vue` 结构一致：
+`MobileStudentLayout.vue`、`MobileTeacherLayout.vue` 与 `MobileAdminLayout.vue` 结构一致：
 
 ```
 m-shell
@@ -123,7 +132,10 @@ const tabItems = [
 
 教师端 3 个标签：首页、公告、我的。
 
-标签栏使用 `grid-template-columns: repeat(5, minmax(0, 1fr))`，新增标签时同步修改列数。
+管理端 5 个标签：首页、审批、实验室、公告、我的。
+
+标签栏使用 `grid-template-columns: repeat(v-bind('tabItems.length'), minmax(0, 1fr))`，
+列数跟随标签数量自动变化，新增标签无需改样式。
 
 ### 4.2 安全区适配
 
@@ -170,12 +182,19 @@ const sidebarVisible = computed(() => isMobile.value && !isCollapse.value)
 | `mobile/student/Applications.vue` | `/m/student/applications` | 我的申请记录与审核进度 |
 | `mobile/teacher/Dashboard.vue` | `/m/teacher/dashboard` | 教师首页：创建申请数量、所属学院、申请入口 |
 | `mobile/teacher/CreateApplies.vue` | `/m/teacher/create-applies` | 发起实验室创建申请、查看提交记录 |
-| `mobile/Notices.vue` | `/m/student/notices`、`/m/teacher/notices` | 公告中心，两端共用 |
-| `mobile/Profile.vue` | `/m/student/profile`、`/m/teacher/profile` | 个人信息与退出登录，两端共用 |
+| `mobile/admin/Dashboard.vue` | `/m/admin/dashboard` | 管理首页：问候横幅、实验室/成员/待办/招新四项指标、待办审批清单 |
+| `mobile/admin/Approvals.vue` | `/m/admin/approvals` | 审批中心：三类审批合并展示，支持按类型筛选与审批动作 |
+| `mobile/admin/Labs.vue` | `/m/admin/labs` | 实验室列表：名称、编号、地点、成员数，支持关键字搜索 |
+| `mobile/admin/Notices.vue` | `/m/admin/notices` | 公告管理：公告列表与发布公告抽屉 |
+| `mobile/Notices.vue` | `/m/student/notices`、`/m/teacher/notices` | 公告中心，学生端与教师端共用 |
+| `mobile/Profile.vue` | `/m/student/profile`、`/m/teacher/profile`、`/m/admin/profile` | 个人信息与退出登录，三端共用 |
 
 ### 5.1 移动端页面写法约定
 
 - 页面根元素使用 `<div class="m-page">`，内部使用 `hero`（横幅）、`stat-card`（指标卡）、`quick-card`（功能入口）、`card` / `list`（列表卡片）、`panel`（分组面板）等移动端语义类
+- **语义类不能叠用**：`mobile.css` 里 `.hero` 是首页的深色横幅，`.card` 是普通白卡，
+  写在同一个元素上会让白卡覆盖横幅的底色、横幅的浅色文字压白底而看不见。
+  需要变体就另起类名（如个人信息页的 `.profile-hero`）。
 - 不使用 `el-table`，列表一律用卡片
 - 表单使用 `el-form` 的纵向布局，`label-width="0"`
 - 移动端页面只依赖 `src/api/` 下已有的接口封装，不直接书写 axios 调用
@@ -200,8 +219,8 @@ const sidebarVisible = computed(() => isMobile.value && !isCollapse.value)
 ## 6. 新增移动端页面的步骤
 
 1. 在 `src/views/mobile/` 下按端归类新建组件，参照同类页面写法
-2. 在 `src/router/index.js` 中导入组件，并在 `/m/student` 或 `/m/teacher` 的 `children` 中注册路由，务必填写 `meta.title`
-3. 如需新增底部标签，在对应布局的 `tabItems` 中增加条目，并同步修改 `.m-tabbar` 的 `grid-template-columns` 列数
+2. 在 `src/router/index.js` 中导入组件，并在 `/m/student`、`/m/teacher` 或 `/m/admin` 的 `children` 中注册路由，务必填写 `meta.title`
+3. 如需新增底部标签，在对应布局的 `tabItems` 中增加条目，标签栏列数会自动跟随
 4. 若桌面端也有该功能，在 `src/utils/portal.js` 的 `resolvePortalHome()` 中无需改动（落地页只按角色区分）
 5. 执行 `npm run build` 与 `npx eslint . --ext .vue,.js` 验证
 
@@ -252,4 +271,4 @@ VITE_API_BASE_URL=https://api.example.edu.cn
 
 - `isMobilePortal()` 依据视口宽度判定，桌面浏览器窗口收窄到 768px 以下时，下次导航会切换到移动端界面，属于预期行为
 - 移动端与桌面端是两套路由树，功能覆盖以移动端页面清单为准，其余页面复用桌面端实现
-- 管理员端暂无移动端专属页面，窄屏下使用桌面布局的抽屉形态
+- 管理端已覆盖首页、审批、实验室、公告、我的五项；其余管理功能（学院管理、综合检索、考勤、统计分析等）在窄屏下仍使用桌面布局的抽屉形态
