@@ -1,6 +1,6 @@
-import { createRouter, createWebHistory } from 'vue-router'
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router'
 import { getToken, getUserInfo } from '@/utils/auth'
-import { isMobilePortal, resolvePortalHome, resolvePortalRole } from '@/utils/portal'
+import { isMobilePortal, isNativeApp, resolvePortalHome, resolvePortalRole } from '@/utils/portal'
 import { createHasRoute, resolvePortalTarget } from '@/router/routeResolution'
 
 // 页面组件全部按路由懒加载，首屏只下载实际访问的模块。
@@ -188,7 +188,8 @@ const routes = [
 ]
 
 const router = createRouter({
-  history: createWebHistory(),
+  // 原生壳里没有服务端路由回退，用 hash 模式，深链与刷新都能落到首页
+  history: isNativeApp() ? createWebHashHistory() : createWebHistory(),
   routes
 })
 
