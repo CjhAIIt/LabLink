@@ -13,7 +13,12 @@
 
     <section class="grid">
       <div v-for="card in metricCards" :key="card.label" class="stat-card">
-        <p class="stat-label">{{ card.label }}</p>
+        <div class="stat-head">
+          <span class="stat-icon" :class="card.tone ? `stat-icon--${card.tone}` : ''">
+            <el-icon :size="16"><component :is="card.icon" /></el-icon>
+          </span>
+          <p class="stat-label">{{ card.label }}</p>
+        </div>
         <strong class="stat-value">{{ card.value }}</strong>
         <p class="stat-tip">{{ card.tip }}</p>
       </div>
@@ -75,7 +80,7 @@
 </template>
 
 <script setup>
-import { ArrowRight, Close, Refresh } from '@element-plus/icons-vue'
+import { ArrowRight, Close, Cpu, Opportunity, Refresh, User, Warning } from '@element-plus/icons-vue'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getLatestNotices } from '@/api/notices'
@@ -106,10 +111,10 @@ const scopeLabel = computed(() => {
 })
 
 const metricCards = computed(() => [
-  { label: '实验室总数', value: overview.value.labCount ?? 0, tip: '纳入平台的实验室规模' },
-  { label: '正式成员', value: overview.value.formalMemberCount ?? 0, tip: '当前有效成员总量' },
-  { label: '待处理事项', value: overview.value.pendingApprovalTotal ?? 0, tip: '审批链上的待办总数' },
-  { label: '开放招新', value: overview.value.openPlanCount ?? 0, tip: '正在开放的招新计划' }
+  { label: '实验室总数', value: overview.value.labCount ?? 0, tip: '纳入平台的实验室规模', icon: Cpu, tone: 'success' },
+  { label: '正式成员', value: overview.value.formalMemberCount ?? 0, tip: '当前有效成员总量', icon: User },
+  { label: '待处理事项', value: overview.value.pendingApprovalTotal ?? 0, tip: '审批链上的待办总数', icon: Warning, tone: 'danger' },
+  { label: '开放招新', value: overview.value.openPlanCount ?? 0, tip: '正在开放的招新计划', icon: Opportunity, tone: 'info' }
 ])
 
 const pendingApprovals = computed(() => overview.value.pendingApprovals || [])

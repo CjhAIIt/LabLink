@@ -107,6 +107,46 @@
   box-shadow: var(--ll-shadow-xs);
 }
 
+/* 指标卡图标块：与桌面端同一套语义色 */
+.m-shell .stat-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-2);
+  margin-bottom: 2px;
+}
+
+.m-shell .stat-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  flex-shrink: 0;
+  border-radius: var(--ll-radius-sm);
+  background: var(--ll-running-bg);
+  color: var(--ll-running);
+}
+
+.m-shell .stat-icon--success {
+  background: var(--ll-success-bg);
+  color: var(--ll-success);
+}
+
+.m-shell .stat-icon--warning {
+  background: var(--ll-warning-bg);
+  color: var(--ll-warning);
+}
+
+.m-shell .stat-icon--danger {
+  background: var(--ll-danger-bg);
+  color: var(--ll-danger);
+}
+
+.m-shell .stat-icon--info {
+  background: var(--ll-info-bg);
+  color: var(--ll-info);
+}
+
 .m-shell .stat-label {
   font-size: var(--ll-text-xs);
   color: var(--ll-text-secondary);

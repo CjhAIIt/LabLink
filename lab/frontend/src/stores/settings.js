@@ -23,23 +23,26 @@ export const DENSITIES = {
  * 主色预设，参考 Arco Design / Ant Design 的色板思路，
  * 统一为「主色 + 成功 + 警告 + 危险 + 信息」五色一组。
  *
+ * 主色与平台的品牌蓝同族，切换预设只改强调色（选中态、链接、图标底），
+ * 不会动品牌本身。
+ *
  * darkPrimary 是同一主色在暗色主题下的取值：暗色底上必须用亮色，
  * 否则强调色会压暗到几乎看不见，因此每个预设都成对给出明暗两套。
  */
 export const THEME_PRESETS = [
   {
-    id: 'graphite',
-    name: '石墨',
-    description: '中性克制，适合长时间使用',
+    id: 'blue',
+    name: '品牌蓝',
+    description: '与平台主色一致，最稳妥',
     colors: {
-      primary: '#18181b',
-      success: '#059669',
-      warning: '#d97706',
-      danger: '#e11d48',
-      info: '#52525b'
+      primary: '#2563eb',
+      success: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
+      info: '#8b5cf6'
     },
-    darkPrimary: '#d4d4d8',
-    darkPrimaryStrong: '#fafafa'
+    darkPrimary: '#60a5fa',
+    darkPrimaryStrong: '#93c5fd'
   },
   {
     id: 'indigo',
@@ -47,41 +50,41 @@ export const THEME_PRESETS = [
     description: '冷静专业，突出层级',
     colors: {
       primary: '#4f46e5',
-      success: '#059669',
-      warning: '#d97706',
-      danger: '#e11d48',
-      info: '#0284c7'
+      success: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
+      info: '#0ea5e9'
     },
-    darkPrimary: '#a5b4fc',
-    darkPrimaryStrong: '#c7d2fe'
+    darkPrimary: '#818cf8',
+    darkPrimaryStrong: '#a5b4fc'
   },
   {
-    id: 'teal',
-    name: '青碧',
+    id: 'cyan',
+    name: '青蓝',
     description: '清新沉稳，适合教学场景',
     colors: {
-      primary: '#0f766e',
-      success: '#16a34a',
-      warning: '#d97706',
-      danger: '#e11d48',
-      info: '#0891b2'
+      primary: '#0891b2',
+      success: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
+      info: '#2563eb'
     },
-    darkPrimary: '#5eead4',
-    darkPrimaryStrong: '#99f6e4'
+    darkPrimary: '#22d3ee',
+    darkPrimaryStrong: '#67e8f9'
   },
   {
-    id: 'slate',
-    name: '石板',
-    description: '低饱和，久看不累',
+    id: 'violet',
+    name: '紫罗兰',
+    description: '偏科研质感，区分度更高',
     colors: {
-      primary: '#334155',
-      success: '#0f766e',
-      warning: '#b45309',
-      danger: '#be123c',
-      info: '#0369a1'
+      primary: '#7c3aed',
+      success: '#10b981',
+      warning: '#f59e0b',
+      danger: '#ef4444',
+      info: '#d946ef'
     },
-    darkPrimary: '#cbd5e1',
-    darkPrimaryStrong: '#e2e8f0'
+    darkPrimary: '#a78bfa',
+    darkPrimaryStrong: '#c4b5fd'
   }
 ]
 
@@ -103,7 +106,12 @@ function readStored() {
     if (!raw) {
       return { ...DEFAULTS }
     }
-    return { ...DEFAULTS, ...JSON.parse(raw) }
+    const stored = { ...DEFAULTS, ...JSON.parse(raw) }
+    // 预设改版后旧的 id 会失效，这里回落到默认预设，避免界面里没有选中项
+    if (!THEME_PRESETS.some((item) => item.id === stored.accent)) {
+      stored.accent = DEFAULTS.accent
+    }
+    return stored
   } catch (error) {
     return { ...DEFAULTS }
   }

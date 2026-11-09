@@ -1,7 +1,7 @@
 <template>
   <div class="brand-logo" :class="[sizeClass, `tone-${tone}`]" :aria-label="title">
     <div class="brand-mark" aria-hidden="true">
-      <span class="brand-mark-text">Link</span>
+      <BrandMark />
     </div>
 
     <div v-if="showText" class="brand-copy">
@@ -13,6 +13,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import BrandMark from '@/components/BrandMark.vue'
 
 const props = defineProps({
   title: {
@@ -51,44 +52,18 @@ const sizeClass = computed(() => `size-${props.size}`)
 .brand-mark {
   position: relative;
   flex-shrink: 0;
-  border-radius: var(--ll-radius-lg);
-  background:
-    radial-gradient(circle at 22% 18%, rgba(191, 219, 254, 0.42), transparent 30%),
-    linear-gradient(135deg, var(--ll-logo-from), var(--ll-logo-mid) 58%, var(--ll-logo-to));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.22),
-    0 14px 30px rgba(29, 78, 216, 0.18);
+  border-radius: var(--ll-radius-md);
+  overflow: hidden;
+  box-shadow: 0 6px 16px rgba(30, 64, 175, 0.22);
 }
 
 .brand-mark::after {
   content: '';
   position: absolute;
-  inset: 1px;
-  border-radius: inherit;
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  pointer-events: none;
-}
-
-.brand-mark::before {
-  content: '';
-  position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent 48%);
+  border: 1px solid rgba(255, 255, 255, 0.24);
   pointer-events: none;
-}
-
-.brand-mark-text {
-  position: relative;
-  z-index: 1;
-  display: grid;
-  width: 100%;
-  height: 100%;
-  place-items: center;
-  color: var(--ll-on-logo);
-  font-weight: 900;
-  letter-spacing: 0.08em;
-  text-shadow: 0 4px 18px rgba(8, 15, 35, 0.28);
 }
 
 .brand-copy {
@@ -134,10 +109,6 @@ const sizeClass = computed(() => `size-${props.size}`)
   border-radius: var(--ll-radius-md);
 }
 
-.size-sm .brand-mark-text {
-  font-size: 11px;
-}
-
 .size-sm .brand-title {
   font-size: 16px;
   line-height: 1.1;
@@ -151,10 +122,6 @@ const sizeClass = computed(() => `size-${props.size}`)
 .size-md .brand-mark {
   width: 54px;
   height: 54px;
-}
-
-.size-md .brand-mark-text {
-  font-size: 13px;
 }
 
 .size-md .brand-title {
@@ -171,10 +138,6 @@ const sizeClass = computed(() => `size-${props.size}`)
   width: 62px;
   height: 62px;
   border-radius: var(--ll-radius-lg);
-}
-
-.size-lg .brand-mark-text {
-  font-size: 15px;
 }
 
 .size-lg .brand-title {

@@ -4,7 +4,7 @@
 
 ## 1. 视觉基线
 
-视觉基线参考 Linear、shadcn/ui 与 Vercel Geist：中性色用 Zinc 阶，主色克制为石墨色，
+视觉基线参考 Linear、shadcn/ui 与 Vercel Geist：中性色用 Zinc 阶，主色为克制的品牌蓝，
 只用淡彩语义色标注状态，避免霓虹感与厚重拟物。
 
 ### 1.1 设计令牌
@@ -16,15 +16,15 @@
 | --- | --- |
 | `--ll-zinc-0` … `--ll-zinc-900` | 中性色阶。浅色 `#ffffff / #f4f4f5 / #e4e4e7`，暗色整体翻转为 `#09090b / #18181b / #27272a` |
 | `--ll-gray-0` … `--ll-gray-900` | 历史灰阶别名，逐项指向 Zinc，**新增代码不要再用** |
-| `--ll-brand-50` … `--ll-brand-700` | 主色阶。浅色主题下 `600 = #18181b`（石墨），暗色主题下整阶反相成浅色 |
-| `--ll-accent-50` … `--ll-accent-700` | 强调色阶（靛蓝），用于选中态、链接与图表；`--ll-accent-600` 会被界面设置里的主色覆盖 |
-| `--ll-hero-from` / `--ll-hero-to` / `--ll-on-hero` | 深色区块（英雄区、标识块）底色。**不随主题反相**，浅色暗色下都是深色石墨，保证底上的文字始终可读 |
+| `--ll-brand-50` … `--ll-brand-700` | 主色阶（品牌蓝）。浅色主题下 `600 = #2563eb`，暗色主题下整阶反相成浅蓝 |
+| `--ll-accent-50` … `--ll-accent-700` | 强调色阶，默认与品牌蓝同族，用于选中态、链接与图表；`--ll-accent-600` 会被界面设置里的主色覆盖 |
+| `--ll-hero-from` / `--ll-hero-to` / `--ll-on-hero` | 深色区块（英雄区、标识块）底色。**不随主题反相**，浅色暗色下都是深蓝，保证底上的文字始终可读 |
 | `--ll-logo-from` / `--ll-logo-mid` / `--ll-logo-to` / `--ll-on-logo` | 品牌标识色块的三段渐变与块上文字 |
 | `--ll-success` / `--ll-running` / `--ll-warning` / `--ll-danger` / `--ll-info` | 语义色，浅色下为深字浅底，暗色下为亮字深底，各自带 `-bg` `-border` |
 | `--ll-chart-1` … `--ll-chart-6` | 图表辅助色 |
 | `--ll-bg-body` / `--ll-bg-surface` / `--ll-bg-subtle` / `--ll-bg-hover` / `--ll-bg-selected` | 语义背景，`--ll-bg-selected` 由 `color-mix` 跟随强调色 |
 | `--ll-text-primary` / `secondary` / `tertiary` / `disabled` / `inverse` / `brand` / `link` | 语义文字 |
-| `--ll-on-brand` | **实心品牌底上的文字**。品牌阶在暗色下反相为浅色，所以此令牌在暗色下是深色 `#09090b` |
+| `--ll-on-brand` | **实心品牌底上的文字**。品牌阶在暗色下反相为浅蓝，所以此令牌在暗色下是深色 `#09090b` |
 | `--ll-border-subtle` / `default` / `strong` / `brand` | 语义描边 |
 | `--ll-radius-xs` … `--ll-radius-full` | 圆角，小 3 / 中 5 / 卡片 7 / 大 10 / 超大 14 |
 | `--ll-shadow-xs` … `--ll-shadow-lg` | 阴影，很浅；仅浮层可用 `md` 以上 |
@@ -52,14 +52,14 @@
 
 | 令牌 | 用途 |
 | --- | --- |
-| `--ll-on-brand` | 实心品牌底上的文字。品牌阶在暗色下反相成浅色，所以此令牌在暗色下是深色 `#09090b` |
+| `--ll-on-brand` | 实心品牌底上的文字。品牌阶在暗色下反相成浅蓝，所以此令牌在暗色下是深色 `#09090b` |
 | `--ll-hero-from` / `--ll-hero-to` / `--ll-on-hero` | 深色区块底色与底上的文字，**两套主题下都保持深色**，避免英雄区在暗色下变成白底白字 |
 | `--ll-bg-chrome` | 吸顶导航等半透明 chrome 层的底色 |
 
 **新增页面时不要写死浅色背景**（例如 `rgba(248, 250, 252, 0.92)`），
 一律用 `--ll-bg-surface` / `--ll-bg-subtle` / `--ll-bg-muted`，否则暗色主题下会出现白底浅字。
 
-Element Plus 在暗色下的主色是浅色石墨，其「主色实心底」默认配白字，对比度不足，
+Element Plus 在暗色下的主色是浅蓝，其「主色实心底」默认配白字，对比度不足，
 `global.css` 中用 `[data-theme='dark'] .el-button--primary:not(.is-plain):not(.is-link):not(.is-text)`
 把这类实心按钮的文字改为深色。新增自定义主色时同理。
 
@@ -67,16 +67,17 @@ Element Plus 在暗色下的主色是浅色石墨，其「主色实心底」默�
 
 平台统一品牌标识为 **LabLink**，对应中文副标题“高校实验室管理平台”。
 
-- 品牌标识组件：`src/components/BrandLogo.vue`
-- 标识色块文字固定为 `Link`，底色为深色石墨渐变，块上文字固定 `--ll-on-logo`
+- 品牌标识组件：`src/components/BrandLogo.vue`；标识图形组件：`src/components/BrandMark.vue`
+- 标识图形为「蓝色圆角方块 + 白色菱形与三条平行斜线」，矢量组件为 `src/components/BrandMark.vue`，
+  与 `public/favicon.svg` 是同一套图形；侧边栏、登录页、平台介绍页共用，不允许各写一份
 - 品牌在侧边栏、登录页、注册页、平台介绍页中的标题必须来自 `BrandLogo` 的 `title` / `subtitle` 属性，不要在页面里重复硬编码全称
 
 ### 1.4 颜色
 
 | 用途 | 色值 |
 | --- | --- |
-| 主色 | `--ll-brand-600`，浅色 `#18181b`，暗色 `#fafafa` |
-| 强调色 | `--ll-accent-600`，浅色 `#4f46e5`，暗色 `#a5b4fc` |
+| 主色 | `--ll-brand-600`，浅色 `#2563eb`，暗色 `#93c5fd` |
+| 强调色 | `--ll-accent-600`，浅色 `#2563eb`，暗色 `#93c5fd` |
 | 页面底色 | `--ll-bg-body`，浅色 `#f4f4f5`，暗色 `#09090b` |
 | 卡片底色 | `--ll-bg-surface`，浅色 `#ffffff`，暗色 `#18181b` |
 | 主文字 | `--ll-text-primary`，浅色 `#09090b`，暗色 `#fafafa` |
@@ -85,6 +86,9 @@ Element Plus 在暗色下的主色是浅色石墨，其「主色实心底」默�
 
 页面级渐变只允许出现在 `.page-hero--brand`（工作台首页的强调头部）、
 移动端 `.hero` 横幅与深色区块，其余位置一律使用扁平卡片。
+
+英雄区的底色来自 `--ll-hero-from` / `--ll-hero-to`，两组 ±60° 重复渐变叠出六边形网格纹饰，
+不要在页面里另写渐变。
 
 ### 1.5 字体与滚动条
 
@@ -102,7 +106,7 @@ Element Plus 在暗色下的主色是浅色石墨，其「主色实心底」默�
 | --- | --- | --- |
 | 主题模式 | 浅色 / 深色 / 跟随系统 | `<html data-theme="dark">`，`auto` 时读 `prefers-color-scheme` |
 | 界面密度 | 默认 / 紧凑 | `<html data-density="compact">` + `global.css` 中的 `[data-density='compact']` 块，收紧表格行高、控件高度与留白 |
-| 主色调 | 石墨 / 靛蓝 / 青碧 / 石板 / 自定义取色 | 覆盖 `--ll-accent-600`、`--ll-accent-700` 与 `--el-color-primary` |
+| 主色调 | 品牌蓝 / 靛蓝 / 青蓝 / 紫罗兰 / 自定义取色 | 覆盖 `--ll-accent-600`、`--ll-accent-700` 与 `--el-color-primary` |
 | 收起侧边栏 | 开 / 关 | 桌面端侧边栏收成 64px 图标栏 |
 | 显示页签栏 | 开 / 关 | 顶栏下方显示多页签导航 |
 
@@ -137,9 +141,12 @@ Element Plus 在暗色下的主色是浅色石墨，其「主色实心底」默�
 | --- | --- |
 | `.page-shell` | 页面根容器，纵向 grid + gap |
 | `.page-hero` | 页面头部，**扁平**：白底 + 1px 描边，标题 / 说明 / 右侧操作区 |
-| `.page-hero--brand` | 强调型头部，仅工作台首页使用（品牌深色渐变） |
+| `.page-hero--brand` | 强调型头部，仅工作台首页使用（品牌深蓝渐变 + 六边形网格纹饰） |
 | `.page-hero h1` / `.hero-subtitle` / `.eyebrow` | 头部内的标题、副标题、眉标 |
 | `.metric-grid` / `.metric-card` | 指标卡网格与单卡。桌面按容器宽度自适应（`auto-fit` + `minmax(200px, 1fr)`），768px 以下固定为 1 列 |
+| `.metric-head` / `.metric-icon` | 指标卡图标块：彩色底 + 同色图形。色调用 `.metric-icon--success` / `--warning` / `--danger` / `--info` 区分 |
+| `.metric-card--success` 等 | 指标卡按语义色描边，与图标块呼应 |
+| `.metric-delta--up` / `.metric-delta--down` | 增减量文字，上涨用绿、下跌用红 |
 | `.metric-label` / `.metric-value` / `.metric-tip` | 指标卡的标签、数值、补充说明 |
 | `.content-grid.two-column` | 双栏内容区 |
 | `.panel-card` / `.toolbar-card` | 内容卡片、筛选工具条卡片 |
@@ -355,6 +362,7 @@ npm run test:watch    # 监听模式
 ## 11. 新增页面检查清单
 
 - [ ] 根元素使用 `.page-shell`，头部使用 `.page-hero`（工作台首页用 `.page-hero--brand`），内容区使用 `.panel-card`
+- [ ] 指标卡使用 `.metric-head` + `.metric-icon`，图标色与卡片语义色一致，不要自绘色块
 - [ ] 深色区块用 `--ll-hero-from` / `--ll-hero-to` / `--ll-on-hero`，实心品牌底上的文字用 `--ll-on-brand`
 - [ ] 页面样式里没有裸十六进制色值与超过 14px 的圆角，一律用 `var(--ll-*)`
 - [ ] 没有硬编码的浅色背景（如 `rgba(248,250,252,.92)`），否则暗色主题下会变成白底浅字

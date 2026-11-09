@@ -44,11 +44,11 @@ describe('settings store', () => {
 
   it('选择主色预设会覆盖强调色变量', () => {
     const store = createStore()
-    const preset = THEME_PRESETS.find((item) => item.id === 'teal')
+    const preset = THEME_PRESETS.find((item) => item.id === 'cyan')
 
-    store.setAccent('teal')
+    store.setAccent('cyan')
 
-    expect(store.accent).toBe('teal')
+    expect(store.accent).toBe('cyan')
     expect(store.resolvedAccent).toBe(preset.colors.primary)
     expect(document.documentElement.style.getPropertyValue('--ll-accent-600')).toBe(preset.colors.primary)
   })
@@ -56,7 +56,7 @@ describe('settings store', () => {
   it('自定义主色优先于预设', () => {
     const store = createStore()
 
-    store.setAccent('teal')
+    store.setAccent('cyan')
     store.setCustomAccent('#123456')
 
     expect(store.resolvedAccent).toBe('#123456')
@@ -77,9 +77,9 @@ describe('settings store', () => {
 
   it('暗色主题下强调色换成预设的亮色版本', () => {
     const store = createStore()
-    const preset = THEME_PRESETS.find((item) => item.id === 'teal')
+    const preset = THEME_PRESETS.find((item) => item.id === 'cyan')
 
-    store.setAccent('teal')
+    store.setAccent('cyan')
     store.setThemeMode(THEME_MODES.DARK)
 
     expect(document.documentElement.style.getPropertyValue('--ll-accent-600')).toBe(
@@ -112,13 +112,13 @@ describe('settings store', () => {
   it('读取已保存的设置', () => {
     localStorage.setItem(
       'lab_settings',
-      JSON.stringify({ themeMode: 'dark', density: 'compact', accent: 'slate', customAccent: '' })
+      JSON.stringify({ themeMode: 'dark', density: 'compact', accent: 'violet', customAccent: '' })
     )
 
     const store = createStore()
 
     expect(store.themeMode).toBe('dark')
     expect(store.density).toBe('compact')
-    expect(store.accent).toBe('slate')
+    expect(store.accent).toBe('violet')
   })
 })

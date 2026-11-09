@@ -35,64 +35,64 @@
   --ll-gray-800: var(--ll-zinc-800);
   --ll-gray-900: var(--ll-zinc-900);
 
-  /* ---------- 主色：石墨（Linear / shadcn 默认） ---------- */
-  /* 浅色主题下 brand-600/700 是深色，按钮等「实心品牌底」用它们；
+  /* ---------- 主色：品牌蓝 ---------- */
+  /* 浅色主题下 brand-600/700 是深蓝，按钮等「实心品牌底」用它们；
      暗色主题会把这套色阶反相成浅色，此时实心底上的文字改用 --ll-on-brand。 */
-  --ll-brand-50: #f4f4f5;
-  --ll-brand-100: #e4e4e7;
-  --ll-brand-200: #d4d4d8;
-  --ll-brand-300: #a1a1aa;
-  --ll-brand-400: #71717a;
-  --ll-brand-500: #52525b;
-  --ll-brand-600: #18181b;
-  --ll-brand-700: #09090b;
+  --ll-brand-50: #eff6ff;
+  --ll-brand-100: #dbeafe;
+  --ll-brand-200: #bfdbfe;
+  --ll-brand-300: #93c5fd;
+  --ll-brand-400: #60a5fa;
+  --ll-brand-500: #3b82f6;
+  --ll-brand-600: #2563eb;
+  --ll-brand-700: #1d4ed8;
 
   /* ---------- 深色区块底色：英雄区、标识块等大面积深底 ---------- */
-  /* 这组令牌不随主题反相，浅色与暗色下始终是深色石墨，保证底上的文字始终可读 */
-  --ll-hero-from: #09090b;
-  --ll-hero-to: #18181b;
-  --ll-on-hero: #fafafa;
+  /* 这组令牌不随主题反相，浅色与暗色下始终是深蓝，保证底上的文字始终可读 */
+  --ll-hero-from: #1e3a8a;
+  --ll-hero-to: #2563eb;
+  --ll-on-hero: #ffffff;
 
   /* ---------- 品牌标识块 ---------- */
-  --ll-logo-from: #3f3f46;
-  --ll-logo-mid: #27272a;
-  --ll-logo-to: #18181b;
+  --ll-logo-from: #3b82f6;
+  --ll-logo-mid: #2563eb;
+  --ll-logo-to: #1d4ed8;
   /* 标识块底上的文字 */
   --ll-on-logo: #ffffff;
 
-  /* ---------- 强调色：用于品牌渐变与链接 ---------- */
-  --ll-accent-50: #eef2ff;
-  --ll-accent-100: #e0e7ff;
-  --ll-accent-200: #c7d2fe;
-  --ll-accent-300: #a5b4fc;
-  --ll-accent-400: #818cf8;
-  --ll-accent-500: #6366f1;
-  --ll-accent-600: #4f46e5;
-  --ll-accent-700: #4338ca;
+  /* ---------- 强调色：用于选中态、链接与图表 ---------- */
+  --ll-accent-50: #eff6ff;
+  --ll-accent-100: #dbeafe;
+  --ll-accent-200: #bfdbfe;
+  --ll-accent-300: #93c5fd;
+  --ll-accent-400: #60a5fa;
+  --ll-accent-500: #3b82f6;
+  --ll-accent-600: #2563eb;
+  --ll-accent-700: #1d4ed8;
 
   /* ---------- 语义色：淡彩底 + 高对比文字 ---------- */
-  --ll-success: #059669;
+  --ll-success: #10b981;
   --ll-success-bg: #ecfdf5;
   --ll-success-border: #a7f3d0;
-  --ll-running: #2563eb;
+  --ll-running: #3b82f6;
   --ll-running-bg: #eff6ff;
   --ll-running-border: #bfdbfe;
-  --ll-warning: #d97706;
+  --ll-warning: #f59e0b;
   --ll-warning-bg: #fffbeb;
   --ll-warning-border: #fde68a;
-  --ll-danger: #e11d48;
-  --ll-danger-bg: #fff1f2;
-  --ll-danger-border: #fecdd3;
-  --ll-info: #0284c7;
-  --ll-info-bg: #f0f9ff;
-  --ll-info-border: #bae6fd;
+  --ll-danger: #ef4444;
+  --ll-danger-bg: #fef2f2;
+  --ll-danger-border: #fecaca;
+  --ll-info: #8b5cf6;
+  --ll-info-bg: #f5f3ff;
+  --ll-info-border: #ddd6fe;
 
   /* ---------- 图表辅助色 ---------- */
-  --ll-chart-1: #4f46e5;
-  --ll-chart-2: #059669;
-  --ll-chart-3: #d97706;
-  --ll-chart-4: #e11d48;
-  --ll-chart-5: #7c3aed;
+  --ll-chart-1: #2563eb;
+  --ll-chart-2: #10b981;
+  --ll-chart-3: #f59e0b;
+  --ll-chart-4: #ef4444;
+  --ll-chart-5: #8b5cf6;
   --ll-chart-6: #0891b2;
 
   /* ---------- 语义色：背景 ---------- */
@@ -209,37 +209,37 @@
   --ll-zinc-900: #fafafa;
 
   /* ---------- 主色：暗色下反过来 ---------- */
-  /* 反相后 brand-600 是近白，实心品牌底上的文字必须换成深色，
+  /* 反相后 brand-600 是浅蓝，实心品牌底上的文字必须换成深色，
      所以这里用 --ll-on-brand 统一收口，不要在业务样式里写死颜色。 */
-  --ll-brand-50: #27272a;
-  --ll-brand-100: #3f3f46;
-  --ll-brand-200: #52525b;
-  --ll-brand-300: #71717a;
-  --ll-brand-400: #a1a1aa;
-  --ll-brand-500: #d4d4d8;
-  --ll-brand-600: #fafafa;
-  --ll-brand-700: #ffffff;
+  --ll-brand-50: #172554;
+  --ll-brand-100: #1e3a8a;
+  --ll-brand-200: #1e40af;
+  --ll-brand-300: #2563eb;
+  --ll-brand-400: #3b82f6;
+  --ll-brand-500: #60a5fa;
+  --ll-brand-600: #93c5fd;
+  --ll-brand-700: #bfdbfe;
 
-  /* ---------- 深色区块底色：暗色下抬高一档，仍保持深色 ---------- */
-  --ll-hero-from: #18181b;
-  --ll-hero-to: #27272a;
-  --ll-on-hero: #fafafa;
+  /* ---------- 深色区块底色：暗色下仍保持深蓝 ---------- */
+  --ll-hero-from: #172554;
+  --ll-hero-to: #1d4ed8;
+  --ll-on-hero: #ffffff;
 
   /* ---------- 品牌标识块 ---------- */
-  --ll-logo-from: #52525b;
-  --ll-logo-mid: #3f3f46;
-  --ll-logo-to: #27272a;
+  --ll-logo-from: #3b82f6;
+  --ll-logo-mid: #2563eb;
+  --ll-logo-to: #1d4ed8;
   --ll-on-logo: #ffffff;
 
   /* ---------- 强调色 ---------- */
-  --ll-accent-50: #1e1b4b;
-  --ll-accent-100: #262261;
-  --ll-accent-200: #312e81;
-  --ll-accent-300: #4338ca;
-  --ll-accent-400: #6366f1;
-  --ll-accent-500: #818cf8;
-  --ll-accent-600: #a5b4fc;
-  --ll-accent-700: #c7d2fe;
+  --ll-accent-50: #172554;
+  --ll-accent-100: #1e3a8a;
+  --ll-accent-200: #1e40af;
+  --ll-accent-300: #2563eb;
+  --ll-accent-400: #3b82f6;
+  --ll-accent-500: #60a5fa;
+  --ll-accent-600: #93c5fd;
+  --ll-accent-700: #bfdbfe;
 
   /* ---------- 语义色：暗色下用深底 + 亮字 ---------- */
   --ll-success: #34d399;

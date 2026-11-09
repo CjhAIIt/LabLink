@@ -13,11 +13,21 @@
 
     <section class="grid">
       <div class="stat-card">
-        <p class="stat-label">创建申请</p>
+        <div class="stat-head">
+          <span class="stat-icon stat-icon--info">
+            <el-icon :size="16"><Document /></el-icon>
+          </span>
+          <p class="stat-label">创建申请</p>
+        </div>
         <strong class="stat-value">{{ createApplyTotal ?? '--' }}</strong>
       </div>
       <div class="stat-card">
-        <p class="stat-label">我的学院</p>
+        <div class="stat-head">
+          <span class="stat-icon">
+            <el-icon :size="16"><OfficeBuilding /></el-icon>
+          </span>
+          <p class="stat-label">我的学院</p>
+        </div>
         <strong class="stat-value">{{ userStore.userInfo?.collegeName || userStore.userInfo?.college || '--' }}</strong>
       </div>
     </section>
@@ -48,7 +58,7 @@
 </template>
 
 <script setup>
-import { ArrowRight, Bell, Edit, Refresh } from '@element-plus/icons-vue'
+import { ArrowRight, Bell, Document, Edit, OfficeBuilding, Refresh } from '@element-plus/icons-vue'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getLabCreateApplyPage } from '@/api/labCreateApplies'

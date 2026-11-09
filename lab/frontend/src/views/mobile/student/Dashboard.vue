@@ -13,19 +13,39 @@
 
     <section class="grid">
       <div class="stat-card">
-        <p class="stat-label">实验室总数</p>
+        <div class="stat-head">
+          <span class="stat-icon stat-icon--success">
+            <el-icon :size="16"><Cpu /></el-icon>
+          </span>
+          <p class="stat-label">实验室总数</p>
+        </div>
         <strong class="stat-value">{{ stats.labCount ?? '--' }}</strong>
       </div>
       <div class="stat-card">
-        <p class="stat-label">学院数量</p>
+        <div class="stat-head">
+          <span class="stat-icon">
+            <el-icon :size="16"><School /></el-icon>
+          </span>
+          <p class="stat-label">学院数量</p>
+        </div>
         <strong class="stat-value">{{ stats.collegeCount ?? '--' }}</strong>
       </div>
       <div class="stat-card">
-        <p class="stat-label">我的申请</p>
+        <div class="stat-head">
+          <span class="stat-icon stat-icon--info">
+            <el-icon :size="16"><Document /></el-icon>
+          </span>
+          <p class="stat-label">我的申请</p>
+        </div>
         <strong class="stat-value">{{ myApplyTotal ?? '--' }}</strong>
       </div>
       <div class="stat-card">
-        <p class="stat-label">我的实验室</p>
+        <div class="stat-head">
+          <span class="stat-icon stat-icon--warning">
+            <el-icon :size="16"><Opportunity /></el-icon>
+          </span>
+          <p class="stat-label">我的实验室</p>
+        </div>
         <strong class="stat-value">{{ userStore.userInfo?.labId ? `#${userStore.userInfo.labId}` : '未加入' }}</strong>
       </div>
     </section>
@@ -102,7 +122,17 @@
 </template>
 
 <script setup>
-import { ArrowRight, Bell, Close, Document, OfficeBuilding, Refresh } from '@element-plus/icons-vue'
+import {
+  ArrowRight,
+  Bell,
+  Close,
+  Cpu,
+  Document,
+  OfficeBuilding,
+  Opportunity,
+  Refresh,
+  School
+} from '@element-plus/icons-vue'
 import { onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { getLabStats } from '@/api/lab'

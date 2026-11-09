@@ -12,7 +12,7 @@
 
     <main class="main-content">
       <section class="hero">
-        <div class="hero-content">
+        <div class="hero-copy">
           <span class="hero-eyebrow">面向学校、学院与实验室的一体化平台</span>
           <h1>实验室发现与学院治理</h1>
           <p>
@@ -25,12 +25,34 @@
           </div>
         </div>
 
-        <div class="hero-features">
-          <div v-for="item in platformFeatures" :key="item.title" class="feature-card">
-            <span class="feature-icon"><el-icon :size="18"><component :is="item.icon" /></el-icon></span>
-            <strong>{{ item.title }}</strong>
-            <p>{{ item.text }}</p>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="visual-card">
+            <span class="visual-eyebrow">平台概览</span>
+            <div class="visual-metrics">
+              <div v-for="item in visualMetrics" :key="item.label" class="visual-metric">
+                <span class="visual-icon" :class="`visual-icon--${item.tone}`"></span>
+                <strong>{{ item.value }}</strong>
+                <span>{{ item.label }}</span>
+              </div>
+            </div>
+            <div class="visual-bars">
+              <span
+                v-for="(bar, index) in visualBars"
+                :key="index"
+                :style="{ height: `${bar}%` }"
+              ></span>
+            </div>
           </div>
+        </div>
+      </section>
+
+      <section class="feature-grid">
+        <div v-for="item in platformFeatures" :key="item.title" class="feature-card">
+          <span class="feature-icon" :class="`feature-icon--${item.tone}`">
+            <el-icon :size="20"><component :is="item.icon" /></el-icon>
+          </span>
+          <strong>{{ item.title }}</strong>
+          <p>{{ item.text }}</p>
         </div>
       </section>
 
@@ -143,11 +165,21 @@ import { getCollegeOptions } from '@/api/colleges'
 import { getLabPage, getLabStats } from '@/api/lab'
 
 const platformFeatures = [
-  { title: '多角色协同', text: '学校、学院、实验室、教师与学生分层治理，权限按角色下发。', icon: UserFilled },
-  { title: '实验室档案', text: '实验室基础信息、招新计划与成员状态集中沉淀，随时可查。', icon: OfficeBuilding },
-  { title: '审批闭环', text: '教师注册、实验室创建与成员申请全部走审批流程，状态可追踪。', icon: DocumentChecked },
-  { title: '运营数据', text: '考勤、资料空间与公告统一汇总，支持综合检索与统计分析。', icon: TrendCharts }
+  { title: '多角色协同', text: '学校、学院、实验室、教师与学生分层治理，权限按角色下发。', icon: UserFilled, tone: 'primary' },
+  { title: '实验室档案', text: '实验室基础信息、招新计划与成员状态集中沉淀，随时可查。', icon: OfficeBuilding, tone: 'info' },
+  { title: '审批闭环', text: '教师注册、实验室创建与成员申请全部走审批流程，状态可追踪。', icon: DocumentChecked, tone: 'success' },
+  { title: '运营数据', text: '考勤、资料空间与公告统一汇总，支持综合检索与统计分析。', icon: TrendCharts, tone: 'warning' }
 ]
+
+/** 首屏右侧的示意面板，纯装饰，不承载真实数据。 */
+const visualMetrics = [
+  { label: '学院', value: '7', tone: 'primary' },
+  { label: '实验室', value: '24', tone: 'success' },
+  { label: '成员', value: '142', tone: 'warning' },
+  { label: '待办', value: '4', tone: 'danger' }
+]
+
+const visualBars = [46, 72, 38, 88, 58, 96, 64]
 
 const router = useRouter()
 const colleges = ref([])
@@ -270,7 +302,9 @@ onBeforeUnmount(() => {
 <style scoped>
 .portal-page {
   min-height: 100vh;
-  background: var(--ll-bg-body);
+  background:
+    radial-gradient(80% 60% at 50% 0%, rgba(59, 130, 246, 0.08), transparent 70%),
+    var(--ll-bg-body);
   color: var(--ll-text-primary);
 }
 
@@ -280,13 +314,16 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   gap: var(--ll-space-4);
-  height: 64px;
-  padding: 0 var(--ll-space-8);
-  background: var(--ll-bg-chrome);
-  backdrop-filter: blur(12px);
-  border-bottom: 1px solid var(--ll-border-subtle);
+  height: 60px;
+  max-width: 1200px;
+  margin: var(--ll-space-4) auto 0;
+  padding: 0 var(--ll-space-5);
+  border-radius: var(--ll-radius-full);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: var(--ll-shadow-sm);
   position: sticky;
-  top: 0;
+  top: var(--ll-space-4);
   z-index: var(--ll-z-sticky);
 }
 
@@ -332,15 +369,28 @@ onBeforeUnmount(() => {
 /* ---------- 首屏 ---------- */
 .hero {
   display: grid;
-  gap: var(--ll-space-6);
-  padding: var(--ll-space-6) 0 var(--ll-space-2);
+  grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+  align-items: center;
+  gap: var(--ll-space-10);
+  margin-top: var(--ll-space-4);
+  padding: var(--ll-space-10) var(--ll-space-8);
+  border-radius: var(--ll-radius-xl);
+  background:
+    radial-gradient(70% 120% at 100% 0%, rgba(59, 130, 246, 0.18), transparent 60%),
+    linear-gradient(135deg, var(--ll-brand-50), var(--ll-bg-surface));
+  border: 1px solid var(--ll-border-subtle);
+  overflow: hidden;
+}
+
+.hero-copy {
+  min-width: 0;
 }
 
 .hero-eyebrow {
   display: inline-block;
-  padding: 4px 12px;
+  padding: 5px 14px;
   border-radius: var(--ll-radius-full);
-  background: var(--ll-brand-50);
+  background: var(--ll-brand-100);
   color: var(--ll-brand-700);
   font-size: var(--ll-text-xs);
   font-weight: 600;
@@ -348,17 +398,18 @@ onBeforeUnmount(() => {
 }
 
 .hero h1 {
-  margin-top: var(--ll-space-3);
-  font-size: 36px;
-  font-weight: 600;
-  line-height: 1.3;
+  margin-top: var(--ll-space-4);
+  font-size: 40px;
+  font-weight: 700;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
 }
 
 .hero p {
   margin-top: var(--ll-space-3);
-  max-width: 640px;
-  font-size: var(--ll-text-base);
-  line-height: 1.7;
+  max-width: 560px;
+  font-size: var(--ll-text-lg);
+  line-height: 1.75;
   color: var(--ll-text-secondary);
 }
 
@@ -366,7 +417,7 @@ onBeforeUnmount(() => {
   display: flex;
   flex-wrap: wrap;
   gap: var(--ll-space-3);
-  margin-top: var(--ll-space-4);
+  margin-top: var(--ll-space-6);
 }
 
 .primary-btn,
@@ -374,7 +425,7 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 40px;
+  height: 42px;
   padding: 0 var(--ll-space-6);
   border-radius: var(--ll-radius-md);
   font-size: var(--ll-text-base);
@@ -406,58 +457,158 @@ onBeforeUnmount(() => {
   background: var(--ll-brand-50);
 }
 
-/* ---------- 特性网格 ---------- */
-.hero-features {
+/* ---------- 首屏示意面板 ---------- */
+.hero-visual {
+  min-width: 0;
+}
+
+.visual-card {
+  padding: var(--ll-space-5);
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: var(--ll-shadow-lg);
+}
+
+.visual-eyebrow {
+  font-size: var(--ll-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ll-text-tertiary);
+}
+
+.visual-metrics {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  gap: 0;
-  border-top: 1px solid var(--ll-border-subtle);
-  border-bottom: 1px solid var(--ll-border-subtle);
+  gap: var(--ll-space-3);
+  margin-top: var(--ll-space-4);
+}
+
+.visual-metric {
+  display: grid;
+  gap: 2px;
+  justify-items: center;
+  padding: var(--ll-space-3) var(--ll-space-2);
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-bg-muted);
+}
+
+.visual-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--ll-radius-sm);
+  background: var(--ll-running-bg);
+  border: 2px solid var(--ll-running);
+}
+
+.visual-icon--success {
+  background: var(--ll-success-bg);
+  border-color: var(--ll-success);
+}
+
+.visual-icon--warning {
+  background: var(--ll-warning-bg);
+  border-color: var(--ll-warning);
+}
+
+.visual-icon--danger {
+  background: var(--ll-danger-bg);
+  border-color: var(--ll-danger);
+}
+
+.visual-metric strong {
+  margin-top: var(--ll-space-1);
+  font-size: var(--ll-text-xl);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ll-text-primary);
+}
+
+.visual-metric span:last-child {
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
+}
+
+.visual-bars {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--ll-space-2);
+  height: 96px;
+  margin-top: var(--ll-space-5);
+  padding-top: var(--ll-space-3);
+  border-top: 1px dashed var(--ll-border-subtle);
+}
+
+.visual-bars span {
+  flex: 1;
+  border-radius: var(--ll-radius-xs) var(--ll-radius-xs) 0 0;
+  background: linear-gradient(180deg, var(--ll-brand-400), var(--ll-brand-600));
+}
+
+/* ---------- 特性网格 ---------- */
+.feature-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--ll-space-4);
+  margin-top: var(--ll-space-6);
 }
 
 .feature-card {
   display: grid;
-  grid-template-columns: 34px minmax(0, 1fr);
-  align-content: center;
-  align-items: center;
-  column-gap: var(--ll-space-3);
-  row-gap: 2px;
-  min-height: 76px;
-  padding: var(--ll-space-3) var(--ll-space-4);
-  border-right: 1px solid var(--ll-border-subtle);
+  gap: var(--ll-space-2);
+  align-content: start;
+  padding: var(--ll-space-5);
+  border-radius: var(--ll-radius-lg);
+  background: var(--ll-bg-surface);
+  border: 1px solid var(--ll-border-subtle);
+  box-shadow: var(--ll-shadow-xs);
+  transition: border-color var(--ll-transition-fast), box-shadow var(--ll-transition-fast),
+    transform var(--ll-transition-fast);
 }
 
-.feature-card:last-child {
-  border-right: 0;
+.feature-card:hover {
+  border-color: var(--ll-brand-200);
+  box-shadow: var(--ll-shadow-sm);
+  transform: translateY(-1px);
 }
 
 .feature-icon {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  grid-row: span 2;
-  border-radius: var(--ll-radius-sm);
-  background: var(--ll-brand-50);
-  color: var(--ll-brand-600);
+  width: 40px;
+  height: 40px;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-running-bg);
+  color: var(--ll-running);
   margin-bottom: var(--ll-space-1);
 }
 
+.feature-icon--info {
+  background: var(--ll-info-bg);
+  color: var(--ll-info);
+}
+
+.feature-icon--success {
+  background: var(--ll-success-bg);
+  color: var(--ll-success);
+}
+
+.feature-icon--warning {
+  background: var(--ll-warning-bg);
+  color: var(--ll-warning);
+}
+
 .feature-card strong {
-  font-size: var(--ll-text-base);
+  font-size: var(--ll-text-lg);
   font-weight: 600;
 }
 
 .feature-card p {
   font-size: var(--ll-text-sm);
-  line-height: 1.45;
+  line-height: 1.6;
   color: var(--ll-text-secondary);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
 }
 
 /* ---------- 筛选面板 ---------- */
@@ -692,6 +843,18 @@ onBeforeUnmount(() => {
   margin-top: var(--ll-space-4);
 }
 
+@media (max-width: 1024px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--ll-space-6);
+    padding: var(--ll-space-8) var(--ll-space-6);
+  }
+
+  .feature-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 768px) {
   .portal-nav {
     padding: 0 var(--ll-space-4);
@@ -706,8 +869,13 @@ onBeforeUnmount(() => {
     gap: var(--ll-space-6);
   }
 
+  .hero {
+    padding: var(--ll-space-6) var(--ll-space-4);
+    border-radius: var(--ll-radius-lg);
+  }
+
   .hero h1 {
-    font-size: 26px;
+    font-size: 28px;
   }
 
   .hero p {
@@ -719,20 +887,16 @@ onBeforeUnmount(() => {
     flex: 1 1 100%;
   }
 
+  .visual-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .filter-item {
     width: 100%;
   }
 
-  .hero-features {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .feature-card:nth-child(2) {
-    border-right: 0;
-  }
-
-  .feature-card:nth-child(n + 3) {
-    border-top: 1px solid var(--ll-border-subtle);
+  .feature-grid {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .labs-grid {

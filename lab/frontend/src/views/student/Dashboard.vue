@@ -15,8 +15,18 @@
     </section>
 
     <section class="metric-grid">
-      <article v-for="card in metricCards" :key="card.label" class="metric-card">
-        <span class="metric-label">{{ card.label }}</span>
+      <article
+        v-for="card in metricCards"
+        :key="card.label"
+        class="metric-card"
+        :class="card.tone ? `metric-card--${card.tone}` : ''"
+      >
+        <div class="metric-head">
+          <span class="metric-icon" :class="card.tone ? `metric-icon--${card.tone}` : ''">
+            <el-icon :size="20"><component :is="card.icon" /></el-icon>
+          </span>
+          <span class="metric-label">{{ card.label }}</span>
+        </div>
         <strong class="metric-value">{{ card.value }}</strong>
         <span class="metric-tip">{{ card.tip }}</span>
       </article>
@@ -93,6 +103,7 @@
 <script setup>
 import dayjs from 'dayjs'
 import { computed, onMounted, ref } from 'vue'
+import { Bell, Document, Opportunity, Timer } from '@element-plus/icons-vue'
 import { getMyLabApplyPage } from '@/api/labApplies'
 import { getLatestNotices } from '@/api/notices'
 import { getActiveRecruitPlans } from '@/api/recruitPlans'
@@ -110,10 +121,10 @@ const joinedLabLabel = computed(() =>
 const metricCards = computed(() => {
   const applies = myApplies.value || []
   return [
-    { label: '开放计划', value: activePlans.value.length, tip: '当前正在招募的实验室计划' },
-    { label: '我的申请', value: applies.length, tip: '已提交的实验室申请数量' },
-    { label: '待处理结果', value: applies.filter((item) => item.status !== 'approved' && item.status !== 'rejected').length, tip: '仍在流程中的申请' },
-    { label: '最新公告', value: notices.value.length, tip: '与你当前可见范围相关的公告' }
+    { label: '开放计划', value: activePlans.value.length, tip: '当前正在招募的实验室计划', icon: Opportunity, tone: 'info' },
+    { label: '我的申请', value: applies.length, tip: '已提交的实验室申请数量', icon: Document },
+    { label: '待处理结果', value: applies.filter((item) => item.status !== 'approved' && item.status !== 'rejected').length, tip: '仍在流程中的申请', icon: Timer, tone: 'warning' },
+    { label: '最新公告', value: notices.value.length, tip: '与你当前可见范围相关的公告', icon: Bell }
   ]
 })
 
