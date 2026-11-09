@@ -1,0 +1,18 @@
+{
+  "appId": "com.aiit.lablink",
+  "appName": "LabLink",
+  "webDir": "dist",
+  "android": {
+    "allowMixedContent": true,
+    "webContentsDebuggingEnabled": true
+  },
+  "server": {
+    "androidScheme": "https",
+    "cleartext": true
+  },
+  "plugins": {
+    "CapacitorHttp": {
+      "enabled": false
+    }
+  }
+}

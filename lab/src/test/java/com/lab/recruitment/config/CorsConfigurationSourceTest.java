@@ -58,6 +58,17 @@ class CorsConfigurationSourceTest {
     }
 
     @Test
+    @DisplayName("本地环境放行桌面端与安卓端的 WebView 来源")
+    void shouldAllowNativeOriginsInLocalEnvironment() {
+        CorsConfiguration configuration =
+                configurationFor("local", Collections.singletonList("http://localhost:5173"));
+
+        assertNotNull(configuration.checkOrigin("tauri://localhost"), "Tauri 的 WebView 来源应放行");
+        assertNotNull(configuration.checkOrigin("capacitor://localhost"), "Capacitor 的 WebView 来源应放行");
+        assertNotNull(configuration.checkOrigin("https://localhost"), "Capacitor 的 https 方案应放行");
+    }
+
+    @Test
     @DisplayName("生产环境不放宽回环端口")
     void shouldNotRelaxLoopbackPortsInProduction() {
         CorsConfiguration configuration =
@@ -65,6 +76,8 @@ class CorsConfigurationSourceTest {
 
         assertNull(configuration.checkOrigin("http://127.0.0.1:5193"),
                 "生产环境不应放行回环地址");
+        assertNull(configuration.checkOrigin("tauri://localhost"),
+                "生产环境不应放行桌面端来源");
         assertNotNull(configuration.checkOrigin("https://lab.example.edu.cn"),
                 "生产环境白名单内的来源应当放行");
     }

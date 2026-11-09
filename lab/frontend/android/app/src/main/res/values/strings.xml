@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">LabLink</string>
+    <string name="title_activity_main">LabLink</string>
+    <string name="package_name">com.aiit.lablink</string>
+    <string name="custom_url_scheme">com.aiit.lablink</string>
+</resources>

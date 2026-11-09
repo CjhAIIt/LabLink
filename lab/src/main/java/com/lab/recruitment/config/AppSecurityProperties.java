@@ -78,12 +78,22 @@ public class AppSecurityProperties {
      * 开发代理把该头原样转发到后端后就会命中白名单校验并返回
      * {@code Invalid CORS request}，登录这类写操作全部失败。
      * 因此非生产环境额外放行回环地址的任意端口，生产环境不做任何放宽。</p>
+     *
+     * <p>另外桌面端（Tauri）与安卓端（Capacitor）的 WebView 也带着自己的来源：
+     * Tauri 是 {@code tauri://localhost}，Capacitor 默认是 {@code http://localhost}，
+     * 配成 https 方案后是 {@code https://localhost}。
+     * 这些来源只在非生产环境放行，生产环境应通过
+     * {@code APP_SECURITY_ALLOWED_ORIGINS_CSV} 显式声明实际来源。</p>
      */
     public List<String> resolveAllowedOriginPatterns() {
         List<String> patterns = new ArrayList<>(resolveAllowedOrigins());
         if (!isProduction()) {
             patterns.add("http://localhost:[*]");
             patterns.add("http://127.0.0.1:[*]");
+            patterns.add("https://localhost:[*]");
+            patterns.add("https://127.0.0.1:[*]");
+            patterns.add("tauri://localhost");
+            patterns.add("capacitor://localhost");
         }
         return patterns;
     }
