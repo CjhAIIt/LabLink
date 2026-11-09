@@ -18,8 +18,18 @@
     </section>
 
     <section class="metric-grid">
-      <article v-for="card in metricCards" :key="card.label" class="metric-card">
-        <span class="metric-label">{{ card.label }}</span>
+      <article
+        v-for="card in metricCards"
+        :key="card.label"
+        class="metric-card"
+        :class="card.tone ? `metric-card--${card.tone}` : ''"
+      >
+        <div class="metric-head">
+          <span class="metric-icon" :class="card.tone ? `metric-icon--${card.tone}` : ''">
+            <el-icon :size="20"><component :is="card.icon" /></el-icon>
+          </span>
+          <span class="metric-label">{{ card.label }}</span>
+        </div>
         <strong class="metric-value">{{ card.value }}</strong>
         <span class="metric-tip">{{ card.tip }}</span>
       </article>
@@ -34,13 +44,20 @@
       </template>
 
       <div class="pending-grid">
-        <article v-for="item in pendingApprovals" :key="item.label" class="pending-card">
+        <article
+          v-for="item in pendingApprovals"
+          :key="item.label"
+          class="pending-card"
+          :class="`pending-card--${pendingTone(item.label)}`"
+        >
           <div class="pending-main">
             <span class="pending-label">{{ item.label }}</span>
             <strong class="pending-value">{{ item.value }}</strong>
           </div>
           <p>{{ item.description }}</p>
-          <el-button v-if="item.route" link type="primary" @click="goRoute(item.route)">立即处理</el-button>
+          <el-button v-if="item.route" link type="primary" @click="goRoute(item.route)">
+            立即处理<el-icon class="el-icon--right"><ArrowRight /></el-icon>
+          </el-button>
         </article>
       </div>
     </el-card>
@@ -81,10 +98,13 @@
           <el-empty description="暂无公告" />
         </div>
         <div v-else class="notice-list">
-          <article v-for="notice in notices" :key="notice.id" class="notice-item">
-            <strong>{{ notice.title }}</strong>
+          <article v-for="(notice, index) in notices" :key="notice.id" class="notice-item">
+            <div class="notice-head">
+              <span class="notice-dot" :class="`notice-dot--${noticeDots[index % noticeDots.length]}`" />
+              <strong>{{ notice.title }}</strong>
+              <span class="notice-time">{{ formatDateTime(notice.publishTime) }}</span>
+            </div>
             <p>{{ notice.content }}</p>
-            <span>{{ formatDateTime(notice.publishTime) }}</span>
           </article>
         </div>
       </el-card>
@@ -141,6 +161,17 @@ import dayjs from 'dayjs'
 import { ElMessage } from 'element-plus'
 import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import {
+  ArrowRight,
+  Cpu,
+  Files,
+  Opportunity,
+  School,
+  TrendCharts,
+  User,
+  UserFilled,
+  Warning
+} from '@element-plus/icons-vue'
 import { getLatestNotices } from '@/api/notices'
 import { getOverviewStatistics } from '@/api/statistics'
 import { useUserStore } from '@/stores/user'
@@ -205,32 +236,52 @@ const pendingSectionTitle = computed(() =>
 const metricCards = computed(() => {
   if (scopeType.value === 'school') {
     return [
-      { label: '学院总数', value: overview.value.collegeCount ?? 0, tip: '学校治理覆盖学院数' },
-      { label: '实验室总数', value: overview.value.labCount ?? 0, tip: '纳入平台的实验室规模' },
-      { label: '指导老师', value: overview.value.teacherCount ?? 0, tip: '参与实验室指导的老师数量' },
-      { label: '正式成员', value: overview.value.formalMemberCount ?? 0, tip: '当前有效成员总量' },
-      { label: '待处理事项', value: overview.value.pendingApprovalTotal ?? 0, tip: '学校层面的待办审批总数' }
+      { label: '学院总数', value: overview.value.collegeCount ?? 0, tip: '学校治理覆盖学院数', icon: School },
+      { label: '实验室总数', value: overview.value.labCount ?? 0, tip: '纳入平台的实验室规模', icon: Cpu, tone: 'success' },
+      { label: '指导老师', value: overview.value.teacherCount ?? 0, tip: '参与实验室指导的老师数量', icon: UserFilled, tone: 'warning' },
+      { label: '正式成员', value: overview.value.formalMemberCount ?? 0, tip: '当前有效成员总量', icon: User },
+      { label: '待处理事项', value: overview.value.pendingApprovalTotal ?? 0, tip: '学校层面的待办审批总数', icon: Warning, tone: 'danger' }
     ]
   }
 
   if (scopeType.value === 'college') {
     return [
-      { label: '实验室总数', value: overview.value.labCount ?? 0, tip: '本学院纳入管理的实验室数量' },
-      { label: '指导老师', value: overview.value.teacherCount ?? 0, tip: '本学院实验室指导教师数量' },
-      { label: '正式成员', value: overview.value.formalMemberCount ?? 0, tip: '本学院实验室有效成员总量' },
-      { label: '开放招新', value: overview.value.openPlanCount ?? 0, tip: '当前仍在开放的招新计划数量' },
-      { label: '待处理事项', value: overview.value.pendingApprovalTotal ?? 0, tip: '本学院审批链上的待办数量' }
+      { label: '实验室总数', value: overview.value.labCount ?? 0, tip: '本学院纳入管理的实验室数量', icon: Cpu, tone: 'success' },
+      { label: '指导老师', value: overview.value.teacherCount ?? 0, tip: '本学院实验室指导教师数量', icon: UserFilled, tone: 'warning' },
+      { label: '正式成员', value: overview.value.formalMemberCount ?? 0, tip: '本学院实验室有效成员总量', icon: User },
+      { label: '开放招新', value: overview.value.openPlanCount ?? 0, tip: '当前仍在开放的招新计划数量', icon: Opportunity, tone: 'info' },
+      { label: '待处理事项', value: overview.value.pendingApprovalTotal ?? 0, tip: '本学院审批链上的待办数量', icon: Warning, tone: 'danger' }
     ]
   }
 
   return [
-    { label: '成员规模', value: overview.value.memberCount ?? 0, tip: '当前实验室正式成员数' },
-    { label: '在招计划', value: overview.value.openPlanCount ?? 0, tip: '正在开放招新的计划数量' },
-    { label: '待审核事项', value: overview.value.pendingApprovalTotal ?? 0, tip: '待实验室管理员处理的事项' },
-    { label: '月出勤率', value: `${overview.value.attendanceRate ?? 0}%`, tip: '考勤记录综合出勤率' },
-    { label: '资料文件', value: overview.value.fileCount ?? 0, tip: '实验室空间累计文件量' }
+    { label: '成员规模', value: overview.value.memberCount ?? 0, tip: '当前实验室正式成员数', icon: User },
+    { label: '在招计划', value: overview.value.openPlanCount ?? 0, tip: '正在开放招新的计划数量', icon: Opportunity, tone: 'info' },
+    { label: '待审核事项', value: overview.value.pendingApprovalTotal ?? 0, tip: '待实验室管理员处理的事项', icon: Warning, tone: 'danger' },
+    { label: '月出勤率', value: `${overview.value.attendanceRate ?? 0}%`, tip: '考勤记录综合出勤率', icon: TrendCharts, tone: 'success' },
+    { label: '资料文件', value: overview.value.fileCount ?? 0, tip: '实验室空间累计文件量', icon: Files }
   ]
 })
+
+/**
+ * 公告前的圆点按顺序取语义色，只用来区分条目，
+ * 真正的公告分类仍由公告自身的类型字段表达。
+ */
+const noticeDots = ['primary', 'success', 'warning', 'info']
+
+/**
+ * 待办卡片按业务类型取一个语义色，用左侧色条区分，
+ * 颜色只用来分组，不表示状态，状态仍由文案与徽标承担。
+ */
+const pendingTone = (label = '') => {
+  if (label.includes('教师')) {
+    return 'primary'
+  }
+  if (label.includes('实验室')) {
+    return 'warning'
+  }
+  return 'info'
+}
 
 const primaryList = computed(() =>
   scopeType.value === 'lab' ? overview.value.recentFiles || [] : overview.value.activityRanking || []
@@ -406,10 +457,17 @@ onMounted(() => {
   gap: var(--ll-space-2);
 }
 
+/* 深色英雄区上的主操作：白底蓝字，和图示里的「导出治理报表」一致 */
 .hero-button {
-  border-color: rgba(255, 255, 255, 0.28);
-  color: var(--ll-on-hero);
-  background: rgba(255, 255, 255, 0.1);
+  --el-button-bg-color: #ffffff;
+  --el-button-border-color: #ffffff;
+  --el-button-text-color: var(--ll-hero-from);
+  --el-button-hover-bg-color: rgba(255, 255, 255, 0.88);
+  --el-button-hover-border-color: rgba(255, 255, 255, 0.88);
+  --el-button-hover-text-color: var(--ll-hero-from);
+  --el-button-active-bg-color: rgba(255, 255, 255, 0.78);
+  --el-button-active-border-color: rgba(255, 255, 255, 0.78);
+  --el-button-active-text-color: var(--ll-hero-from);
 }
 
 .hero-chip {
@@ -442,8 +500,21 @@ onMounted(() => {
   gap: 10px;
   padding: 18px 20px;
   border-radius: var(--ll-radius-lg);
-  background: linear-gradient(135deg, var(--ll-bg-subtle), var(--ll-bg-surface));
+  background: var(--ll-bg-surface);
   border: 1px solid var(--ll-border-subtle);
+  border-left: 3px solid var(--ll-brand-500);
+}
+
+.pending-card--primary {
+  border-left-color: var(--ll-brand-500);
+}
+
+.pending-card--warning {
+  border-left-color: var(--ll-warning);
+}
+
+.pending-card--info {
+  border-left-color: var(--ll-info);
 }
 
 .pending-main {
@@ -481,6 +552,47 @@ onMounted(() => {
 
 .notice-list {
   display: grid;
+}
+
+/* 公告行：彩色圆点 + 标题 + 时间 */
+.notice-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-2);
+}
+
+.notice-head strong {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notice-dot {
+  width: 8px;
+  height: 8px;
+  flex-shrink: 0;
+  border-radius: var(--ll-radius-full);
+  background: var(--ll-brand-500);
+}
+
+.notice-dot--success {
+  background: var(--ll-success);
+}
+
+.notice-dot--warning {
+  background: var(--ll-warning);
+}
+
+.notice-dot--info {
+  background: var(--ll-info);
+}
+
+.notice-time {
+  flex-shrink: 0;
+  font-size: var(--ll-text-xs);
+  color: var(--ll-text-tertiary);
 }
 
 .notice-item {

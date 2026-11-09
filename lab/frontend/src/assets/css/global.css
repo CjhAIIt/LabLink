@@ -132,6 +132,38 @@ a:hover {
   --el-fill-color-light: var(--ll-gray-50);
   --el-fill-color-lighter: var(--ll-gray-25);
   --el-box-shadow-light: var(--ll-shadow-sm);
+
+  /* Element 的语义色阶：标签、徽标、状态点都靠这套变量取色，
+     这里改成与 LabLink 语义色一致的色板，plain 变体的浅底与深字才对得上。 */
+  --el-color-primary-light-3: #93c5fd;
+  --el-color-primary-light-5: #3b82f6;
+  --el-color-primary-light-7: #bfdbfe;
+  --el-color-primary-light-8: #dbeafe;
+  --el-color-primary-light-9: #eff6ff;
+
+  --el-color-success-light-3: #6ee7b7;
+  --el-color-success-light-5: #10b981;
+  --el-color-success-light-7: #a7f3d0;
+  --el-color-success-light-8: #d1fae5;
+  --el-color-success-light-9: #ecfdf5;
+
+  --el-color-warning-light-3: #fcd34d;
+  --el-color-warning-light-5: #f59e0b;
+  --el-color-warning-light-7: #fde68a;
+  --el-color-warning-light-8: #fef3c7;
+  --el-color-warning-light-9: #fffbeb;
+
+  --el-color-danger-light-3: #fca5a5;
+  --el-color-danger-light-5: #ef4444;
+  --el-color-danger-light-7: #fecaca;
+  --el-color-danger-light-8: #fee2e2;
+  --el-color-danger-light-9: #fef2f2;
+
+  --el-color-info-light-3: #c4b5fd;
+  --el-color-info-light-5: #8b5cf6;
+  --el-color-info-light-7: #ddd6fe;
+  --el-color-info-light-8: #ede9fe;
+  --el-color-info-light-9: #f5f3ff;
 }
 
 /**
@@ -215,6 +247,37 @@ a:hover {
   --el-radio-checked-text-color: var(--ll-on-brand);
   --el-switch-off-color: var(--ll-gray-300);
   --el-loading-spinner-size-large: 42px;
+
+  /* 暗色下语义色的「浅底」要换成深底 + 亮字，plain 标签才不至于刺眼 */
+  --el-color-primary-light-3: #2563eb;
+  --el-color-primary-light-5: #93c5fd;
+  --el-color-primary-light-7: #1e40af;
+  --el-color-primary-light-8: #172554;
+  --el-color-primary-light-9: rgba(37, 99, 235, 0.16);
+
+  --el-color-success-light-3: #059669;
+  --el-color-success-light-5: #34d399;
+  --el-color-success-light-7: #065f46;
+  --el-color-success-light-8: #064e3b;
+  --el-color-success-light-9: rgba(16, 185, 129, 0.16);
+
+  --el-color-warning-light-3: #d97706;
+  --el-color-warning-light-5: #fbbf24;
+  --el-color-warning-light-7: #92400e;
+  --el-color-warning-light-8: #78350f;
+  --el-color-warning-light-9: rgba(245, 158, 11, 0.16);
+
+  --el-color-danger-light-3: #dc2626;
+  --el-color-danger-light-5: #f87171;
+  --el-color-danger-light-7: #991b1b;
+  --el-color-danger-light-8: #7f1d1d;
+  --el-color-danger-light-9: rgba(239, 68, 68, 0.16);
+
+  --el-color-info-light-3: #7c3aed;
+  --el-color-info-light-5: #a78bfa;
+  --el-color-info-light-7: #5b21b6;
+  --el-color-info-light-8: #4c1d95;
+  --el-color-info-light-9: rgba(139, 92, 246, 0.16);
 }
 
 /**
@@ -565,10 +628,28 @@ a:hover {
 
 /* 强调型头部：仅工作台等需要视觉重量的场景使用 */
 .page-hero--brand {
+  position: relative;
+  overflow: hidden;
   color: var(--ll-on-hero);
   border-color: transparent;
-  background: linear-gradient(110deg, var(--ll-hero-from), var(--ll-hero-to));
+  /* 两组 ±60° 重复渐变叠出六边形网格，右上角再压一层高光 */
+  background:
+    radial-gradient(85% 150% at 92% 0%, rgba(255, 255, 255, 0.2), transparent 58%),
+    repeating-linear-gradient(60deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 26px),
+    repeating-linear-gradient(-60deg, rgba(255, 255, 255, 0.055) 0 1px, transparent 1px 26px),
+    linear-gradient(115deg, var(--ll-hero-from), var(--ll-hero-to));
   box-shadow: none;
+}
+
+/* 深色底上的胶囊标签 */
+.page-hero--brand .hero-chip {
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.24);
+  color: var(--ll-on-hero);
+}
+
+.page-hero--brand .hero-chip.muted {
+  background: rgba(255, 255, 255, 0.1);
 }
 
 .page-hero--brand h1,
@@ -610,6 +691,60 @@ a:hover {
   transform: translateY(-1px);
 }
 
+/* 指标卡图标块：彩色底 + 同色图形，配色跟随语义色 */
+.metric-head {
+  display: flex;
+  align-items: center;
+  gap: var(--ll-space-3);
+  margin-bottom: var(--ll-space-1);
+}
+
+.metric-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+  border-radius: var(--ll-radius-md);
+  background: var(--ll-running-bg);
+  color: var(--ll-running);
+  font-size: 20px;
+}
+
+.metric-icon--success {
+  background: var(--ll-success-bg);
+  color: var(--ll-success);
+}
+
+.metric-icon--warning {
+  background: var(--ll-warning-bg);
+  color: var(--ll-warning);
+}
+
+.metric-icon--danger {
+  background: var(--ll-danger-bg);
+  color: var(--ll-danger);
+}
+
+.metric-icon--info {
+  background: var(--ll-info-bg);
+  color: var(--ll-info);
+}
+
+/* 指标卡按语义色描边，hover 时加深 */
+.metric-card--success {
+  border-color: color-mix(in srgb, var(--ll-success) 24%, var(--ll-border-subtle));
+}
+
+.metric-card--warning {
+  border-color: color-mix(in srgb, var(--ll-warning) 24%, var(--ll-border-subtle));
+}
+
+.metric-card--danger {
+  border-color: color-mix(in srgb, var(--ll-danger) 24%, var(--ll-border-subtle));
+}
+
 .metric-label {
   color: var(--ll-text-secondary);
   font-size: var(--ll-text-sm);
@@ -628,6 +763,23 @@ a:hover {
 .metric-tip {
   color: var(--ll-text-tertiary);
   font-size: var(--ll-text-xs);
+}
+
+/* 增减量：上涨用绿色、下跌用红色，其余保持中性 */
+.metric-delta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--ll-text-xs);
+  font-weight: 600;
+}
+
+.metric-delta--up {
+  color: var(--ll-success);
+}
+
+.metric-delta--down {
+  color: var(--ll-danger);
 }
 
 /* ---------- 内容栅格 ---------- */

@@ -16,8 +16,18 @@
     </section>
 
     <section class="metric-grid">
-      <article v-for="card in summaryCards" :key="card.label" class="metric-card">
-        <span class="metric-label">{{ card.label }}</span>
+      <article
+        v-for="card in summaryCards"
+        :key="card.label"
+        class="metric-card"
+        :class="card.tone ? `metric-card--${card.tone}` : ''"
+      >
+        <div class="metric-head">
+          <span class="metric-icon" :class="card.tone ? `metric-icon--${card.tone}` : ''">
+            <el-icon :size="20"><component :is="card.icon" /></el-icon>
+          </span>
+          <span class="metric-label">{{ card.label }}</span>
+        </div>
         <strong class="metric-value">{{ card.value }}</strong>
         <span class="metric-tip">{{ card.tip }}</span>
       </article>
@@ -75,6 +85,7 @@
 <script setup>
 import dayjs from 'dayjs'
 import { computed, onMounted, ref } from 'vue'
+import { Bell, CircleCheck, Document, Timer } from '@element-plus/icons-vue'
 import { getLabCreateApplyPage } from '@/api/labCreateApplies'
 import { getLatestNotices } from '@/api/notices'
 import { useUserStore } from '@/stores/user'
@@ -88,22 +99,28 @@ const summaryCards = computed(() => [
   {
     label: '累计申请',
     value: applyTotal.value,
-    tip: '教师本人已提交的实验室创建申请总数'
+    tip: '教师本人已提交的实验室创建申请总数',
+    icon: Document
   },
   {
     label: '待审批',
     value: applications.value.filter((item) => item.status === 'submitted' || item.status === 'college_approved').length,
-    tip: '仍在学院或学校审批流程中的申请'
+    tip: '仍在学院或学校审批流程中的申请',
+    icon: Timer,
+    tone: 'warning'
   },
   {
     label: '已通过',
     value: applications.value.filter((item) => item.status === 'approved').length,
-    tip: '已完成审批并生成实验室的申请'
+    tip: '已完成审批并生成实验室的申请',
+    icon: CircleCheck,
+    tone: 'success'
   },
   {
     label: '最新公告',
     value: notices.value.length,
-    tip: '当前可见范围内最近发布的公告数量'
+    tip: '当前可见范围内最近发布的公告数量',
+    icon: Bell
   }
 ])
 
